@@ -6,7 +6,7 @@
 #$ -N lpa-analysis
 
 # Email address (change to yours)
-#$ -M yl4326@columbia.edu
+#$ -M example@columbia.edu
 
 # Specify mailing options: b=beginning, e=end, s=suspended, n=never, a=aborted or suspended
 #$ -m besa
@@ -40,12 +40,12 @@
 echo "Setting: Current Working directory is $PWD, current task id is $SGE_TASK_ID"
 
 # Specify the data inflow and home directory
-INPUTPATH="/mnt/mfs/hgrcgrid/data/whicap/WHICAP_WES/BAM/washeiDragenBamsList/washeiBamsUpdate2/BQSR/bqsrRGbam"
-HOMEPATH="/mnt/mfs/hgrcgrid/homes/$USER"
+INPUTPATH="[input_path]"
+HOMEPATH="[home_path]"
 
 # Specifying the name of the data
 # (For testing)
-INPUTFILES=(washei71450.BQSR.recaled.bam washei71453.BQSR.recaled.bam washei71451.BQSR.recaled.bam washei71454.BQSR.recaled.bam washei71452.BQSR.recaled.bam)
+INPUTFILES=('files')
 # (actual deployment)
 # shopt -s globstar nullglob
 # cd $INPUTPATH

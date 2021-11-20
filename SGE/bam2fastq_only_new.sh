@@ -8,7 +8,7 @@
 #$ -N bam_to_fastq
 
 # Email address (change to yours)
-#$ -M yl4326@columbia.edu
+#$ -M example@columbia.edu
 
 # Specify mailing options: b=beginning, e=end, s=suspended, n=never, a=aborted or suspended
 #$ -m besa
@@ -37,7 +37,7 @@
 # Specify the filenames
 INPUTFILES=(washei71450.BQSR.recaled.bam washei71453.BQSR.recaled.bam washei71451.BQSR.recaled.bam washei71454.BQSR.recaled.bam washei71452.BQSR.recaled.bam)
 
-INPUTPATH="/mnt/mfs/hgrcgrid/data/whicap/WHICAP_WES/BAM/washeiDragenBamsList/washeiBamsUpdate2/BQSR/bqsrRGbam"
+INPUTPATH="[input_path]"
 
 # Name the Project directory
 PROJECT_SUBDIR="ArrayJob_bam2fastq"
@@ -67,7 +67,7 @@ fi
 cp $INPUTFILENAME $WORKING_DIR/${INPUTFILES[$SGE_TASK_ID - 1]}
 
 # Copy the app to the working directory
-cp ~/bam2fastq.tgz $WORKING_DIR/bam2fastq.tgz 
+cp ~/bam2fastq.tgz $WORKING_DIR/bam2fastq.tgz
 
 #########################################################################
 ## Section 3:Executing the program                                      #
