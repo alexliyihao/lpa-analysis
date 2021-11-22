@@ -3,6 +3,7 @@ import os
 import datetime
 import argparse
 import sys
+import re
 
 def write(path, content):
     """
@@ -145,7 +146,7 @@ def new_index_VCF(l, i, mode):
         else:
             return "0/0"
 
-def new_index_LPA(l, i, mode):
+def new_index_LPA(l, i, mode, order):
     """
     a exception solver for list with invalid index, return the corresponding
     output based on the genotype literal in LPA mode
@@ -157,13 +158,35 @@ def new_index_LPA(l, i, mode):
     Return:
         the output, if the l[i] is invalid, return a placeholder
     """
+    # if this item fit in order[i]'s pattern, i.e. order[i][0]
     try:
-        return [item for item in l if item[0] == i][0][1]
+        return [item[1] for item in l if item[0] == order[i][0]][0]
     except:
         if mode == "complete":
             return "0/0:::"
         else:
             return "0/0"
+
+def comp_list(l):
+    """
+    comparison key between list with at most 2 element
+    length is dominant, then compare first term, then second term
+    helper function of assign_order as a comparison key
+    """
+    if len(l) == 1:
+        return 100 + 10*l[0]
+    else:
+        return 200 + 10*l[0] + l[1]
+
+def assign_order(l):
+    """
+    given a list of list, assign them a order given by comp_list,
+    just because list of list cannot be hashed and sorted...
+    """
+    l = [eval(j) for j in set([str(i) for i in l])]
+    l.sort(key = comp_list)
+    return [[j,i] for i,j in enumerate(l)]
+
 
 def generate_line(pos, REF, ALT, sample_literal, mode, format):
     """
@@ -209,17 +232,42 @@ def generate_line(pos, REF, ALT, sample_literal, mode, format):
     # in LPA mode, each alternatives will take a line
     # the genotype will use 1 in the literal and list them on the corresponding line
     else:
-        # split the ALT string into individual output
+        # flatten the sample literal by 2 level then pick [0],
+        # i.e. get all the appeared pattern, assign an order to this list of list
+        order = assign_order([l2[0] for l1 in sample_literal for l2 in l1 if len(l2) == 2])
+        # get the total number of lines
+        repeat = len(order)
+        # each alternatives will be connected by commna
         ALT = ALT.split(",")
-        repeat = len(ALT)
-        # for each individual line, the ALT is ALT[i]
+        ALT = [",".join([ALT[j-1] for j in i[0]]) for i in order]
         return "\n".join(
             ["\t".join(
                 [CHROM, POS, ID, REF, ALT[i], QUAL, FILTER, FORMAT]+
-                [new_index_LPA(l,i+1,mode) for l in sample_literal])
+                formatting_lines(sample_literal,i,mode,order))
              for i in range(repeat)
             ]
         )+"\n"
+
+
+def formatting_lines(sample_literal,i,mode,order):
+    #convert the lines into string
+    body = str([new_index_LPA(l,i,mode,order) for l in sample_literal])
+    # find all non 0 numbers,
+    numbers = list(set([i for j in re.findall(r'([0-9])/([0-9])', body) for i in j]))
+    try:
+        numbers.remove("0")
+    except ValueError:
+        pass
+    if len(numbers) > 1:
+        # it can be sorted although they are strings
+        alt_list = sorted(numbers)
+        body = body.replace(alt_list[0],"1")
+        body = body.replace(alt_list[1],"2")
+    elif len(numbers) == 1 and numbers[0] != "1":
+        # it can be sorted although they are strings
+        body = body.replace(numbers[0],"1")
+    return eval(body)
+
 
 def get_positional_data(df):
     """
@@ -236,12 +284,20 @@ def get_positional_data(df):
     # reference is unique for each position
     REF = df.Ref.unique()[0]
     # This list keeps the order of alternatives
-    alt_list = list(df.Variant.unique())
+    alt_list = list(set(list(df.Variant.unique()) +
+               [alt for i in list(df["Major/Minor"].unique()) for alt in i.split("/")]))
+    alt_list = [i for i in alt_list if i != REF]
     # the output format of alternatives
     ALT = ','.join(alt_list)
     # Total Coverage is unique for each position
     TC = df['Coverage-Total'].unique()[0]
     return REF, ALT, TC, alt_list
+
+def formatting_alt(l):
+    if (len(l) == 2 and l[1] == l[0]):
+        return [l[0]]
+    else:
+        return sorted(l)
 
 def _get_genotype_literal(row, ref, alt_list, format):
     '''
@@ -256,11 +312,11 @@ def _get_genotype_literal(row, ref, alt_list, format):
         String, a genotype output follows VCFv4.2 1.4.2 genotype field
                 requirement, given the order from alt_list
         format == "LPA"
-        Please notice there's a assumption that we don't have 1/2 - like genotype
-        list[int, str] a genotype output follows VCFv4.2 1.4.2 genotype field
-                       requirement given the order from alt_list,
-                       the int is the 1-based position in alt_list,
-                       str is the genotype output
+        list[list, str] a genotype output follows VCFv4.2 1.4.2 genotype field
+                        requirement given the order from alt_list,
+                        the list is the 1-based position in alt_list,
+                        if the length is 2, it means we have more than 1 alt in ref/alt
+                        str is the genotype output
     '''
     gt_list = [ref]+alt_list
     gt_dict = {v: k for k, v in enumerate(gt_list)}
@@ -269,9 +325,7 @@ def _get_genotype_literal(row, ref, alt_list, format):
         return f"{gt_dict[major]}/{gt_dict[minor]}"
     else:
         alt = [gt_dict[allele] for allele in [major, minor] if gt_dict[allele] != 0]
-        # Please notice there's a assumption that we don't have 1/2 - like genotype
-        assert len(alt) <= 1
-        return [alt[0],f"{0 if (gt_dict[major]) == 0 else 1}/{0 if (gt_dict[minor]) == 0 else 1}"]
+        return [formatting_alt(alt),f"{gt_dict[major]}/{gt_dict[minor]}"]
 
 def _get_genotype(df, ref, alt_list, format):
     """
@@ -282,10 +336,10 @@ def _get_genotype(df, ref, alt_list, format):
         alt_list: all the alternatives possible
         format: "VCF" or "LPA"
     Return:
-        dict{str:str} or dict{str, list[int, str]}
+        dict{str:str} or dict{str, list[list[int], str]}
         genotype output follows VCFv4.2 1.4.2 genotype field
         requirement given the order from alt_list,
-        first str is the row index,
+        first list[str] is the row index,
         second str is the genotype literal
     """
     # apply _get_genotype_literal to all rows
@@ -319,7 +373,7 @@ def _extract_data(df, ref, alt_list, TC, mode, format):
         list[str], a genotype output follows VCFv4.2 1.4.2 genotype field
                 requirement, given the order from alt_list
         format == "LPA"
-        list[list[int, str]] a genotype output follows VCFv4.2 1.4.2 genotype field
+        list[list[list[int], str]] a genotype output follows VCFv4.2 1.4.2 genotype field
                        requirement given the order from alt_list,
                        the int is the 1-based position in alt_list,
                        str is the genotype output
@@ -386,7 +440,7 @@ def get_sample_data(df_group_by_id, SampleID, ref, alt_list, TC, mode, format):
                         format = format
                         )
 
-def write_VCF(input_path = "data", bam_list = "*", output_path = "output.vcf", mode = "complete", format = "VCF"):
+def write_vcf(input_path = "data", bam_list = "*", output_path = "output.vcf", mode = "simplified", format = "LPA"):
     """
     Wrapper function for a complete process taking Coassin pipeline output as input
     and output VCF file at output_path
@@ -449,6 +503,7 @@ def write_VCF(input_path = "data", bam_list = "*", output_path = "output.vcf", m
             mode = mode,
             format = format
         ) for sample_id in sample_id_sorted_list]
+
         # complete the row with sample data
         append(path = output_path,
                content = generate_line(pos = pos,
@@ -457,8 +512,7 @@ def write_VCF(input_path = "data", bam_list = "*", output_path = "output.vcf", m
                                        sample_literal = sample_literal,
                                        mode = mode,
                                        format = format))
-
-
+                                       
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input_path", default="data", help="The path of folder storing all the output folders")
