@@ -1,20 +1,20 @@
 import pandas as pd
 import os
-from . import settings
+from . import path_settings, data_management
 
 class Validators():
-    
+
     def __init__(self, verbose):
         self.verbose = verbose
-    
-    def _get_folders(self, csv_path):
+
+    def _get_folders(self, csv_path, folder_ID):
         """
         get a dictionary of folders need for a specific csv output
         """
         df = pd.read_csv(csv_path, index_col = 0)
-        WES_ID = dict(df.WES_ID)
-        return {key:f"{value}.BQSR.recaled.bam" for key, value in WES_ID.items()}
-    
+        ID_dict = dict(df[folder_ID])
+        return ID_dict
+
     def validate(self, csv_file):
         bam_dict = self._get_folders(csv_file)
         bad_dict = self._list_invalid_input(bam_dict)
@@ -28,46 +28,71 @@ class Validators():
                 for key, values in bad_dict.items():
                     print(f"row index {key}, file {values}")
             return bad_dict
-    
+
     def _validate_input(self, path):
         pass
-    
+
     def _list_invalid_input(self, bam_dict):
         """
         run _validate_input on all the returnings
         """
         return {key: value for key, value in bam_dict.items() if not self._validate_input(value)}
-    
-    
+
+
 class SourceValidator(Validators):
-    
-    def _validate_input(self, path):
+
+    def _get_folders(self, csv_path):
         """
-        give a path, check if it's a exist path, and if the Coassin pipeline output is there
+        get a dictionary of folders need for a specific csv output
         """
-        return (os.path.isfile(os.path.join(settings.WHICAP_SOURCE, path))
-                or 
-                os.path.isfile(os.path.join(settings.WHICAP_SOURCE, "hispanic", path)))
-    
-class OutputValidator(Validators):
+        df = pd.read_csv(csv_path, index_col = 0)
+        if "WES_ID" in df.columns:
+            ID_dict = dict(df["WES_ID"])
+        else:
+            ID_dict = dict(enumerate(df.index))
+        return {key:f"{value}.BQSR.recaled.bam" for key, value in ID_dict.items()}
 
     def _validate_input(self, path):
         """
         give a path, check if it's a exist path, and if the Coassin pipeline output is there
         """
-        return ((os.path.isdir(os.path.join(settings.COASSIN_OUTPUT, path)) 
-                and os.path.isfile(os.path.join(settings.COASSIN_OUTPUT, path, "variantsAnnotate/variantsAnnotate.txt")))
-                or 
-                (os.path.isdir(os.path.join(settings.COASSIN_OUTPUT, "hispanic", path)) 
-                and os.path.isfile(os.path.join(settings.COASSIN_OUTPUT, "hispanic", path, "variantsAnnotate/variantsAnnotate.txt")))
+        return (os.path.isfile(os.path.join(path_settings.WHICAP_SOURCE, path))
+                or
+                os.path.isfile(os.path.join(path_settings.WHICAP_SOURCE, "hispanic", path)))
+
+class OutputValidator(Validators):
+
+    def _get_folders(self, csv_path):
+        """
+        get a dictionary of folders need for a specific csv output
+        """
+        df = pd.read_csv(csv_path, index_col = 0)
+        if "WES_ID" in df.columns:
+            ID_dict = dict(df["WES_ID"])
+        else:
+            ID_dict = dict(enumerate(df.index))
+        return {key:f"{value}.BQSR.recaled.bam" for key, value in ID_dict.items()}
+
+    def _validate_input(self, path):
+        """
+        give a path, check if it's a exist path, and if the Coassin pipeline output is there
+        """
+        return ((os.path.isdir(os.path.join(path_settings.COASSIN_OUTPUT, path))
+                and os.path.isfile(os.path.join(path_settings.COASSIN_OUTPUT, path, "variantsAnnotate/variantsAnnotate.txt")))
+                or
+                (os.path.isdir(os.path.join(path_settings.COASSIN_OUTPUT, "hispanic", path))
+                and os.path.isfile(os.path.join(path_settings.COASSIN_OUTPUT, "hispanic", path, "variantsAnnotate/variantsAnnotate.txt")))
                )
-    
+
 class EnsembleValidator():
-    def __init__(self):
+    def __init__(self, data_manager):
         self.SV = SourceValidator(verbose = False)
         self.OV = OutputValidator(verbose = False)
-    
-    def validate(self,path):
+        self.data_manager = data_manager
+
+    def validate(self, version_name, ethnicity):
+        assert ethnicity in path_settings.CLASS_ALIAS.keys()
+        path = self.data_manager.path_tool_csv(version_name = version_name)['pheno'][ethnicity]
         source_bad = self.SV.validate(path)
         output_bad = self.OV.validate(path)
         if (len(source_bad) == 0 and len(output_bad) == 0):
@@ -92,10 +117,10 @@ class EnsembleValidator():
                 for key, values in output_bad.items():
                     print(f"row index {key}, folder {values}")
                 return (source_bad, output_bad)
-        
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--path", help="The csv path of folder storing phenotypes")
-    
+
     EV = EnsembleValidator()
     source_bad, output_bad = EV.validate(path = args.path)
