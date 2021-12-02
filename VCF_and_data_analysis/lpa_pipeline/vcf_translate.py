@@ -158,7 +158,7 @@ def new_index_LPA(l, i, mode, order):
     Return:
         the output, if the l[i] is invalid, return a placeholder
     """
-    # if this item fit in order[i]'s pattern, i.e. order[i][0] 
+    # if this item fit in order[i]'s pattern, i.e. order[i][0]
     try:
         return [item[1] for item in l if item[0] == order[i][0]][0]
     except:
@@ -177,7 +177,7 @@ def comp_list(l):
         return 100 + 10*l[0]
     else:
         return 200 + 10*l[0] + l[1]
-    
+
 def assign_order(l):
     """
     given a list of list, assign them a order given by comp_list,
@@ -232,7 +232,7 @@ def generate_line(pos, REF, ALT, sample_literal, mode, format):
     # in LPA mode, each alternatives will take a line
     # the genotype will use 1 in the literal and list them on the corresponding line
     else:
-        # flatten the sample literal by 2 level then pick [0], 
+        # flatten the sample literal by 2 level then pick [0],
         # i.e. get all the appeared pattern, assign an order to this list of list
         order = assign_order([l2[0] for l1 in sample_literal for l2 in l1 if len(l2) == 2])
         # get the total number of lines
@@ -252,7 +252,7 @@ def generate_line(pos, REF, ALT, sample_literal, mode, format):
 def formatting_lines(sample_literal,i,mode,order):
     #convert the lines into string
     body = str([new_index_LPA(l,i,mode,order) for l in sample_literal])
-    # find all non 0 numbers, 
+    # find all non 0 numbers,
     numbers = list(set([i for j in re.findall(r'([0-9])/([0-9])', body) for i in j]))
     try:
         numbers.remove("0")
@@ -267,8 +267,8 @@ def formatting_lines(sample_literal,i,mode,order):
         # it can be sorted although they are strings
         body = body.replace(numbers[0],"1")
     return eval(body)
-        
-    
+
+
 def get_positional_data(df):
     """
     Extract the positional-specific data, df
@@ -298,7 +298,7 @@ def formatting_alt(l):
         return [l[0]]
     else:
         return sorted(l)
-    
+
 def _get_genotype_literal(row, ref, alt_list, format):
     '''
     generate the genotype information literal
@@ -314,7 +314,7 @@ def _get_genotype_literal(row, ref, alt_list, format):
         format == "LPA"
         list[list, str] a genotype output follows VCFv4.2 1.4.2 genotype field
                         requirement given the order from alt_list,
-                        the list is the 1-based position in alt_list, 
+                        the list is the 1-based position in alt_list,
                         if the length is 2, it means we have more than 1 alt in ref/alt
                         str is the genotype output
     '''

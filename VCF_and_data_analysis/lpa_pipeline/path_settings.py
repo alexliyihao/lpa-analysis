@@ -26,4 +26,3 @@ CLASS_ALIAS = {"eu": 1,
                "complete": "complete"}
 
 WHICAP_SOURCE = "/mnt/mfs/hgrcgrid/data/whicap/WHICAP_WES/BAM/washeiDragenBamsList/washeiBamsUpdate2/BQSR/bqsrRGbam"
-
