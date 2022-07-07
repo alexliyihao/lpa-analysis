@@ -1,0 +1,12 @@
+genotypename: complete.eigenstratgeno
+snpname: complete.snp
+indivname: complete.ind
+evecoutname: complete.pca.evec
+evaloutname: complete.eval
+altnormstyle: NO
+numoutevec: 3
+numoutlieriter: 5
+numoutlierevec: 10
+outliersigmathresh: 6
+qtmode: 0
+snpweightoutname: complete.snpweight
