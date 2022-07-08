@@ -3,7 +3,7 @@
 # platform: linux-64
 @EXPLICIT
 https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
-https://conda.anaconda.org/conda-forge/linux-64/ca-certificates-2021.10.8-ha878542_0.tar.bz2
+https://conda.anaconda.org/conda-forge/linux-64/ca-certificates-2022.5.18.1-ha878542_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.36.1-hea4e1c9_2.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/libgfortran5-11.2.0-h5c6108e_11.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-ng-11.2.0-he4da1e4_11.tar.bz2
@@ -25,7 +25,7 @@ https://conda.anaconda.org/conda-forge/linux-64/libwebp-base-1.2.1-h7f98852_0.ta
 https://conda.anaconda.org/conda-forge/linux-64/libzlib-1.2.11-h36c2ea0_1013.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/lz4-c-1.9.3-h9c3ff4c_1.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.2-h58526e2_4.tar.bz2
-https://conda.anaconda.org/conda-forge/linux-64/openssl-1.1.1l-h7f98852_0.tar.bz2
+https://conda.anaconda.org/conda-forge/linux-64/openssl-1.1.1o-h166bdaf_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/xz-5.2.5-h516909a_1.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/libblas-3.9.0-12_linux64_openblas.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/libbrotlidec-1.0.9-h7f98852_6.tar.bz2
@@ -54,6 +54,7 @@ https://conda.anaconda.org/conda-forge/noarch/cycler-0.11.0-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/decorator-5.1.0-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/defusedxml-0.7.1-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/entrypoints-0.3-pyhd8ed1ab_1003.tar.bz2
+https://conda.anaconda.org/conda-forge/noarch/et_xmlfile-1.0.1-py_1001.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/idna-3.1-pyhd3deb0d_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/ipython_genutils-0.2.0-py_1.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/json5-0.9.5-pyh9f0ad1d_0.tar.bz2
@@ -80,7 +81,7 @@ https://conda.anaconda.org/conda-forge/noarch/webencodings-0.5.1-py_1.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/wheel-0.37.0-pyhd8ed1ab_1.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/zipp-3.6.0-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/babel-2.9.1-pyh44b312d_0.tar.bz2
-https://conda.anaconda.org/conda-forge/linux-64/certifi-2021.10.8-py38h578d9bd_1.tar.bz2
+https://conda.anaconda.org/conda-forge/linux-64/certifi-2022.5.18.1-py38h578d9bd_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/cffi-1.15.0-py38h3931269_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/chardet-4.0.0-py38h578d9bd_2.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/debugpy-1.5.1-py38h709712a_0.tar.bz2
@@ -93,6 +94,7 @@ https://conda.anaconda.org/conda-forge/linux-64/markupsafe-2.0.1-py38h497a2fe_1.
 https://conda.anaconda.org/conda-forge/noarch/matplotlib-inline-0.1.3-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/mistune-0.8.4-py38h497a2fe_1005.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/numpy-1.21.4-py38he2449b9_0.tar.bz2
+https://conda.anaconda.org/conda-forge/noarch/openpyxl-3.0.9-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/packaging-21.3-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/pexpect-4.8.0-pyh9f0ad1d_2.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/pillow-8.4.0-py38h8e6f84c_0.tar.bz2
@@ -129,6 +131,7 @@ https://conda.anaconda.org/conda-forge/noarch/patsy-0.5.2-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/pyopenssl-21.0.0-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/scikit-learn-1.0.1-py38h1561384_2.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/wcwidth-0.2.5-pyh9f0ad1d_2.tar.bz2
+https://conda.anaconda.org/conda-forge/noarch/matplotlib-venn-0.11.7-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/nbclient-0.5.9-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/prompt-toolkit-3.0.22-pyha770c72_0.tar.bz2
 https://conda.anaconda.org/conda-forge/noarch/seaborn-base-0.11.2-pyhd8ed1ab_0.tar.bz2

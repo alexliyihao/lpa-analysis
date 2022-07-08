@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import datetime
 from . import path_settings, utils, settings
 
 class DataManager():
@@ -25,14 +26,22 @@ class DataManager():
         })
 
         # for each datatype, load all the folders under this datatype
-        self.versions = utils.DotDict({
+        self._versions = utils.DotDict({
             data_type: self._get_subdirectory_list(sub_path = path)
             for data_type, path
             in self.paths.items()
         })
 
+        # load the class alias for better User Management
+        self.class_alias = path_settings.CLASS_ALIAS
+        # reverse class alias is for convenient data saving
+        self.reverse_class_alias = {value: key for key, value in self.class_alias.items()}
         # additional metadata
         self._generate_meta()
+
+    def print_versions(self):
+        for data_type, versions in self._versions.items():
+            print(f"datatype {data_type}: {', '.join(versions)}")
 
     def _get_subdirectory_list(self, sub_path):
         """
@@ -61,6 +70,12 @@ class DataManager():
             except FileExistsError:
                 print(f"folder for data type {data_type} exists")
 
+    def date_string(self):
+        """
+        helper function generate the date string in YYYYMMDD format
+        """
+        return datetime.datetime.now().strftime('%Y%m%d')
+
     def _create_version(self, data_type, version_name):
         """
         base method for all folder building
@@ -68,7 +83,7 @@ class DataManager():
         path = os.path.join(self.root, self.paths[data_type], version_name)
         try:
             os.makedirs(path, exist_ok = False)
-            self.versions[data_type].append(version_name)
+            self._versions[data_type].append(version_name)
             print(f"{data_type[:-1].replace('_', ' ')} version {version_name} created")
         except FileExistsError:
             print(f"folder for data type {data_type} exists")
@@ -80,17 +95,17 @@ class DataManager_LPA(DataManager):
     """
     def _generate_meta(self):
         """
-        a overridden DataManager method generating the data
+        a overridden DataManager method generating the additional data
         """
         # load the metadata folders
         self.coassin_output = path_settings.COASSIN_OUTPUT
         self.paths["analysis_results"] = path_settings.ANALYSIS_RESULT_PATH
-        self.versions["analysis_results"] = self._get_subdirectory_list(
+        self._versions["analysis_results"] = self._get_subdirectory_list(
             sub_path = path_settings.ANALYSIS_RESULT_PATH)
 
     def create_vcf(self, version_name):
         """
-        create folders for new vcf folder with <version_name>, add them to self.versions
+        create folders for new vcf folder with <version_name>, add them to self._versions
         args:
             version_name, string, the name of the version
         return:
@@ -100,18 +115,20 @@ class DataManager_LPA(DataManager):
 
     def create_dataset(self, version_name):
         """
-        create folders for new datasets with <version_name>, add them to self.versions
+        create folders for new datasets with <version_name>, add them to self._versions
         args:
             version_name, string, the name of the version
         return:
-            snps_path, genotypes_path, the path of folders saving snps and genotypes
+            DotDict[str:DotDict[str:str]]: the paths in this dataset for each individual ethnicities
+            you can access it via path.genotypes[ethnicity]/path.snps[ethnicity]
         """
         self._create_version(data_type = "snps", version_name = version_name)
         self._create_version(data_type = "genotypes", version_name = version_name)
+        return self.path_tool_csv(version_name = version_name)
 
     def create_analysis_result(self, version_name):
         """
-        create folders for new analysis_result folder with <version_name>, add them to self.versions
+        create folders for new analysis_result folder with <version_name>, add them to self._versions
         args:
             version_name, string, the name of the version
         return:
@@ -160,6 +177,8 @@ class DataManager_LPA(DataManager):
         Args:
             ethnicity: str or int, the ethnicity node
             missing: mode, if missing = True, 20 missing value will be removed from the list
+        Returns:
+            a DotDict which provides all the data necessary for vcf procedure
         """
         assert ethnicity in ["eu","af",'hisp',"others", 'complete']
         input_path = self.coassin_output
@@ -170,16 +189,16 @@ class DataManager_LPA(DataManager):
                 self.paths["snps"],
                 version_name,
                 self.filename_formats["snps"].replace(
-                    "*", str(path_settings.CLASS_ALIAS[ethnicity])
+                    "*", str(self.class_alias[ethnicity])
                 )
             ))
 
         vcf_name = self.filename_formats["vcfs"].replace(
-                       "*", str(path_settings.CLASS_ALIAS[ethnicity])
+                       "*", str(self.class_alias[ethnicity])
                    )
 
         genotypes_name = self.filename_formats["genotypes"].replace(
-                            "*", str(path_settings.CLASS_ALIAS[ethnicity])
+                            "*", str(self.class_alias[ethnicity])
                          )
 
         vcf_path = os.path.join(self.root, self.paths["vcfs"],version_name, vcf_name)
@@ -196,21 +215,26 @@ class DataManager_LPA(DataManager):
         """
         a wrapper for _generate_paths functions, once called,
         it will return a dot access dictionary of paths
+        args:
+            version_name: str, the version name of a dataset
+        return:
+            DotDict[str:DotDict[str:str]]: the paths in this dataset for each individual ethnicities
+            you can access it via path.genotypes[ethnicity]/path.snps[ethnicity]
         """
         snps_path = os.path.join(self.root, self.paths["snps"], version_name)
         genotypes_path = os.path.join(self.root, self.paths["genotypes"], version_name)
         snps_dict = {ethnicity: os.path.join(snps_path,
                                              self.filename_formats["snps"].replace("*", str(alias)))
                      for ethnicity, alias
-                     in path_settings.CLASS_ALIAS.items()
+                     in self.class_alias.items()
                     }
         genotypes_dicts = {ethnicity: os.path.join(snps_path,
                                                    self.filename_formats["genotypes"].replace("*", str(alias)))
                            for ethnicity, alias
-                           in path_settings.CLASS_ALIAS.items()
+                           in self.class_alias.items()
                           }
-        return utils.DotDict({"pheno":utils.DotDict(snps_dict),
-                              "geno": utils.DotDict(genotypes_dicts)
+        return utils.DotDict({"snps":utils.DotDict(snps_dict),
+                              "genotypes": utils.DotDict(genotypes_dicts)
                              })
 
 
@@ -228,7 +252,7 @@ class DataLoader():
         """
         load a version of dataset's path into dataset
         """
-        for data_type, versions in self.data_manager.versions:
+        for data_type, versions in self.data_manager._versions:
             assert version_name in versions
 
     def get_dataset(self):
@@ -236,9 +260,24 @@ class DataLoader():
 
 class DataLoader_LPA(DataLoader):
 
+    def load_data_source(self, version_name):
+        self.snps_dict = {class_name:
+                  os.path.join(self.data_manager.root,
+                               self.data_manager.paths["snps"],
+                               version_name,
+                               self.data_manager.filename_formats["snps"].replace("*", str(alias))
+                              )
+                  for class_name, alias
+                  in self.data_manager.class_alias.items()
+                 }
+
+    def get_data_source(self, ethnicity):
+        snp = pd.read_csv(self.snps_dict[ethnicity], index_col = 0)
+        return snp
+
     def load_dataset(self, version_name):
-        assert version_name in self.data_manager.versions['snps']
-        assert version_name in self.data_manager.versions["genotypes"]
+        assert version_name in self.data_manager._versions['snps']
+        assert version_name in self.data_manager._versions["genotypes"]
         # get all the snp and genotype paths for  dataset
         self.snps_dict = {class_name:
                           os.path.join(self.data_manager.root,
@@ -247,7 +286,7 @@ class DataLoader_LPA(DataLoader):
                                        self.data_manager.filename_formats["snps"].replace("*", str(alias))
                                       )
                           for class_name, alias
-                          in path_settings.CLASS_ALIAS.items()
+                          in self.data_manager.class_alias.items()
                          }
 
         self.snps_dict = utils.DotDict({class_name:path
@@ -263,7 +302,7 @@ class DataLoader_LPA(DataLoader):
                                             self.data_manager.filename_formats["genotypes"].replace("*", str(alias))
                                             )
                                for class_name, alias
-                               in path_settings.CLASS_ALIAS.items()
+                               in self.data_manager.class_alias.items()
                               }
 
         self.genotypes_dict = utils.DotDict({class_name:path
@@ -271,6 +310,13 @@ class DataLoader_LPA(DataLoader):
                                in self.genotypes_dict.items()
                                if os.path.isfile(path)
                               })
+
+    def get_table(self, ethnicity):
+        assert ethnicity in ['eu','af','hisp', 'complete']
+        genotype = pd.read_csv(self.genotypes_dict[ethnicity], index_col = 0)
+        snp = pd.read_csv(self.snps_dict[ethnicity], index_col = 0)
+        genotype,snp = genotype.align(snp, axis = 0)
+        return genotype,snp
 
     def get_dataset(self, ethnicity, n_table):
         assert n_table in [2,3]
@@ -341,7 +387,7 @@ class DataLoader_LPA(DataLoader):
                                         self.data_manager.filename_formats["vcfs"].replace("*", str(alias))
                                         )
                            for class_name, alias
-                           in path_settings.CLASS_ALIAS.items()
+                           in self.data_manager.class_alias.items()
                           }
 
         self.vcfs_dict = utils.DotDict({class_name:path
@@ -352,3 +398,34 @@ class DataLoader_LPA(DataLoader):
 
     def get_vcf(self, ethnicity):
         return self._read_vcf(self.vcfs_dict[ethnicity])
+
+    def _clean_eigenstrat(self, df):
+        # Assert FAM_ID = IND_ID
+        assert(sum(df["FAM_ID"].eq(df["IND_ID"])) == len(df["FAM_ID"]))
+        # Clean the data necessary
+        # ID
+        df.set_index(keys = ["FAM_ID"], inplace = True)
+        df.drop(["IND_ID"], axis = 1, inplace = True)
+        df = df[["PC1", "PC2", "PC3"]]
+        df = df.dropna(axis = 0, how = "any")
+        return df
+
+    def get_eigenstrat(self, ethnicity, with_label = True):
+        """
+        get the eigenstat csv necessary, align them based on the id in base
+        """
+        ethnicity_list = {"eu":"WHITE",
+                          "af":"AA",
+                          "hisp":"HISP"}
+        path = f"/mnt/mfs/hgrcgrid/shared/LPA_analysis/eigenstrat/{ethnicity_list[ethnicity]}_phenocov_pcs.ped"
+        df = pd.read_csv(path, sep = "\t")
+        df = self._clean_eigenstrat(df)
+        if with_label:
+            df["ethnicity"] = ethnicity
+        return df
+
+    def get_full_eigenstrat(self, with_label = True):
+        """
+        get complete eigenstrat csv
+        """
+        return pd.concat([self.get_eigenstrat(ethnicity, with_label) for ethnicity in ["eu","af","hisp"]], axis = 0)

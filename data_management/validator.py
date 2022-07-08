@@ -92,7 +92,7 @@ class EnsembleValidator():
 
     def validate(self, version_name, ethnicity):
         assert ethnicity in path_settings.CLASS_ALIAS.keys()
-        path = self.data_manager.path_tool_csv(version_name = version_name)['pheno'][ethnicity]
+        path = self.data_manager.path_tool_csv(version_name = version_name)['snps'][ethnicity]
         source_bad = self.SV.validate(path)
         output_bad = self.OV.validate(path)
         if (len(source_bad) == 0 and len(output_bad) == 0):
