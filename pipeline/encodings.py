@@ -5,7 +5,6 @@ import os
 import gc
 import statsmodels.api as sm
 import datetime
-import sys
 import glob
 import shutil
 import itertools
