@@ -73,13 +73,13 @@ class SNPAssociation():
         3-line style:
             snp_asso = SNPAssociation()
             snp_asso.fit(**kwargs)
-            output_info = snp_asso.transform()
+            snp_asso.transform()
         or 2-line style
             snp_asso = SNPAssociation()
-            output_info = snp_asso.fit_transform(**kwargs)
-    or class method style:
+            snp_asso.fit_transform(**kwargs)
+    or function style:
         snp_asso = SNPAssociation()
-        output_info = snp_asso.association_test(**kwargs)
+        snp_asso.association_test(**kwargs_1) #kwargs_1 can new kwargs
     """
 
     def __init__(self):
@@ -340,9 +340,6 @@ class SNPAssociation():
             if not one_to_one_strategy is None:
                 one_to_one_exogs.dropna(axis = 0, how = "any", inplace = True)
         # Otherwise the drop will be operated by statsmodels' "missing" argument
-        # apply the preprocessing function to snps(filter_C)
-        if not snps_preprocessing_strategy is None:
-            snp_table = snps_preprocessing_strategy(snp_table)
         # for columns run the regression
         for snp in tqdm(snp_table.columns, position=0, leave= False):
             # this try is to capture regression running errors
@@ -366,6 +363,14 @@ class SNPAssociation():
                     endog_drop = endog.dropna(axis = 0)
                 # align the exog and endog table
                 exog, endog_drop = exog.align(endog_drop, join = "inner", axis = 0)
+                # apply the preprocessing function to snps(filter_C)
+                if not snps_preprocessing_strategy is None:
+                    # find the snp column from current exog table
+                    # apply the snps_preprocessing_strategy given
+                    snp_table_exog = snps_preprocessing_strategy(exog[[snp]])
+                    # if no column is left
+                    if len(snp_table_exog.columns) == 0:
+                        raise ValueError("filtered out by snps_preprocessing_strategy")
                 if meta_info:
                     rel_freq, abs_freq, total = self._calculate_freq(exog, snp)
                 # initialize <engine> for regression
