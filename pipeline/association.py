@@ -47,7 +47,6 @@ target_strategy = {'STROKE':{"engine": sm.Logit,
                    'HBA1C_2':{"engine": sm.OLS,
                               "preprocessing":dropna}
                     }
-
 class SNPAssociation():
     """a class for running SNP association pipeline
 
