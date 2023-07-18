@@ -1,14 +1,29 @@
 """All the settings related to encodings"""
-import numpy as np
 import pandas as pd
 import os
 import gc
-import statsmodels.api as sm
-import datetime
 import glob
-import shutil
-import itertools
-from tqdm import tqdm
+import warnings
+
+def is_notebook() -> bool:
+    """https://stackoverflow.com/a/39662359"""
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+
+if is_notebook():
+    from tqdm.notebook import tqdm
+else:
+    from tqdm.auto import tqdm
+tqdm.pandas()
+
 
 class EncodingCoassinOutput():
     """
@@ -38,107 +53,130 @@ class EncodingCoassinOutput():
     For a smooth running, I suggest at least 20GB to 30GB memories for the kernel.
 
     Initialize:
-        eco = EncodingCoassinOutput(input_path = "some_path",
-                                    output_path = "other_path",
+        eco = EncodingCoassinOutput(choose 1: input_path = "/some/parent/path/of/bam/output" or
+                                              bam_list = "/paths/to/a/file/recording/bam/path/line/by/line.txt"
+                                    output_path = "output_path", # required
                                     raw_total_coverage_threshold = 50,
                                     variant_level_threshold = 0.01,
                                     supporting_threshold = 10)
+
     Encoding:
-        After eco.encode_individual() (ETA ~6hours)
-        Run eco.generate_coverage_total() for final coverage_total
-        eco.generate_encoded_results() for final encoded_results
+        1. run eco.encode_individual(saving_step = 500(or any integer)),
+        this step will be very time consuming. For it is originally running on SGE,
+        no parallel is provided in Python, it's recommended to split your BAM output via bam_list
+        After 1 finish, run the following in one thread:
+        2. eco.generate_coverage_total() for final coverage_total
+        3. eco.generate_encoded_results() for final encoded_results
     """
     def __init__(self,
-                 input_path,
                  output_path,
+                 input_path = None,
                  bam_list = None,
                  raw_total_coverage_threshold = 50,
                  variant_level_threshold = 0.01,
-                 supporting_threshold = 10):
+                 supporting_threshold = 10,
+                 verbose = True):
         """
         The initializer inputing all the results
         Args:
-            input_path: str, the path saving all the coassin's output
             output_path: str, the path saving all encoding output
+            input_path: Optional[str], the path saving all the coassin's output
             bam_list: Optional[list], the name of all the coassin output we will use
             raw_total_coverage_threshold: int, see above.
             variant_level_threshold: float, see above.
             supporting_threshold: int, see above.
+            verbose: bool, default True: if False, no log will be printed
         """
-        self._input_path = input_path
+        # save the output_path, create one if not provided
         self._output_path = output_path
         os.makedirs(self._output_path, exist_ok = True)
-        # if the bam_list is provided
-        if not bam_list is None:
-            # use this bam_list
-            self._bam_list = bam_list
-        # otherwise search over the folders input_path and its subfolder called ./hispanic
+        # if the bam_list is not provided, search over the folders input_path
+        if bam_list is None:
+            # glob.iglob("input_path/**/*.BQSR.recaled.bam", recursive = True)
+            # searches every file and subfolder under input_path
+            bam_list = glob.iglob(os.path.join(
+                                    input_path,
+                                    "**",
+                                    "*.BQSR.recaled.bam"),
+                                    recursive = True)
         else:
-            # get its sub-folder
-            input_path_hispanic = os.path.join(self._input_path, "hispanic")
-            # find all the folder with proper name in input_path
-            bam_list_0 = [dir for dir in next(os.walk(self._input_path))[1]
-                          if '.BQSR.recaled.bam' in dir]
-            # find all the folder with proper name in input_path/hispanic
-            bam_list_1 = [os.path.join("hispanic",dir)
-                          for dir in next(os.walk(input_path_hispanic))[1]
-                          if '.BQSR.recaled.bam' in dir]
-            # combine the list
-            bam_list = bam_list_0+bam_list_1
-            self._bam_list = [i for i in bam_list
-                              if os.path.isfile(
-                                os.path.join(input_path, i,
-                                            "variantsAnnotate",
-                                            "variantsAnnotate.txt")
-                              )]
-            del bam_list, bam_list_0, bam_list_1
-            gc.collect()
+            with open(bam_list, "r") as file:
+                bam_list = [line.rstrip() for line in file]
+        self._verbosity = verbose
+        # Verify that each folder provided have variantsAnnotate/variantsAnnotate.txt file
+        self._bam_list = [bam_output for bam_output in tqdm(bam_list)
+                          if self._verify_coassin_output(bam_output)]
+        if self._verbosity == True:
+            print(f"{len(self._bam_list)} valid input detected")
+        del bam_list
+        gc.collect()
 
         self._raw_total_coverage_threshold = raw_total_coverage_threshold
         self._variant_level_threshold = variant_level_threshold
         self._supporting_threshold = supporting_threshold
         pd.set_option('mode.chained_assignment', None)
+        # this warning is triggered by generate_encoded_results() method, and is properly dealt with
+        warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
-    def _encode_individual(self, input_path, bam_name):
+
+    def _verify_coassin_output(self, path):
+        """
+        assert <path> is a complete Coassin path output
+
+        check the existence of
+        1. <path>/raw/raw.txt
+        2. <path>/variantsAnnotate/variantsAnnotate.txt
+
+        Args:
+            path: str, the path to a Coassin pipeline output
+        Returns
+            bool, if the output is valid, return True, otherwise False
+        """
+        #
+        return (os.path.isfile(
+          os.path.join(path,"raw","raw.txt")
+        ) and os.path.isfile(
+          os.path.join(path,"variantsAnnotate","variantsAnnotate.txt")
+        ))
+
+    def _encode_individual(self, bam_path):
         """The procedure reading in, encoding, then tidy up the output for an invidual"""
         # read the coverage total column from raw.txt file
         coverage_total, SampleID = self._get_coverage_total(
             self._data_cleaning_raw(
-                self._get_file_raw(
-                    input_path = input_path,
-                    bam_name = bam_name)))
+                self._get_file_raw(bam_path = bam_path)))
         # read the variant_annotated.txt file
         annotated_files = self._data_cleaning_annotated(
-            self._get_file_annotated(
-                input_path = input_path,
-                bam_name = bam_name))
-        # prepare a snp_pos format label for annotated_files
-        annotated_files["snp_pos"] = annotated_files.apply(lambda x: f"{x['Pos']}-{x['Ref']}/{x['Variant']}", axis = 1)
+            self._get_file_annotated(bam_path = bam_path))
         # group the coverage_total by its position for row-wise encoding
-        encoded_group = coverage_total.reset_index().groupby("POS")
-        # apply the encoding procedure
-        encode_result = encoded_group.apply(self._encode_position, annotated_files)
-
+        encoded_group = coverage_total.reset_index().groupby(["POS","COV-TOTAL"])
+        encode_result = encoded_group.apply(
+                            lambda x: self._encode_position(
+                                pos = x.name[0],
+                                coverage_total = x.name[1],
+                                annotated_files = annotated_files))
         # tidy up for merge and output
         coverage_total = coverage_total.rename(columns = {"COV-TOTAL": SampleID})
-        encode_result = encode_result.reset_index().drop(columns = ["POS","level_1"]).set_index("snp_pos")
+        encode_result = encode_result.reset_index().drop(
+                            columns = ["COV-TOTAL","POS","level_2"]
+                            ).set_index("snp_pos").astype(pd.Float64Dtype())
         encode_result = encode_result.rename(columns = {"encoding": SampleID})
         # clean the memory
         gc.collect()
         return coverage_total, encode_result
 
-    def _encode_position(self, row, annotated_files):
+    def _encode_position(self, pos, coverage_total, annotated_files):
         """actual encoding logic, apply to each specific row(allele) in variantsAnnotate file
 
+        both pos and coverage_total is obtained from pd.DataFrameGroupBy object's apply method
+
         Args:
-            row: pd.DataFrame, a dataframe on a specific pos,
-                 filtered by pd.groupby("POS")
+            pos: int, the position of this SNP
+            coverage_total: int, the coverage_total read from the raw.txt
             annotated_files: pd.DataFrame, reading from
                              variantsAnnotate/variantsAnnotate.txt
         """
-        # get the position and coverage_total
-        pos = row["POS"].iloc[0]
-        coverage_total = row["COV-TOTAL"].iloc[0]
+
         # if the coverage_total is less than raw_total_coverage_threshold
         if coverage_total < self._raw_total_coverage_threshold:
             # encode it as pos, pd.NA
@@ -146,96 +184,144 @@ class EncodingCoassinOutput():
         else:
             #If position is present in the annotated, then variant_level>0.01
             # and the total reads supporting (variant_level*total_coverage) the variant should be>=10
-            if sum(annotated_files["Pos"].eq(pos)):
-                related_anno = annotated_files[annotated_files["Pos"].eq(pos)]
+            if pos in annotated_files["Pos"].values:
+                related_annotation = annotated_files[annotated_files["Pos"].eq(pos)]
                 # variant_level>0.01 and the total reads supporting
                 # (variant_level*total_coverage) the variant should be>=10
-                related_anno["encoding"] = \
-                    (related_anno["Variant-Level"]>self._variant_level_threshold) & \
-                    (related_anno["Variant-Level"]*related_anno["Coverage-Total"]>self._supporting_threshold)
+                related_annotation["encoding"] = \
+                    (related_annotation["Variant-Level"]>self._variant_level_threshold) & \
+                    (related_annotation["Variant-Level"]*related_annotation["Coverage-Total"]\
+                     >self._supporting_threshold)
                 # encode the True or False to 1 or 0
-                return related_anno[["snp_pos", "encoding"]].replace([True, False], [1,0])
+                return related_annotation[["snp_pos", "encoding"]].replace({True: 1, False: 0})
             # if the annotated files doesn't have this row, encode them as 0
             else:
                 return pd.DataFrame([[pos, 0]], columns = ["snp_pos", "encoding"])
 
-    def encode_individual(self):
+    def _tidy_encoded_results(self, df):
+        """read in a 1st step encoded_result from path, then tidy the format up
+
+        inplace=True is applied to minimize the memory cost
+        Args:
+            path: str, the path of the file
+        Returns:
+            df: pd.DataFrame, the encoded_result
+        """
+        df.fillna(-1, inplace = True)
+        df.reset_index(inplace = True)
+        df.drop_duplicates(inplace = True)
+        df.set_index("snp_pos", inplace = True)
+        return df
+
+    def encode_individual(self, saving_step = 500):
         """API for the first step individual-wise encoding procedure,
 
         It will take very long time, so for loop and huge amount of intermediate
-        results will be saved in self._output_path
+        results will be saved in self._output_path, to customize the saving step,
+        a saving_step (default 500) is provided
 
+        Args:
+            save_step: int, after every <save_step> sample, the program will save the result
         Saves:
             self._output_path/coverage_totals/<sample_name>.csv
             self._output_path/encoded_results/<sample_name>.csv
         """
         # create the saving path
-        converage_totals_path = os.path.join(self._output_path, "coverage_totals")
-        os.makedirs(converage_totals_path, exist_ok=true)
+        coverage_totals_path = os.path.join(self._output_path, "coverage_totals")
+        os.makedirs(coverage_totals_path, exist_ok=True)
         encode_results_path = os.path.join(self._output_path, "encoded_results")
-        os.makedirs(encode_results_path, exist_ok=true)
+        os.makedirs(encode_results_path, exist_ok=True)
+        sample_size = len(self._bam_list)
         # loop through the bam_list
-        for i in tqdm(range(len(self._bam_list)),position=0, leave=True):
-            # encode one person
-            coverage_total, encode_result = self._encode_individual(input_path = input_path,bam_name = bam_list[i])
+        for saving_loop in tqdm(range(0, sample_size, saving_step), position=0, leave=True):
+            # encode the slice of bam list, save the result into two individual lists
+            coverage_total_list, encode_result_list = \
+                zip(*(self._encode_individual(bam_path = self._bam_list[saving_loop*saving_step + i])
+                    for i in range(min(saving_step, sample_size - saving_loop*saving_step))))
             # save coverage total and encoding result
-            coverage_total.to_csv(os.path.join(converage_totals_path, f"{bam_list[i]}.csv"))
-            encode_result.to_csv(os.path.join(encode_results_path, f"{bam_list[i]}.csv"))
+            coverage_total_combined = pd.concat(coverage_total_list, axis = 1, join = "outer")
+            coverage_total_saving_path = os.path.join(coverage_totals_path,
+                                                      f"{os.path.basename(self._bam_list[saving_loop])}.csv")
+            coverage_total_combined.to_csv(coverage_total_saving_path)
+            if self._verbosity == True:
+                print(f"Step: {int(saving_loop/saving_step)}: coverage total saved into {coverage_total_saving_path}")
+            del coverage_total_list, coverage_total_combined
+            gc.collect()
+            encode_result_combined = pd.concat([self._tidy_encoded_results(encode_result)
+                                                for encode_result in encode_result_list],
+                                                axis = 1, join = "outer")
+            encoded_result_saving_path = os.path.join(encode_results_path,
+                                                      f"{os.path.basename(self._bam_list[saving_loop])}.csv")
+            encode_result_combined.to_csv(encoded_result_saving_path)
+            if self._verbosity == True:
+                print(f"Step: {int(saving_loop/saving_step)}: encoded result saved into {encoded_result_saving_path}")
             # memory cleaning
-            del coverage_total, encode_result
+            del encode_result_list, encode_result_combined
             gc.collect()
 
-    def generate_coverage_total(self):
+    def generate_coverage_total(self, save = False):
         """API generate final coverage_total table
-
+        Args:
+            save: Bool, default False, if True, it will save the final result at
+                  self._output_path/coverage_total_final.csv
         Returns:
             coverage_total: pandas.DataFrame, the final coverage_total table
         Saves:
-            self._output_path/coverage_total_final.csv, same as above
+            if save == True, self._output_path/coverage_total_final.csv, same as above
         """
-        ct_path_list = glob.glob(os.path.join(self._output_path,"coverage_totals","*.csv")) + \
-               glob.glob(os.path.join(self._output_path,"coverage_totals","**","*.csv"))
-        ct_list = [pd.read_csv(path, index_col = 0)
-                   for path in tqdm(ct_path_list,position=0, leave=True)]
-        coverage_total = pd.concat(ct_list, axis = 1, join = "outer")
-        coverage_total.to_csv(os.path.join(self._output_path, "coverage_total_final.csv"))
+        ct_path_iter = glob.iglob(os.path.join(self._output_path, "coverage_totals", "**","*.csv"),
+                                  recursive = True)
+        ct_iter = (pd.read_csv(path, index_col = 0) for path in ct_path_iter)
+        coverage_total = pd.concat(ct_iter, axis = 1, join = "outer")
+        if save == True:
+            coverage_total.to_csv(os.path.join(self._output_path, "coverage_total_final.csv"))
         # Memory Efficiency
-        del ct_name_list, ct_list, coverage_total
+        del ct_path_iter, ct_iter
         gc.collect()
         return coverage_total
 
-    def generate_encoded_results(self):
+    def generate_encoded_results(self, save = False, tidy_when_load = False):
         """The procedure generate final encoded_results table
 
+        Args:
+            save: Bool, default False, if True, it will save the final result at
+                  self._output_path/encoded_result_final.csv
+            tidy_when_load: Bool, default False, if True, when load each seperate encoded_result
+                            will apply self._tidy_encoded_results, just for running different version code
+                            please use False in your application.
         Returns:
             combined_er: pandas.DataFrame, the final encoded_result table
         Saves:
-            self._output_path/encoded_result_final.csv, same as above
+            if save == True, self._output_path/encoded_result_final.csv, same as above
         """
         # a list of all the encoded result
-        er_path_list = glob.glob(os.path.join(self._output_path,"encoded_results","*.csv")) + \
-               glob.glob(os.path.join(self._output_path,"encoded_results","**","*.csv"))
+        er_path_iter = glob.iglob(os.path.join(self._output_path,"encoded_results", "**","*.csv"),
+                                  recursive = True)
         # for each encoded results tidy up the format
-        er_list_cleaned = [self._tidy_encoded_results(path = path)
-                           for path in tqdm(er_path_list, position=0, leave=True)]
-        gc.collect()
+        if tidy_when_load == True:
+            er_iter = (self._tidy_encoded_results(pd.read_csv(path, index_col = 0))
+                       for path in tqdm(er_path_iter, position=0, leave=True))
+        else:
+            er_iter = (pd.read_csv(path, index_col = 0)
+                       for path in tqdm(er_path_iter, position=0, leave=True))
         # concate the encoded result
-        er_complete = pd.concat(er_list_cleaned, join = "outer", axis = 1)
+        er_complete = pd.concat(er_iter, join = "outer", axis = 1)
         # deleted the huge list with csvs
-        del er_list_cleaned
+        del er_path_iter, er_iter
         gc.collect()
-        # generate a "pos" column
-        er_complete.reset_index(inplace=True)
-        er_complete["pos"] = er_complete["snp_pos"].apply(lambda x: x.split("-")[0])
-        er_complete.set_index("snp_pos", inplace = True)
-        # this copy is necessary for modifying the Dtypes, please keep
+        # generate a "position" column
+        er_complete["pos"] = er_complete.index.map(lambda x: str(x).split("-")[0])
+        # please keep this copy is
+        # 1. to combine the dataframe as a continuous chunk in RAM
+        # 2. necessary for modifying the Dtypes,
         er_complete = er_complete.copy()
+        gc.collect()
         er_complete.index = er_complete.index.astype(pd.StringDtype())
-        er_complete.pos = er_complete.pos.astype(pd.StringDtype())
+        er_complete["pos"] = er_complete["pos"].astype(pd.StringDtype())
         # split the whole table by the pos
         er_complete_group = er_complete.groupby("pos")
         # apply the combine wrapper to each position
-        combined_er = er_complete_group.apply(self._combine_position_wrapper)
+        combined_er = er_complete_group.progress_apply(self._combine_position_wrapper)
         # clean the er_complete_group
         del er_complete_group
         gc.collect()
@@ -245,25 +331,18 @@ class EncodingCoassinOutput():
         combined_er["pos"] = combined_er["pos"].apply(lambda x: int(x))
         combined_er = combined_er.sort_values("pos")
         combined_er = combined_er.drop(columns = ["index", "pos"], errors = "ignore")
-        combined_er.set_index("snp_pos")
-        combined_er.to_csv(os.path.join(self._output_path, "encoded_result_final.csv"))
+        combined_er.set_index("snp_pos", inplace = True)
+        if save == True:
+            combined_er.to_csv(os.path.join(self._output_path, "encoded_result_final.csv"))
         return combined_er
 
-    def _tidy_encoded_results(self, path):
-        """read in a 1st step encoded_result from path, then tidy the format up
-
-        inplace=True is applied to minimize the memory cost
-        Args:
-            path: str, the path of the file
-        Returns:
-            df: pd.DataFrame, the encoded_result
-        """
-        df = pd.read_csv(path, index_col = 0)
-        df.fillna("missing", inplace = True)
-        df.reset_index(inplace = True)
-        df.drop_duplicates(inplace = True)
-        df.set_index("snp_pos", inplace = True)
-        return df
+    def _combine_position_wrapper(self, x):
+        """wrapper function apply self._combine_encoded_on_position() to a DataFrame"""
+        base = x.name
+        x = x.apply(self._combine_encoded_on_position, axis = 0, base = base)
+        x.drop(index = [f"{base}", base], columns = "pos",inplace= True,errors = "ignore")
+        gc.collect()
+        return x
 
     def _combine_encoded_on_position(self, col, base):
         """the actual logic combine the result of a column
@@ -310,14 +389,14 @@ class EncodingCoassinOutput():
             # rather than <position>-<ref>/<alt>
             base = col.loc[base]
             # if coverage_total < 50 or all NA
-            if (base == "missing") or (col.isna().all()):
+            if (base == "missing") or (col.isna().all()) or (base == -1):
                 # Case 1: return as-is, base will be dropped, all the rest is natually NA
                 # Case 2: all the element is natually NA
                 return col
             # if coverage > 50 and not all NA, base = 0 or NA
             else:
-                # Case 3: if position is encoded 0, raw.txt provided a total coverage > 50 but not in annotatedVariant.txt
-                # all the rest will be NA, so fill them as 0
+                # Case 3: if position is encoded 0, raw.txt provided a total coverage > 50
+                # but not in annotatedVariant.txt all the rest will be NA, so fill them as 0
                 # Case 4: otherwise position has to be NA, and the col has some non-NA position-ref/alt
                 return col.fillna(0)
         # if there's no "position", total coverage > 50 for sure
@@ -325,13 +404,7 @@ class EncodingCoassinOutput():
             #case 6 and 7
             return col.fillna(0)
 
-    def _combine_position_wrapper(self, x):
-        """wrapper function apply self._combine_encoded_on_position() to a DataFrame"""
-        base = x.name
-        x = x.apply(self._combine_encoded_on_position, axis = 0, base = base)
-        x.drop(index = [f"{base}", base], columns = "pos",inplace= True,errors = "ignore")
-        gc.collect()
-        return x
+
 #----------------------------reading files--------------------------------------
     def _extract_ID(self, SampleID):
         """
@@ -344,42 +417,44 @@ class EncodingCoassinOutput():
         """
         return SampleID.split(".")[0]
 
-    def _get_file_annotated(self.input_path, bam_name):
+    def _get_file_annotated(self, bam_path):
         '''
         given a bam name, read the variantsAnnotate.txt inside the output of Coassin pipeline
         Args:
             input_path, the input path with all the bam output inside
-            bam_name: str, the name of the original bam file
+            bam_path: str, the name of the original bam file
         Return:
             pandas.DataFrame instance, the variantsAnnotate.txt file read
         '''
-        return pd.read_csv(f'{input_path}/{bam_name}/variantsAnnotate/variantsAnnotate.txt', delimiter = "\t")
-
-    def _get_file_raw(self, input_path, bam_name):
-        '''
-        given a bam name, read the variantsAnnotate.txt inside the output of Coassin pipeline
-        Args:
-            input_path, the input path with all the bam output inside
-            bam_name: str, the name of the original bam file
-        Return:
-            pandas.DataFrame instance, the variantsAnnotate.txt file read
-        '''
-        return pd.read_csv(f'{input_path}/{bam_name}/raw/raw.txt', delimiter = "\t")
+        return pd.read_csv(os.path.join(bam_path,"variantsAnnotate","variantsAnnotate.txt"), delimiter = "\t")
 
     def _data_cleaning_annotated(self,df):
         """
-        existing annotatedVariant data cleaning procedure
+        existing variantsAnnotate.txt data cleaning procedure
         Args:
             df: pandas.DafaFrame instance, the dataframe
         Return:
             df: pandas.DafaFrame instance, the dataframe with cleaned ID
         """
-        df.SampleID = df.SampleID.apply(self._extract_ID)
+        df["SampleID"] = df["SampleID"].apply(self._extract_ID)
+        # prepare a snp_pos format label("pos-ref/alt") for annotated_files
+        df["snp_pos"] = df.apply(lambda x: f"{x['Pos']}-{x['Ref']}/{x['Variant']}", axis = 1)
         return df
 
-    def _data_cleaning_raw(self,df):
+    def _get_file_raw(self, bam_path):
+        '''
+        given a bam name, read the <bam_path>/raw/raw.txt inside the output of Coassin pipeline
+        Args:
+            input_path, the input path with all the bam output inside
+            bam_path: str, the name of the original bam file
+        Return:
+            pandas.DataFrame instance, the variantsAnnotate.txt file read
+        '''
+        return pd.read_csv(os.path.join(bam_path,"raw","raw.txt"), delimiter = "\t")
+
+    def _data_cleaning_raw(self, df):
         """
-        existing raw data cleaning procedure
+        existing raw.txt data cleaning procedure
         Args:
             df: pandas.DafaFrame instance, the dataframe
         Return:
