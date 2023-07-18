@@ -5,17 +5,8 @@
 # Specify name to be used to identify this run
 #$ -N lpa-analysis
 
-# Email address (change to yours)
-#$ -M yl4326@columbia.edu
-
-# Specify mailing options: b=beginning, e=end, s=suspended, n=never, a=aborted or suspended
-#$ -m besa
-
 # This sets the task range in the array
 #$ -t 1-3917:1
-
-# This set concurrent job limit(limit to 4 for the disk usage)
-# -tc 4(not applied here)
 
 # Change directory to the current
 #$ -cwd
@@ -23,17 +14,9 @@
 # Specify that bash shell should be used to process this script
 #$ -S /bin/bash
 
-# Specify the output file
+# Specify the outerr file
 #$ -o /mnt/mfs/hgrcgrid/shared/LPA_analysis/logs/$JOB_NAME_$TASK_ID.outerr
-# If you prefer splitting out and error
-# -o /mnt/mfs/hgrcgrid/shared/LPA_analysis/logs/$JOB_NAME_$TASK_ID.out
-
-# Specify the error file
 #$ -e /mnt/mfs/hgrcgrid/shared/LPA_analysis/logs/$JOB_NAME_$TASK_ID.outerr
-# If perfer splitting
-# -e /mnt/mfs/hgrcgrid/shared/LPA_analysis/logs/$JOB_NAME_$TASK_ID.err
-
-
 
 
 ## Section 2: Transfering Data & Path Settings ----------------------------------------------------
@@ -45,7 +28,7 @@ HOMEPATH="/mnt/mfs/hgrcgrid/shared/LPA_analysis"
 
 # Specifying the name of the data
 cd $HOMEPATH
-readarray -t INPUTFILES < data_inflow/bam_list.txt 
+readarray -t INPUTFILES < data_inflow/bam_list.txt
 echo "Setting: ${#INPUTFILES[@]} files detected"
 echo "Setting: working on ${INPUTFILES[$SGE_TASK_ID - 1]}"
 
@@ -148,9 +131,6 @@ echo "Deployment: necessary data installed"
 # Eelete the tar of necessary data
 rm coassin_pipeline_data.tgz
 echo "Deployment: necessary data installation package cleaned"
-
-
-
 
 ## Section 4:Executing the Program ----------------------------------------------------
 
