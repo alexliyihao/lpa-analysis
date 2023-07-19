@@ -5,12 +5,30 @@ import pandas as pd
 import os
 import gc
 import statsmodels.api as sm
-import datetime
-import glob
 import json
 import warnings
 from tqdm import tqdm
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
+def is_notebook() -> bool:
+    """https://stackoverflow.com/a/39662359"""
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+
+if is_notebook():
+    from tqdm.notebook import tqdm
+else:
+    from tqdm.auto import tqdm
+tqdm.pandas()
+
+#----------------------------------Encoding Strategy Example--------------------------------------
 
 def encode_dementia(df):
     df.dropna(inplace = True)
@@ -19,6 +37,18 @@ def encode_dementia(df):
 
 def dropna(df):
     return df.dropna()
+
+def filter_C(df, threshold = 5):
+    """The filter C on existing frequency,
+
+    both 0 and 1 should appear for more than <threshold> times
+
+    Args:
+        df: pandas DataFrame, the index should be the Sample ID, and the columns are the snps
+        threshold: int, the number threshold that both 0 and 1 should appear more than this number
+    """
+    filtered_snp = [i for i in df.columns if sum(df[i].value_counts() > threshold) > 1]
+    return df[filtered_snp]
 
 target_strategy = {'STROKE':{"engine": sm.Logit,
                              "preprocessing":dropna},
@@ -47,6 +77,17 @@ target_strategy = {'STROKE':{"engine": sm.Logit,
                    'HBA1C_2':{"engine": sm.OLS,
                               "preprocessing":dropna}
                     }
+
+target_strategy_serum = {'lpa':{"engine": sm.OLS,
+                                     "preprocessing":None},
+                       'wAS':{"engine": sm.OLS,
+                                  "preprocessing":None},
+                       'isoform':{"engine": sm.OLS,
+                                      "preprocessing":None}
+                        }
+
+#----------------------------------Iterator API--------------------------------------
+
 class SNPAssociation():
     """a class for running SNP association pipeline
 
