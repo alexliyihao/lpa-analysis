@@ -33,7 +33,7 @@ EFFECT   BETA
 STDERR   SE
 PVAL     PVAL
 
-PROCESS ethnicity=eu_for_metal.csv
+PROCESS ethnicity=EU_for_metal.csv
 
 # Describe and process the DGI input files
 MARKER   POS-REF/ALT
@@ -43,7 +43,7 @@ EFFECT   BETA
 STDERR   SE
 PVAL     PVAL
 
-PROCESS ethnicity=af_for_metal.csv
+PROCESS ethnicity=AF_for_metal.csv
 
 # Describe and process the DGI input files
 MARKER   POS-REF/ALT
@@ -53,7 +53,7 @@ EFFECT   BETA
 STDERR   SE
 PVAL     PVAL
 
-PROCESS ethnicity=hisp_for_metal.csv
+PROCESS ethnicity=HISP_for_metal.csv
 
 # Execute meta-analysis
 ANALYZE
