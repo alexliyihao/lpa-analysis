@@ -9,7 +9,7 @@ class METALToolkit():
     ...pipeline.association.SNPAssociation instance and provides the following APIs:
 
     Initialize:
-        mtk = METALToolkit(ethnicity = ["eu", "af", "hisp"], verbose = 1)
+        mtk = METALToolkit(ethnicity = ["EU", "AF", "HISP"], verbose = 1)
             ethnicity: the name of ethnicities need to be analyzed
             verbose: 0 or 1, if 1, API internally reading or writing files will
                 print a hint
@@ -34,7 +34,7 @@ class METALToolkit():
             After running the METAL analysis, this API will generate an
             aggregate table for this folder for next step analysis
     """
-    def __init__(self, ethnicity = ["eu", "af", "hisp"], verbose = 1):
+    def __init__(self, ethnicity = ["EU", "AF", "HISP"], verbose = 1):
         """initializer save the ethnicity setting,
         Args:
             ethnicity: list, the list of ethnicities in string format,
