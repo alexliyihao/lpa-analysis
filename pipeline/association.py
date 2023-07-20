@@ -1,16 +1,64 @@
-"""All the settings related to association analysis"""
+"""
+This pipeline running an association_test on the following steps
+
+ - for each the endogenous variable in <target_strategy>:
+      - find them from <target_dataset>
+      - run preprocessing, if given by <target_strategy>.preprocessing
+      - split the dataset by unique values in columns defined by
+        <extra_iterate_on> if provided,
+      - for all the groups generates:
+         - for each columns of <encoded_snp>:
+             - concatenate it with <other_exogs>, generate the exogenous dataset
+             - if <one_to_one_exogs> is provided, use <one_to_one_strategy>
+                finding other columns and concatenate them as well
+             - run regressions specified by <target_strategy>.engine and
+               save the result
+         - combine the results from each columns
+         - save the regression output
+
+Two APIs provided:
+sklearn style:
+    3-line style:
+        snp_asso = SNPAssociation()
+        snp_asso.fit(**kwargs)
+        snp_asso.transform()
+    or 2-line style
+        snp_asso = SNPAssociation()
+        snp_asso.fit_transform(**kwargs)
+or function style:
+    snp_asso = SNPAssociation()
+    snp_asso.association_test(**kwargs_1) #kwargs_1 can be new kwargs
+"""
 
 import numpy as np
 import pandas as pd
 import os
 import gc
 import statsmodels.api as sm
-import datetime
-import glob
 import json
 import warnings
 from tqdm import tqdm
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
+def is_notebook() -> bool:
+    """https://stackoverflow.com/a/39662359"""
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+
+if is_notebook():
+    from tqdm.notebook import tqdm
+else:
+    from tqdm.auto import tqdm
+tqdm.pandas()
+
+#----------------------------------Encoding Strategy Example--------------------------------------
 
 def encode_dementia(df):
     df.dropna(inplace = True)
@@ -19,6 +67,18 @@ def encode_dementia(df):
 
 def dropna(df):
     return df.dropna()
+
+def filter_C(df, threshold = 5):
+    """The filter C on existing frequency,
+
+    both 0 and 1 should appear for more than <threshold> times
+
+    Args:
+        df: pandas DataFrame, the index should be the Sample ID, and the columns are the snps
+        threshold: int, the number threshold that both 0 and 1 should appear more than this number
+    """
+    filtered_snp = [i for i in df.columns if sum(df[i].value_counts() > threshold) > 1]
+    return df[filtered_snp]
 
 target_strategy = {'STROKE':{"engine": sm.Logit,
                              "preprocessing":dropna},
@@ -47,39 +107,19 @@ target_strategy = {'STROKE':{"engine": sm.Logit,
                    'HBA1C_2':{"engine": sm.OLS,
                               "preprocessing":dropna}
                     }
+
+target_strategy_serum = {'lpa':{"engine": sm.OLS,
+                                     "preprocessing":None},
+                       'wAS':{"engine": sm.OLS,
+                                  "preprocessing":None},
+                       'isoform':{"engine": sm.OLS,
+                                      "preprocessing":None}
+                        }
+
+#----------------------------------Iterator API--------------------------------------
+
 class SNPAssociation():
-    """a class for running SNP association pipeline
-
-    This pipeline running an association_test on the following steps
-
-     - for each the endogenous variable in <target_strategy>:
-          - find them from <target_dataset>
-          - run preprocessing, if given by <target_strategy>.preprocessing
-          - split the dataset by unique values in columns defined by
-            <extra_iterate_on> if provided,
-          - for all the groups generates:
-             - for each columns of <encoded_snp>:
-                 - concatenate it with <other_exogs>, generate the exogenous dataset
-                 - if <one_to_one_exogs> is provided, use <one_to_one_strategy>
-                    finding other columns and concatenate them as well
-                 - run regressions specified by <target_strategy>.engine and
-                   save the result
-             - combine the results from each columns
-             - save the regression output
-
-    Two APIs provided:
-    sklearn style:
-        3-line style:
-            snp_asso = SNPAssociation()
-            snp_asso.fit(**kwargs)
-            snp_asso.transform()
-        or 2-line style
-            snp_asso = SNPAssociation()
-            snp_asso.fit_transform(**kwargs)
-    or function style:
-        snp_asso = SNPAssociation()
-        snp_asso.association_test(**kwargs_1) #kwargs_1 can new kwargs
-    """
+    """a class for running SNP association pipeline"""
 
     def __init__(self):
         pd.set_option('mode.chained_assignment',None)
@@ -100,7 +140,7 @@ class SNPAssociation():
             group_NA_strategy: str = "snp_wise",
             extra_iterate_on: list = [],
             snps_preprocessing_strategy = None,
-            meta_info: bool = False,
+            meta_info: bool = True,
             verbose: int = 0
             ):
         """API initialize the data
@@ -157,7 +197,7 @@ class SNPAssociation():
                            before the regression analysis
                            this function should take a pd.DataFrame as input and output
 
-            meta_info: Optional[bool]: default False
+            meta_info: Optional[bool]: default True
                      if true, provide the frequencies, total, counts data useful for
                      meta analysis(METAL)
 
