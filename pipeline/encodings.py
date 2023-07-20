@@ -1,4 +1,32 @@
-"""All the settings related to encodings"""
+"""
+Encoding Rule:
+    If raw/raw.txt file total coverage < raw_total_coverage_threshold, encode that position missing for that person
+    If raw/raw.txt total coverage >= raw_total_coverage_threshold, then look at annotated file
+        If position is missing in annotated file, the variant is coded 0
+        If position is present in the annotated,
+            If 1. variant_level> variant_level_threshold, and
+               2. the total reads supporting (variant_level*total_coverage) the variant >= read_supporting_threshold,
+               the variant is coded 1, otherwise 0
+
+Initialize:
+    eco = encodings.EncodingCoassinOutput(choose 1: input_path = "/some/parent/path/of/bam/output" or
+                                                    bam_list = "/paths/to/a/file/recording/bam/path/line/by/line.txt"
+                                          output_path = "output_path", # required
+                                          raw_total_coverage_threshold = 50,
+                                          variant_level_threshold = 0.01,
+                                          read_supporting_threshold = 10,
+                                          verbosity = True)
+
+Encoding:
+    1. run eco.encode_individual(saving_step: int),
+    this step will be very time consuming. For it is originally running on SGE,
+    no parallel is provided in Python, it's recommended to split your BAM output via bam_list
+    Saving_step default to 1. A larger saving_step can reduce the saving overhead
+
+    After 1 finish, run the following in one thread:
+    2. eco.generate_coverage_total() for final coverage_total
+    3. eco.generate_encoded_results() for final encoded_results
+"""
 import pandas as pd
 import os
 import gc
@@ -29,14 +57,6 @@ class EncodingCoassinOutput():
     """
     The pipeline running encoding outputs from coassin_pipeline
 
-    Encoding Rule:
-        If Raw file total coverage <50, make that position missing for that person
-        If Raw file total coverage >=50, then look at annotated file
-            If position is missing in annotated file, the variant is coded 0
-            If position is present in the annotated, variant_level>0.01 and
-            the total reads supporting (variant_level*total_coverage) the variant
-            be >= 10,the variant is coded 1, otherwise 0
-
     Algorithm:
     1. Read and encode each folders individually,
        if a snp position didn't give mutation result, save them as pos, else pos-ref/alt,
@@ -49,24 +69,8 @@ class EncodingCoassinOutput():
     at any specific time) during 1st step encoding. Which is at the cost of
     HUGE memory requirement dealing with concatenation (which is more customizable
     on our cluster).
-    For reproducing, generate_encoded_results() method need at least 10GB memories.
-    For a smooth running, I suggest at least 20GB to 30GB memories for the kernel.
-
-    Initialize:
-        eco = EncodingCoassinOutput(choose 1: input_path = "/some/parent/path/of/bam/output" or
-                                              bam_list = "/paths/to/a/file/recording/bam/path/line/by/line.txt"
-                                    output_path = "output_path", # required
-                                    raw_total_coverage_threshold = 50,
-                                    variant_level_threshold = 0.01,
-                                    supporting_threshold = 10)
-
-    Encoding:
-        1. run eco.encode_individual(saving_step = 500(or any integer)),
-        this step will be very time consuming. For it is originally running on SGE,
-        no parallel is provided in Python, it's recommended to split your BAM output via bam_list
-        After 1 finish, run the following in one thread:
-        2. eco.generate_coverage_total() for final coverage_total
-        3. eco.generate_encoded_results() for final encoded_results
+    For reproducing with ~4000 subjects, generate_encoded_results() method need at least 10GB memories.
+    For a smooth running, 20GB to 30GB memories for the kernel is suggested.
     """
     def __init__(self,
                  output_path,
@@ -74,8 +78,8 @@ class EncodingCoassinOutput():
                  bam_list = None,
                  raw_total_coverage_threshold = 50,
                  variant_level_threshold = 0.01,
-                 supporting_threshold = 10,
-                 verbose = True):
+                 read_supporting_threshold = 10,
+                 verbosity = True):
         """
         The initializer inputing all the results
         Args:
@@ -84,25 +88,25 @@ class EncodingCoassinOutput():
             bam_list: Optional[list], the name of all the coassin output we will use
             raw_total_coverage_threshold: int, see above.
             variant_level_threshold: float, see above.
-            supporting_threshold: int, see above.
-            verbose: bool, default True: if False, no log will be printed
+            read_supporting_threshold: int, see above.
+            verbosity: bool, default True: if False, no log will be printed
         """
         # save the output_path, create one if not provided
         self._output_path = output_path
         os.makedirs(self._output_path, exist_ok = True)
         # if the bam_list is not provided, search over the folders input_path
         if bam_list is None:
-            # glob.iglob("input_path/**/*.BQSR.recaled.bam", recursive = True)
+            # glob.iglob("input_path/**/*.bam", recursive = True)
             # searches every file and subfolder under input_path
             bam_list = glob.iglob(os.path.join(
                                     input_path,
                                     "**",
-                                    "*.BQSR.recaled.bam"),
+                                    "*.bam"),
                                     recursive = True)
         else:
             with open(bam_list, "r") as file:
                 bam_list = [line.rstrip() for line in file]
-        self._verbosity = verbose
+        self._verbosity = verbosity
         # Verify that each folder provided have variantsAnnotate/variantsAnnotate.txt file
         self._bam_list = [bam_output for bam_output in tqdm(bam_list)
                           if self._verify_coassin_output(bam_output)]
@@ -113,7 +117,7 @@ class EncodingCoassinOutput():
 
         self._raw_total_coverage_threshold = raw_total_coverage_threshold
         self._variant_level_threshold = variant_level_threshold
-        self._supporting_threshold = supporting_threshold
+        self._read_supporting_threshold = read_supporting_threshold
         pd.set_option('mode.chained_assignment', None)
         # this warning is triggered by generate_encoded_results() method, and is properly dealt with
         warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
@@ -191,7 +195,7 @@ class EncodingCoassinOutput():
                 related_annotation["encoding"] = \
                     (related_annotation["Variant-Level"]>self._variant_level_threshold) & \
                     (related_annotation["Variant-Level"]*related_annotation["Coverage-Total"]\
-                     >self._supporting_threshold)
+                     >self._read_supporting_threshold)
                 # encode the True or False to 1 or 0
                 return related_annotation[["snp_pos", "encoding"]].replace({True: 1, False: 0})
             # if the annotated files doesn't have this row, encode them as 0
@@ -213,12 +217,12 @@ class EncodingCoassinOutput():
         df.set_index("snp_pos", inplace = True)
         return df
 
-    def encode_individual(self, saving_step = 500):
+    def encode_individual(self, saving_step = 1):
         """API for the first step individual-wise encoding procedure,
 
         It will take very long time, so for loop and huge amount of intermediate
         results will be saved in self._output_path, to customize the saving step,
-        a saving_step (default 500) is provided
+        a saving_step (default 1) is provided
 
         Args:
             save_step: int, after every <save_step> sample, the program will save the result
@@ -411,7 +415,7 @@ class EncodingCoassinOutput():
         Helper function clean Sample ID to pure digits
 
         Args:
-            SampleID: String, in "washei*****.BQSR.recaled.bam" format, where * stand for numbers
+            SampleID: String, in "washei*****.BQSR.recaled.bam" format
         Return:
             String, the WES ID (the part before ".BQSR..." )
         """
@@ -472,3 +476,58 @@ class EncodingCoassinOutput():
         raw = raw.set_index("POS")
         raw = raw.sort_index()
         return raw, SampleID
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(prog = "encodings.py",
+                                     description=\
+"""
+Encoding Rule:
+If raw/raw.txt file total coverage < raw_total_coverage_threshold, encode as missing.
+If raw/raw.txt total coverage >= raw_total_coverage_threshold, then look at annotated file
+ If position is missing in annotated file, the variant is coded 0
+ If position is present in the annotated,
+     If 1. variant_level> variant_level_threshold, and
+        2. the total reads supporting (variant_level*total_coverage) the variant >= read_supporting_threshold,
+        the variant is coded 1, otherwise 0
+
+Hardware Requirement
+For reproducing with ~4000 subjects, generate_encoded_results() method need at least 10GB memories.
+For a smooth running, 20GB to 30GB memories for the kernel is suggested.
+""",formatter_class=argparse.RawTextHelpFormatter)
+    input_group = parser.add_mutually_exclusive_group(required = True)
+    input_group.add_argument('-I', "--input_path", type = str, default = None,
+                            help = "path to the folder storing Coassin's output folders")
+    input_group.add_argument('-L', "--bam_list", type = str, default = None,
+                            help = "path to a file recording Coassin's output folders path line by line")
+    parser.add_argument('-O', "--output_path", type = str, required = True,
+                        help = "path saving the output and intermediate results")
+    parser.add_argument("--mode", type = str, required = True,
+                        choices = ["encode_individual", "generate_coverage_total", "generate_encoded_results"],
+                        help = 'The task to be assigned, choose one from "encode_individual", "generate_coverage_total", "generate_encoded_results"')
+    parser.add_argument('-V', "--verbosity", type = int, choices = [0,1], required = False, default = 1,
+                        help = "verbosity 0 or 1, if set to 1, will print some logs")
+    parser.add_argument('-S', '--saving_step', type = int, required = False, default = 1,
+                        help = 'save the intermediate result every <saving_step> subjects for mode "encode_individual", a larger one will reduce saving overhead, default 1')
+    parser.add_argument("--raw_total_coverage_threshold", type = int, required = False, default = 50,
+                        help = "total_coverage threshold for raw/raw.txt, will be encoded as NA if less than this value, default 50")
+    parser.add_argument("--variant_level_threshold", type = float, required = False, default = 0.01,
+                        help = "variant_level threshold for variantsAnnotate/variantsAnnotate.txt default 0.01")
+    parser.add_argument("--read_supporting_threshold", type = float, required = False, default = 10,
+                        help = "read supporting (variant_level*total_coverage) threshold for variantsAnnotate/variantsAnnotate.txt, default 0.01")
+    Args = parser.parse_args()
+
+    eco = EncodingCoassinOutput(
+        input_path = Args.input_path,
+        bam_list = Args.bam_list,
+        output_path = Args.output_path,
+        raw_total_coverage_threshold = Args.raw_total_coverage_threshold,
+        variant_level_threshold = Args.variant_level_threshold,
+        read_supporting_threshold = Args.reads_supporting_threshold,
+        verbosity = Args.verbosity)
+    if Args.mode == "encode_individual":
+        eco.encode_individual(saving_step = Args.saving_step)
+    elif Args.mode == "generate_coverage_total":
+        eco.generate_coverage_total(save = True)
+    elif Args.mode == "generate_encoded_results":
+        eco.generate_encoded_results(save = True)

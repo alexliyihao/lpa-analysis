@@ -1,3 +1,37 @@
+"""
+Common usage:
+Given two pandas.DataFrame,
+class_info_table has one have columns <class_variable> that indicate each row belongs to,
+one_hot_table has all one-hot-variables(SNPs encoding),
+
+Compute the SNPs frequency in each class defined in <class_variable>
+
+ftg = freq_table_generator.FreqTableGenerator(threshold = 0.01
+                                              encoding = {0: "Not Detected",
+                                                          1: "Rare",
+                                                          2: "Common"})
+Where threshold and encoding are for generating rarity:
+if the threshold < freq < 1- threshold, it will be encoded as 2
+if the 0 < freq < threshold or 1 - threshold < freq < 1, it will be encoded as 1
+if freq = 0 or freq = 1, it will be 0.
+Thus for encoding, please only modify the value, not the key
+
+freq_table = ftg.generate_freq_table(
+                class_info_table = class_info_table,
+                one_hot_table = one_hot_table,
+                class_variable = "<class_variable>"
+                class_variable_list = ["<class_name_1>","<class_name_2>",...]
+                #if only need a part of <class_variable> column
+                )
+if need a rarity classification as columns as well:
+freq_table_with_rarity = ftg.generate_freq_table_with_rarity(
+                            class_info_table = class_info_table,
+                            one_hot_table = one_hot_table,
+                            class_variable = "<class_variable>"
+                            class_variable_list = ["<class_name_1>","<class_name_2>",...]
+                            #if only need a part of <class_variable> column
+                            )
+"""
 import pandas as pd
 
 class FreqTableGenerator():
@@ -5,30 +39,13 @@ class FreqTableGenerator():
     a generator class with API generate frequency table on all-one-hot variables,
     along with rarity check, originally designed for genome analysis
 
-    Common usage:
-    Given two pandas.DataFrame,
-    class_info_table has one have columns <class_variable> that indicate each row belongs to,
-    one_hot_table has all one-hot-variables,
-
-    ftg = FreqTableGenerator()
-    freq_table = ftg.generate_freq_table(
-                    class_info_table = class_info_table,
-                    one_hot_table = one_hot_table,
-                    class_variable = "<class_variable>"
-                    class_variable_list = ["<class_name_1>","<class_name_2>",...]
-                    #if only need a part of <class_variable> column
-                    )
-    if need a rarity classification:
-    freq_table_with_rarity = ftg.generate_freq_table_with_rarity(
-                                class_info_table = class_info_table,
-                                one_hot_table = one_hot_table,
-                                class_variable = "<class_variable>"
-                                class_variable_list = ["<class_name_1>","<class_name_2>",...]
-                                #if only need a part of <class_variable> column
-                                )
+    Initialization:
+        ftg = FreqTableGenerator(threshold: float,
+                                 class_lower_case: bool,
+                                 encoding: dict)
     """
     def __init__(self,
-                 threshold:int = 0.01,
+                 threshold:float = 0.01,
                  class_lower_case:bool = False,
                  encoding:dict = {0: "Not Detected",
                                   1: "Rare",
@@ -113,3 +130,43 @@ class FreqTableGenerator():
                                     encoding = encoding
                                     )
         return freq_table_with_rarity
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(prog = "freq_table_generator.py",
+                                     description=\
+"""
+Given two table in csv format.
+class_info_table has one have columns <class_variable> that indicate each row belongs to,
+one_hot_table has all one-hot-encoded variables(SNPs)
+Compute the SNPs' frequency in each class defined in <class_variable>
+
+With a given <threshold> :
+if the threshold < freq < 1- threshold, it will be encoded as "Common"
+if the 0 < freq < threshold or 1 - threshold < freq < 1, it will be encoded as "Rare"
+if freq = 0 or freq = 1, it will be "Not Detected".
+""", formatter_class = argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-C', "--class_info_table", type = str, required = True,
+                        help = "path to the table with class_info_data")
+    parser.add_argument('-S', "--snps_table", type = str, required = True,
+                        help = "path to the table with one-hot-encode varibles(SNPs)")
+    parser.add_argument('-O', "--output", type = str, required = True,
+                        help = "path to the output, will be in csv format")
+    parser.add_argument("-V", "--class_variable", type = str, required = True,
+                        help = "The class-indicating column in class_info_table")
+    parser.add_argument("-L", "--class_variable_list", required = False, nargs='+',
+                        help = "If only need a subset of class_variable column, list here, case sensitive, used as '-L EU AF HISP'")
+    parser.add_argument('-T', "--threshold", type = float, required = False, default = 0.01,
+                        help = "The threshold distinguish Rare and Common, default 0.01")
+    Args = parser.parse_args()
+    ftg = FreqTableGenerator(threshold = Args.threshold)
+    class_info_table = pd.read_csv(Args.class_info_table, index_col = 0)
+    snps_table = pd,read_csv(Args.snps_table, index_col = 0)
+    freq_table_with_rarity = ftg.generate_freq_table_with_rarity(
+                                class_info_table = class_info_table,
+                                one_hot_table = snps_table,
+                                class_variable = Args.class_variable,
+                                class_variable_list = Args.class_variable_list
+                                )
+    freq_table_with_rarity.to_csv(Args.output)

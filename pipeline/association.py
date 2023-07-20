@@ -1,4 +1,34 @@
-"""All the settings related to association analysis"""
+"""
+This pipeline running an association_test on the following steps
+
+ - for each the endogenous variable in <target_strategy>:
+      - find them from <target_dataset>
+      - run preprocessing, if given by <target_strategy>.preprocessing
+      - split the dataset by unique values in columns defined by
+        <extra_iterate_on> if provided,
+      - for all the groups generates:
+         - for each columns of <encoded_snp>:
+             - concatenate it with <other_exogs>, generate the exogenous dataset
+             - if <one_to_one_exogs> is provided, use <one_to_one_strategy>
+                finding other columns and concatenate them as well
+             - run regressions specified by <target_strategy>.engine and
+               save the result
+         - combine the results from each columns
+         - save the regression output
+
+Two APIs provided:
+sklearn style:
+    3-line style:
+        snp_asso = SNPAssociation()
+        snp_asso.fit(**kwargs)
+        snp_asso.transform()
+    or 2-line style
+        snp_asso = SNPAssociation()
+        snp_asso.fit_transform(**kwargs)
+or function style:
+    snp_asso = SNPAssociation()
+    snp_asso.association_test(**kwargs_1) #kwargs_1 can be new kwargs
+"""
 
 import numpy as np
 import pandas as pd
@@ -89,38 +119,7 @@ target_strategy_serum = {'lpa':{"engine": sm.OLS,
 #----------------------------------Iterator API--------------------------------------
 
 class SNPAssociation():
-    """a class for running SNP association pipeline
-
-    This pipeline running an association_test on the following steps
-
-     - for each the endogenous variable in <target_strategy>:
-          - find them from <target_dataset>
-          - run preprocessing, if given by <target_strategy>.preprocessing
-          - split the dataset by unique values in columns defined by
-            <extra_iterate_on> if provided,
-          - for all the groups generates:
-             - for each columns of <encoded_snp>:
-                 - concatenate it with <other_exogs>, generate the exogenous dataset
-                 - if <one_to_one_exogs> is provided, use <one_to_one_strategy>
-                    finding other columns and concatenate them as well
-                 - run regressions specified by <target_strategy>.engine and
-                   save the result
-             - combine the results from each columns
-             - save the regression output
-
-    Two APIs provided:
-    sklearn style:
-        3-line style:
-            snp_asso = SNPAssociation()
-            snp_asso.fit(**kwargs)
-            snp_asso.transform()
-        or 2-line style
-            snp_asso = SNPAssociation()
-            snp_asso.fit_transform(**kwargs)
-    or function style:
-        snp_asso = SNPAssociation()
-        snp_asso.association_test(**kwargs_1) #kwargs_1 can new kwargs
-    """
+    """a class for running SNP association pipeline"""
 
     def __init__(self):
         pd.set_option('mode.chained_assignment',None)
@@ -141,7 +140,7 @@ class SNPAssociation():
             group_NA_strategy: str = "snp_wise",
             extra_iterate_on: list = [],
             snps_preprocessing_strategy = None,
-            meta_info: bool = False,
+            meta_info: bool = True,
             verbose: int = 0
             ):
         """API initialize the data
@@ -198,7 +197,7 @@ class SNPAssociation():
                            before the regression analysis
                            this function should take a pd.DataFrame as input and output
 
-            meta_info: Optional[bool]: default False
+            meta_info: Optional[bool]: default True
                      if true, provide the frequencies, total, counts data useful for
                      meta analysis(METAL)
 
