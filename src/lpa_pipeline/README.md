@@ -1,4 +1,4 @@
-For iteration purpose, the pipeline is written as Python modules, a demo JupyterLab IPython Notebook(.ipynb) and it's pdf preview are provided in *Demo* folder. A command line version is provided as well.
+For iteration purpose, the pipeline is written as Python modules, a demo JupyterLab IPython Notebook(.ipynb) and it's pdf preview are provided in `docs` folder. A command line version is provided as well.
 
 All the <filename>.py file can be used either except association.py:
 - As python module: the usage is provided in module docstring.
@@ -12,7 +12,7 @@ All the <filename>.py file can be used either except association.py:
   ```
 
 1. Extract the information from Coassin's Pipeline
-    This step takes the output of SGE task in *Coassin_pipeline/coassin_pipeline.sh* as input. Pipeline Code running the following steps:
+    This step takes the output of SGE task in `Coassin_pipeline/coassin_pipeline.sh` as input. Pipeline Code running the following steps:
 
     encodings.py:
      - encode the Coassin's output into one-hot(0/1) encoded carrier information.

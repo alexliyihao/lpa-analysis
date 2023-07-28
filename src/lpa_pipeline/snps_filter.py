@@ -1,13 +1,17 @@
-"""
-apply the following:
-filter A: drop SNPs with more than <drop_ratio> NA in population
-filter B: drop SNPs with all 1's or all 0's (NA doesn't count for this)
+"""Give a first-step filter to all the SNPs encoded from Coassin's output
 
-Example:
+Apply the following:
+
+    * filter A: drop SNPs with NA ratio higher than ``drop_ratio`` in population
+    * filter B: drop SNPs with all 1's or all 0's (NA doesn't count for this)
+
+Example::
+
     filter_AB = SnpsFilter(drop_ratio = 0.1)
     filtered_result, drop_mask, drop_report = filter_AB.filter_A_and_B(df)
 
-Where df is a pd.DataFrame instance, with SNPs on the header, subject ID at the index,.
+Where df is a pd.DataFrame instance,
+with SNPs ID on the header, subject ID at the index,
 i.e. This filter is dropping columns.
 """
 import pandas as pd
@@ -45,6 +49,16 @@ class SnpsFilter():
         return df
 
     def drop_report(self, df, drop_ratio = None):
+        """Generate a drop report about filter A and B
+
+        Args:
+            df: pd.DataFrame, the table to be filtered
+            drop_ratio: float, if provided, will cover the default in class initiation
+
+        Returns:
+            pd.DataFrame, the dropping boolean mask of df
+            pd.DataFrame, the report for numbers of dropping
+        """
         if drop_ratio is None:
             drop_ratio = self.drop_ratio
         df = df.T
@@ -57,6 +71,17 @@ class SnpsFilter():
         return (mask,report)
 
     def filter_A_and_B(self, df, drop_ratio = None):
+        """ API run filter A and B and generate the result in one line
+
+        Args:
+            df: pd.DataFrame, the table to be filtered
+            drop_ratio: float, if provided, will cover the default in class initiation
+
+        Returns:
+            pd.DataFrame, the table of SNPs passed the dropping
+            pd.DataFrame, the dropping boolean mask of df
+            pd.DataFrame, the report for numbers of dropping
+        """
         drop_mask, drop_report = self.drop_report(df, drop_ratio = drop_ratio)
         filtered_df = df.T[drop_mask["filtered"]].T
         return(filtered_df, drop_mask, drop_report)

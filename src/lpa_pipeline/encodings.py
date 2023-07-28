@@ -1,40 +1,49 @@
-"""
+"""The pipeline encodes outputs from coassin_pipeline
+
 Encoding Rule:
-    If raw/raw.txt file total coverage < raw_total_coverage_threshold, encode that position missing for that person
-    If raw/raw.txt total coverage >= raw_total_coverage_threshold, then look at annotated file
-        If position is missing in annotated file, the variant is coded 0
-        If position is present in the annotated,
-            If 1. variant_level> variant_level_threshold, and
-               2. the total reads supporting (variant_level*total_coverage) the variant >= read_supporting_threshold,
-               the variant is coded 1, otherwise 0
 
-Initialize:
-    eco = encodings.EncodingCoassinOutput(choose 1: input_path = "/some/parent/path/of/bam/output" or
-                                                    bam_list = "/paths/to/a/file/recording/bam/path/line/by/line.txt"
-                                          output_path = "output_path", # required
-                                          raw_total_coverage_threshold = 50,
-                                          variant_level_threshold = 0.01,
-                                          read_supporting_threshold = 10,
-                                          verbosity = True)
+* If raw/raw.txt file total coverage < ``raw_total_coverage_threshold``,
+  encode that position "missing" for that person
+* If total coverage >= ``raw_total_coverage_threshold``, in annotated file
+    * If position is missing in annotated file, the variant is coded 0
+    * If position is present in the annotated, if both:
+        1. variant_level value > ``variant_level_threshold``
+        2. the total reads supporting (variant_level*total_coverage)
+           value >= ``read_supporting_threshold``,
+      are met, the variant is coded 1, otherwise 0
 
-Encoding:
-    1. run eco.encode_individual(saving_step: int),
+Example:
+
+    The class should be initiated as follows::
+
+        eco = encodings.EncodingCoassinOutput(
+            input_path = "/some/parent/path/of/bam/output" # or next line
+            bam_list = "/paths/to/a/file/recording/bam/path/line/by/line.txt"
+            output_path = "output_path"# required
+            )
+
+    The encoding process include an individual encoding step::
+
+        eco.encode_individual(saving_step: int)
+
     this step will be very time consuming. For it is originally running on SGE,
-    no parallel is provided in Python, it's recommended to split your BAM output via bam_list
-    Saving_step default to 1. A larger saving_step can reduce the saving overhead
+    no parallel is provided in Python, it's recommended to split your BAM output
+    via bam_list. Saving_step default to 1, i.e. each individual's result is
+    saved seperately. A larger saving_step can reduce the saving overhead.
 
-    After 1 finish, run the following in one thread:
-    2. eco.generate_coverage_total() for final coverage_total
-    3. eco.generate_encoded_results() for final encoded_results
+    After individual encoding, the following method can generate the output::
+
+        eco.generate_coverage_total()
+        eco.generate_encoded_results()
 """
 import pandas as pd
-import os
 import gc
 import glob
 import warnings
 
 def is_notebook() -> bool:
-    """https://stackoverflow.com/a/39662359"""
+    """For proper tqdm import"""
+    #https://stackoverflow.com/a/39662359
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
@@ -55,7 +64,6 @@ tqdm.pandas()
 
 class EncodingCoassinOutput():
     """
-    The pipeline running encoding outputs from coassin_pipeline
 
     Algorithm:
     1. Read and encode each folders individually,
@@ -209,7 +217,7 @@ class EncodingCoassinOutput():
         Args:
             path: str, the path of the file
         Returns:
-            df: pd.DataFrame, the encoded_result
+            pd.DataFrame, the encoded_result
         """
         df.fillna(-1, inplace = True)
         df.reset_index(inplace = True)
@@ -265,11 +273,14 @@ class EncodingCoassinOutput():
 
     def generate_coverage_total(self, save = False):
         """API generate final coverage_total table
+
         Args:
             save: Bool, default False, if True, it will save the final result at
                   self._output_path/coverage_total_final.csv
         Returns:
-            coverage_total: pandas.DataFrame, the final coverage_total table
+
+            pd.DataFrame, the final coverage_total table
+
         Saves:
             if save == True, self._output_path/coverage_total_final.csv, same as above
         """
@@ -294,7 +305,9 @@ class EncodingCoassinOutput():
                             will apply self._tidy_encoded_results, just for running different version code
                             please use False in your application.
         Returns:
-            combined_er: pandas.DataFrame, the final encoded_result table
+
+            pandas.DataFrame, the final encoded_result table
+
         Saves:
             if save == True, self._output_path/encoded_result_final.csv, same as above
         """
@@ -354,6 +367,7 @@ class EncodingCoassinOutput():
         Run the following logic:
 
         if "position" appears
+
         case 1:
             if "position" is "missing", total coverage < 50, the final encoding should be NA
         case 2:
@@ -375,7 +389,9 @@ class EncodingCoassinOutput():
         case 5:
             Both "position" and "position-ref/alt" are encoded:
             Its technically not possible
+
         if "position" is not there, only "position-ref/alt" appears
+
         case 6:
             If any of these "position-ref/alt" is encoded:
             Encoded position-ref/alt keeps the value in "position-ref/alt"
@@ -469,6 +485,7 @@ class EncodingCoassinOutput():
         return df
 
     def _get_coverage_total(self, raw):
+        """get the coverage_total info from dataFrame read from raw/raw.txt"""
         # get the Sample ID
         SampleID = raw.SampleID.loc[0]
         # Pick POS and coverage total, set index as POS, rename the coverage total as SampleID

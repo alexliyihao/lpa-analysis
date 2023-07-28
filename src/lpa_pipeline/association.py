@@ -1,33 +1,37 @@
-"""
-This pipeline running an association_test on the following steps
+"""This pipeline running an iterative association test for each snps.
 
- - for each the endogenous variable in <target_strategy>:
-      - find them from <target_dataset>
-      - run preprocessing, if given by <target_strategy>.preprocessing
-      - split the dataset by unique values in columns defined by
-        <extra_iterate_on> if provided,
-      - for all the groups generates:
-         - for each columns of <encoded_snp>:
-             - concatenate it with <other_exogs>, generate the exogenous dataset
-             - if <one_to_one_exogs> is provided, use <one_to_one_strategy>
-                finding other columns and concatenate them as well
-             - run regressions specified by <target_strategy>.engine and
-               save the result
-         - combine the results from each columns
-         - save the regression output
+The iterative strategy is as follows:
 
-Two APIs provided:
-sklearn style:
-    3-line style:
+* for each the target variable in ``target_strategy``
+    #. Extract the column from ``target_dataset``:
+    #. run preprocessing, if the value of key ``preprocessing`` is given in ``target_strategy``
+    #. group the dataset by columns defined by ``extra_iterate_on`` if provided
+    #. for each group, iterate over columns of ``encoded_snp`` (each SNP):
+        1. concatenate it with ``other_exogs``, generate the exogenous dataset
+        2. if ``one_to_one_exogs`` is provided, use ``one_to_one_strategy``
+           finding other columns and concatenate them as well
+        3. run regressions specified by ``target_strategy``.engine
+        4. combine the results from each SNP
+        5. save the regression output
+
+Two APIs provided
+ * sklearn style:
+
+     * 3-line style::
+
         snp_asso = SNPAssociation()
         snp_asso.fit(**kwargs)
         snp_asso.transform()
-    or 2-line style
+
+     * 2-line style::
+
         snp_asso = SNPAssociation()
         snp_asso.fit_transform(**kwargs)
-or function style:
-    snp_asso = SNPAssociation()
-    snp_asso.association_test(**kwargs_1) #kwargs_1 can be new kwargs
+
+ * function style::
+
+        snp_asso = SNPAssociation()
+        snp_asso.association_test(**kwargs_1) #kwargs_1 can be new kwargs
 """
 
 import numpy as np
@@ -40,7 +44,8 @@ import warnings
 from tqdm import tqdm
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
 def is_notebook() -> bool:
-    """https://stackoverflow.com/a/39662359"""
+    """For proper tqdm import"""
+    #https://stackoverflow.com/a/39662359
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
@@ -61,11 +66,13 @@ tqdm.pandas()
 #----------------------------------Encoding Strategy Example--------------------------------------
 
 def encode_dementia(df):
+    """An example preprocessing strategy used in target_strategy"""
     df.dropna(inplace = True)
     df = df[df != 3] - 1
     return df
 
 def dropna(df):
+    """A simpler preprocessing strategy used in target_strategy"""
     return df.dropna()
 
 def filter_C(df, threshold = 5):
@@ -80,41 +87,49 @@ def filter_C(df, threshold = 5):
     filtered_snp = [i for i in df.columns if sum(df[i].value_counts() > threshold) > 1]
     return df[filtered_snp]
 
-target_strategy = {'STROKE':{"engine": sm.Logit,
-                             "preprocessing":dropna},
-                   'DEMENTIA':{"engine": sm.Logit,
-                               "preprocessing":encode_dementia},
-                   'DIABETES':{"engine": sm.Logit,
-                                "preprocessing":dropna},
-                   'HEART':{"engine": sm.Logit,
-                            "preprocessing":dropna},
-                   "HYPERTENSION":{"engine": sm.Logit,
-                                  "preprocessing":dropna},
-                   'LIP01_B':{"engine": sm.OLS,
-                              "preprocessing":dropna},
-                   'LIP02_B':{"engine": sm.OLS,
-                              "preprocessing":dropna},
-                   'LIP03_B':{"engine": sm.OLS,
-                              "preprocessing":dropna},
-                   'LIP04_2':{"engine": sm.OLS,
-                              "preprocessing":dropna},
-                   'INSL01_2':{"engine": sm.OLS,
-                              "preprocessing":dropna},
-                   'INSL02_2':{"engine": sm.OLS,
-                              "preprocessing":dropna},
-                   'INSL03_2':{"engine": sm.OLS,
-                              "preprocessing":dropna},
-                   'HBA1C_2':{"engine": sm.OLS,
-                              "preprocessing":dropna}
-                    }
+def target_strategy():
+    """
+    An example target_strategy used in the association analysis
+    """
+    return {'STROKE':{"engine": sm.Logit,
+                     "preprocessing":dropna},
+           'DEMENTIA':{"engine": sm.Logit,
+                       "preprocessing":encode_dementia},
+           'DIABETES':{"engine": sm.Logit,
+                        "preprocessing":dropna},
+           'HEART':{"engine": sm.Logit,
+                    "preprocessing":dropna},
+           "HYPERTENSION":{"engine": sm.Logit,
+                          "preprocessing":dropna},
+           'LIP01_B':{"engine": sm.OLS,
+                      "preprocessing":dropna},
+           'LIP02_B':{"engine": sm.OLS,
+                      "preprocessing":dropna},
+           'LIP03_B':{"engine": sm.OLS,
+                      "preprocessing":dropna},
+           'LIP04_2':{"engine": sm.OLS,
+                      "preprocessing":dropna},
+           'INSL01_2':{"engine": sm.OLS,
+                      "preprocessing":dropna},
+           'INSL02_2':{"engine": sm.OLS,
+                      "preprocessing":dropna},
+           'INSL03_2':{"engine": sm.OLS,
+                      "preprocessing":dropna},
+           'HBA1C_2':{"engine": sm.OLS,
+                      "preprocessing":dropna}
+            }
 
-target_strategy_serum = {'lpa':{"engine": sm.OLS,
-                                     "preprocessing":None},
-                       'wAS':{"engine": sm.OLS,
-                                  "preprocessing":None},
-                       'isoform':{"engine": sm.OLS,
-                                      "preprocessing":None}
-                        }
+def target_strategy_serum():
+    """
+    An example target_strategy used in the serum analyis
+    """
+    return {'lpa':{"engine": sm.OLS,
+                  "preprocessing":None},
+            'wAS':{"engine": sm.OLS,
+                  "preprocessing":None},
+            'isoform':{"engine": sm.OLS,
+                  "preprocessing":None}
+            }
 
 #----------------------------------Iterator API--------------------------------------
 
@@ -143,8 +158,10 @@ class SNPAssociation():
             meta_info: bool = True,
             verbose: int = 0
             ):
-        """API initialize the data
+        """API setting up the regression (not running)
+
         Args:
+
             encoded_snp: pd.DataFrame, the dataframe to be looped on columns
 
             other_exog: pd.DataFrame, the dataframe taking all the other variables
@@ -155,10 +172,12 @@ class SNPAssociation():
                  The dictionary provide pre-processing to specific column,
                  Only column mentioned in keys will be included in the running.
                  The inner dictionary should have two keys:
-                 "engine": statsmodels.api models,
+
+                 "engine": statsmodels.api models
                      designed for statsmodels.discrete.discrete_model.Logit or
                      statsmodels.regression.linear_model.OLS,
                      but any model's .fit results provide .params .bse .pvalues will work
+
                  "preprocessing": funcs
                      the function should take a pd.DataFrame/pd.Series as input
                      and a pd.DataFrame/pd.Series as output,
@@ -254,8 +273,9 @@ class SNPAssociation():
                  )
 
     def fit_transform(self, **kwargs):
-            self.fit(**kwargs)
-            self.transform()
+        """API run fit and transform in one method"""
+        self.fit(**kwargs)
+        self.transform()
 
 
     def _get_column_name(self, col):
@@ -331,7 +351,9 @@ class SNPAssociation():
 
         For each column in snp_table, run a individual <endog>~column+<other> on <engine>
         return the beta/weight/effect size, standard error and p-values
+
         Args:
+
             snp_table: pd.DataFrame, the table encoding snps,
                        the columns is snp name, rows are individuals, values are numerics
             other_exogs: pd.DataFrame, the table encoding other traits,
@@ -359,10 +381,14 @@ class SNPAssociation():
                               extra_iterate_on, can be "snp-wise" or "group-wise",
                               it's working for status when NA_strategy == "drop"
             extra_label: Optional[tuple[tuple[str], tuple[str]]]
+            meta_info: Optional[bool]: default False
+                     if true, provide the frequencies, total, counts data useful for
+                     meta-analysis(METAL)
+
         Returns:
-            df_result: pd.DataFrame, the beta/weight/effect size, standard error and p-values
-                       for each <endog>~column+<other> on <engine>
-            analysis_info: dict, additional information that is included.
+            pd.DataFrame, the beta/weight/effect size, standard error and p-values
+                for each <endog>~column+<other> on <engine>
+            dict, additional information that is included.
         """
         # the list saving output values
         params,bse,p_values,processed_snp, n_sample, errors= [],[],[],[],[],{}
@@ -482,7 +508,9 @@ class SNPAssociation():
                          meta_info: bool = False
                          ):
         """API running regression test
+
         Args:
+
             encoded_snp: pd.DataFrame, the dataframe to be looped on columns
             other_exog: pd.DataFrame, the dataframe taking all the other variables
             target_dataset: pd.DataFrame, the dataframe taking all the target variables
@@ -490,15 +518,18 @@ class SNPAssociation():
                  The dictionary provide pre-processing to specific column,
                  Only column mentioned in keys will be included in the running.
                  The inner dictionary should have two keys:
+
                  "engine": statsmodels.api models,
                      designed for statsmodels.discrete.discrete_model.Logit or
                      statsmodels.regression.linear_model.OLS,
                      but any model's .fit results provide .params .bse .pvalues will work
+
                  "preprocessing": funcs
                      the function should take a pd.DataFrame/pd.Series as input
                      and a pd.DataFrame/pd.Series as output,
                      This strategy is None, the column will be used as
-                     exogenous variablesas-is
+                     exogenous variables as-is
+
             output_path: the output root path, the saving name will be printed for reference
             one_to_one_exogs: pd.DataFrame, the dataframe providing
                             specific exog variable based on encoded_snp
@@ -520,7 +551,8 @@ class SNPAssociation():
             snp_alias: Optional[str], the name used for snp column
 
         Returns:
-            output_info: dict, a dict recording output brief information
+
+            dict, a dict recording output brief information
         """
         os.makedirs(output_path, exist_ok = True)
         output_info = {}
