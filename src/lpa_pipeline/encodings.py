@@ -37,6 +37,7 @@ Example:
         eco.generate_encoded_results()
 """
 import pandas as pd
+import os
 import gc
 import glob
 import warnings
