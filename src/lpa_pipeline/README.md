@@ -1,4 +1,6 @@
-For iteration purpose, the pipeline is written as Python modules, a demo JupyterLab IPython Notebook(.ipynb) and it's pdf preview are provided in `docs` folder. A command line version is provided as well.
+For iteration purpose, the pipeline is written as Python modules, a demo JupyterLab IPython Notebook(.ipynb) are provided in `docs` folder. A command line version is provided as well.
+
+The tqdm are included in the code, in case there's anything wrong with tqdm displaying, our running environment is using jupyterlab==3.2.4 with widgetsnbextension==3.6.4.
 
 All the <filename>.py file can be used either except association.py:
 - As python module: the usage is provided in module docstring.
