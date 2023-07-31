@@ -65,20 +65,23 @@ class METALToolkit():
     Initialize:
 
         mtk = METALToolkit(
-        ethnicity = ["EU", "AF", "HISP"],
-        verbose = 1,
-        metal_path = "/mnt/mfs/cluster/bin/METAL/metal"
+            ethnicity = ["EU", "AF", "HISP"],
+            verbose = 1,
+            metal_path = "/mnt/mfs/cluster/bin/METAL/metal",
+            snp_alias = "snp_pos"
         )
 
     Args:
 
-        ethnicity: the name of ethnicities need to be analyzed
+        ethnicity: list[str], the name of ethnicities need to be analyzed
         verbose: bool, if True, API internally reading or writing files will print a log
-        metal_path: the path to METAL binary, the development environment cannot use
+        metal_path: str, the path to METAL binary, the development environment cannot use
                     "module load METAL" via Jupyterlab hold in SGE, you can either
                     1. "module load METAL && echo $PATH" find the path
                     2. modify generate_metal_running_script() method when your
                        environment allows.
+        snp_alias: str, the setting from association module
+
 
     One-line final:
         mtk.run_metal(path_association: str,
@@ -121,7 +124,8 @@ class METALToolkit():
     def __init__(self,
                  ethnicity=["EU", "AF", "HISP"],
                  verbose=1,
-                 metal_path="/mnt/mfs/cluster/bin/METAL/metal"):
+                 metal_path="/mnt/mfs/cluster/bin/METAL/metal",
+                 snp_alias = "snp_pos"):
         """initializer save the ethnicity setting,
 
         Args:
@@ -132,6 +136,7 @@ class METALToolkit():
         self._ethnicity = ethnicity
         self._verbose = verbose
         self._metal_app_path = metal_path
+        self._snp_alias = snp_alias
 
     def run_metal(self,
             path_association: str,
@@ -207,18 +212,18 @@ class METALToolkit():
                 ready for METAL's meta analysis
         """
         df_new = pd.DataFrame()
-        df_new["SNP"] = df["snp_pos"].apply(self._get_pos)
-        df_new["REF_ALLELE"] = df["snp_pos"].apply(
+        df_new["SNP"] = df[self._snp_alias].apply(self._get_pos)
+        df_new["REF_ALLELE"] = df[self._snp_alias].apply(
             lambda i: i.split("-")[-1]).apply(lambda i: i.split("/")[0])
-        df_new["ALT_ALLELE"] = df["snp_pos"].apply(
+        df_new["ALT_ALLELE"] = df[self._snp_alias].apply(
             lambda i: i.split("-")[-1]).apply(lambda i: i.split("/")[-1])
         df_new["FREQ"] = df["rel_freqs"]
-        df_new["BETA"] = df["snp_pos Beta"]
-        df_new["SE"] = df["snp_pos SE"]
-        df_new["PVAL"] = df["snp_pos P-value"]
+        df_new["BETA"] = df[f"{self._snp_alias} Beta"]
+        df_new["SE"] = df[f"{self._snp_alias} SE"]
+        df_new["PVAL"] = df[f"{self._snp_alias} P-value"]
         df_new["TOTAL"] = df["n_sample"]
         df_new["COUNT"] = df["abs_freqs"]
-        df_new["POS-REF/ALT"] = df["snp_pos"]
+        df_new["POS-REF/ALT"] = df[self._snp_alias]
         return df_new
 
     def csv_to_metal(self, path: str):
@@ -230,7 +235,7 @@ class METALToolkit():
         Saves:
             csv file with an additional "_for_metal" at the end of the file name
         """
-        df = pd.read_csv(path).rename(columns={"Unnamed: 0": "snp_pos"})
+        df = pd.read_csv(path).rename(columns={"Unnamed: 0": self._snp_alias})
         df_new = self.dataframe_to_metal(df)
         new_path = path.replace(".csv", "_for_metal.csv")
         df_new.to_csv(new_path, index=False)
@@ -333,7 +338,8 @@ class METALToolkit():
         """for a folder, and a specific key, get the requested info, add suffix"""
         df = pd.read_csv(os.path.join(
             path, f"ethnicity={key}.csv"), index_col=0)
-        df = df[["snp_pos Beta", "snp_pos SE", "snp_pos P-value",
+        df = df[[f"{self._snp_alias} Beta", f"{self._snp_alias} SE",
+                 f"{self._snp_alias} P-value",
                  "rel_freqs", "abs_freqs", "n_sample"]]
         df.columns = df.columns + f"_{key}"
         return df
@@ -363,11 +369,14 @@ class METALToolkit():
             df["n_sample_AF"].fillna(0) +\
             df["n_sample_HISP"].fillna(0)
         df = df[["index",
-                 "snp_pos Beta_EU", "snp_pos SE_EU", "snp_pos P-value_EU",
+                 f"{self._snp_alias} Beta_EU", f"{self._snp_alias} SE_EU",
+                 f"{self._snp_alias} P-value_EU",
                  "rel_freqs_EU", "abs_freqs_EU", "n_sample_EU",
-                 "snp_pos Beta_AF", "snp_pos SE_AF", "snp_pos P-value_AF",
+                 f"{self._snp_alias} Beta_AF", f"{self._snp_alias} SE_AF",
+                 f"{self._snp_alias} P-value_AF",
                  "rel_freqs_AF", "abs_freqs_AF", "n_sample_AF",
-                 "snp_pos Beta_HISP", "snp_pos SE_HISP", "snp_pos P-value_HISP",
+                 f"{self._snp_alias} Beta_HISP", f"{self._snp_alias} SE_HISP",
+                 f"{self._snp_alias} P-value_HISP",
                  "rel_freqs_HISP", "abs_freqs_HISP", "n_sample_HISP",
                  "Allele1", "Allele2", "Effect", "StdErr", "P-value",
                  "Direction", "total_count", "total_population", "trait"
@@ -375,21 +384,21 @@ class METALToolkit():
 
         df.rename(columns={
             "index": ("SNPs", "MarkerName"),
-            "snp_pos Beta_EU": ("EUR", "snp_pos.Beta.EUR"),
-            "snp_pos SE_EU": ("EUR", "snp_pos.SE.EUR"),
-            "snp_pos P-value_EU": ("EUR", "snp_pos.P.value.EUR"),
+            f"{self._snp_alias} Beta_EU": ("EUR", f"{self._snp_alias}.Beta.EUR"),
+            f"{self._snp_alias} SE_EU": ("EUR", f"{self._snp_alias}.SE.EUR"),
+            f"{self._snp_alias} P-value_EU": ("EUR", f"{self._snp_alias}.P.value.EUR"),
             "rel_freqs_EU": ("EUR", "rel_freqs.EUR"),
             "abs_freqs_EU": ("EUR", "abs_freqs.EUR"),
             "n_sample_EU": ("EUR", "n_sample.EUR"),
-            "snp_pos Beta_AF": ("AFR", "snp_pos.Beta.AA"),
-            "snp_pos SE_AF": ("AFR", "snp_pos.SE.AA"),
-            "snp_pos P-value_AF": ("AFR", "snp_pos.P.value.AA"),
+            f"{self._snp_alias} Beta_AF": ("AFR", f"{self._snp_alias}.Beta.AA"),
+            f"{self._snp_alias} SE_AF": ("AFR", f"{self._snp_alias}.SE.AA"),
+            f"{self._snp_alias} P-value_AF": ("AFR", f"{self._snp_alias}.P.value.AA"),
             "rel_freqs_AF": ("AFR", "rel_freqs.AA"),
             "abs_freqs_AF": ("AFR", "abs_freqs.AA"),
             "n_sample_AF": ("AFR", "n_sample.AA"),
-            "snp_pos Beta_HISP": ("HISP", "snp_pos.Beta.HISP"),
-            "snp_pos SE_HISP": ("HISP", "snp_pos.SE.HISP"),
-            "snp_pos P-value_HISP": ("HISP", "snp_pos.P.value.HISP"),
+            f"{self._snp_alias} Beta_HISP": ("HISP", f"{self._snp_alias}.Beta.HISP"),
+            f"{self._snp_alias} SE_HISP": ("HISP", f"{self._snp_alias}.SE.HISP"),
+            f"{self._snp_alias} P-value_HISP": ("HISP", f"{self._snp_alias}.P.value.HISP"),
             "rel_freqs_HISP": ("HISP", "rel_freqs.HISP"),
             "abs_freqs_HISP": ("HISP", "abs_freqs.HISP"),
             "n_sample_HISP": ("HISP", "n_sample.HISP"),
@@ -415,6 +424,7 @@ class METALToolkit():
     def copy_tree(self, path_association: str, path_meta: str):
         """move file from path_association to path_meta, arrange by traits"""
         # copy the path from <path_association> to <path_meta>
+        shutil.rmtree(path_meta, ignore_errors = True)
         shutil.copytree(src=path_association, dst=path_meta)
         for filename in tqdm(os.listdir(path_meta)):
             info = filename.split("_")
@@ -481,6 +491,8 @@ This script copies the result of Association.py to a new folder
         help="""the path to METAL binary, you can either
                 1. "module load METAL && echo $PATH" find the path
                 2. modify generate_metal_running_script() method.""")
+    parser.add_argument("-A", "--snp_alias", type=str, required=True,
+        help="the setting from association module")
     parser.add_argument("-V", "--verbosity", type=int, choices=[0, 1],
         required=False, default=1,
         help="verbosity 0 or 1, if set to 1, will print some logs, default 1")
@@ -490,7 +502,8 @@ This script copies the result of Association.py to a new folder
     Args = parser.parse_args()
     mtk = METALToolkit(ethnicity=Args.ethnicity,
                        verbose=Args.verbosity,
-                       metal_path=Args.metal_path)
+                       metal_path=Args.metal_path,
+                       snp_alias=Args.snp_alias)
     mtk.run_metal(path_association=Args.input_path,
                   path_meta=Args.output_path,
                   multi_line_header=Args.multi_line_header)
