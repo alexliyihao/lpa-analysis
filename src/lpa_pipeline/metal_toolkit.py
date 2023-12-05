@@ -134,7 +134,7 @@ class METALToolkit():
                         if not provided, using ["eu", "af", "hisp"]
             verbose: int, the verbosity running the pipeline
         """
-        self._ethnicity = ethnicity
+        self._ethnicity = [i.replace(" ","") for i in ethnicity]
         self._verbose = verbose
         self._metal_app_path = metal_path
         self._snp_alias = snp_alias
@@ -433,7 +433,7 @@ class METALToolkit():
             os.makedirs(os.path.join(path_meta, trait), exist_ok=True)
             if os.path.splitext(filename)[1] == ".csv":
                 shutil.move(os.path.join(path_meta, filename),
-                            os.path.join(path_meta, trait, f"{ethnicity}.csv"))
+                            os.path.join(path_meta, trait, f"{ethnicity}.csv").replace(" ",""))
 
     def save_final_output(self,
                           df,
