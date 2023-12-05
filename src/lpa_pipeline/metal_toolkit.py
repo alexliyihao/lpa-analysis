@@ -86,7 +86,8 @@ class METALToolkit():
     One-line final:
         mtk.run_metal(path_association: str,
                       path_meta: str,
-                      multi_line_header = False)
+                      rename: bool = False,
+                      multi_line_header: bool = False)
             It internally do everything below:
 
     Sub-step APIs:
@@ -141,6 +142,7 @@ class METALToolkit():
     def run_metal(self,
             path_association: str,
             path_meta: str,
+            rename: bool = False,
             multi_line_header: bool = False):
         """API processing all the tables at once in a folder
 
@@ -151,6 +153,7 @@ class METALToolkit():
         Args:
             path_association: str, the path of association outputs
             path_meta: str, the path to meta-analysis, it must not already exist.
+            rename: boolean, using False is fine, just for formatting
             multi_line_header: boolean, using False is fine.
 
         Saves:
@@ -190,11 +193,13 @@ class METALToolkit():
                                 for i in tqdm(sub_folders)),
                                axis=0)
         all_result = self.formatting_final_result(
-            all_result, multi_line_header=multi_line_header)
-        self.save_final_output(df=all_result,
-                               path=os.path.join(
-                                   path_meta, "aggregate_all_traits.xlsx"),
-                               multi_line_header=multi_line_header)
+            all_result,
+            multi_line_header=multi_line_header,
+            rename=rename)
+        self.save_final_output(
+            df=all_result,
+            path=os.path.join(path_meta, "aggregate_all_traits.xlsx"),
+            multi_line_header=multi_line_header)
         return all_result
 
 
@@ -361,61 +366,52 @@ class METALToolkit():
         final["trait"] = path.split("/")[-2]
         return final
 
-    def formatting_final_result(self, df, multi_line_header=False):
-        df["total_count"] = df["abs_freqs_EU"].fillna(0) +\
-            df["abs_freqs_AF"].fillna(0) +\
-            df["abs_freqs_HISP"].fillna(0)
-        df["total_population"] = df["n_sample_EU"].fillna(0) +\
-            df["n_sample_AF"].fillna(0) +\
-            df["n_sample_HISP"].fillna(0)
-        df = df[["index",
-                 f"{self._snp_alias} Beta_EU", f"{self._snp_alias} SE_EU",
-                 f"{self._snp_alias} P-value_EU",
-                 "rel_freqs_EU", "abs_freqs_EU", "n_sample_EU",
-                 f"{self._snp_alias} Beta_AF", f"{self._snp_alias} SE_AF",
-                 f"{self._snp_alias} P-value_AF",
-                 "rel_freqs_AF", "abs_freqs_AF", "n_sample_AF",
-                 f"{self._snp_alias} Beta_HISP", f"{self._snp_alias} SE_HISP",
-                 f"{self._snp_alias} P-value_HISP",
-                 "rel_freqs_HISP", "abs_freqs_HISP", "n_sample_HISP",
-                 "Allele1", "Allele2", "Effect", "StdErr", "P-value",
-                 "Direction", "total_count", "total_population", "trait"
-                 ]]
-
-        df.rename(columns={
-            "index": ("SNPs", "MarkerName"),
-            f"{self._snp_alias} Beta_EU": ("EUR", f"{self._snp_alias}.Beta.EUR"),
-            f"{self._snp_alias} SE_EU": ("EUR", f"{self._snp_alias}.SE.EUR"),
-            f"{self._snp_alias} P-value_EU": ("EUR", f"{self._snp_alias}.P.value.EUR"),
-            "rel_freqs_EU": ("EUR", "rel_freqs.EUR"),
-            "abs_freqs_EU": ("EUR", "abs_freqs.EUR"),
-            "n_sample_EU": ("EUR", "n_sample.EUR"),
-            f"{self._snp_alias} Beta_AF": ("AFR", f"{self._snp_alias}.Beta.AA"),
-            f"{self._snp_alias} SE_AF": ("AFR", f"{self._snp_alias}.SE.AA"),
-            f"{self._snp_alias} P-value_AF": ("AFR", f"{self._snp_alias}.P.value.AA"),
-            "rel_freqs_AF": ("AFR", "rel_freqs.AA"),
-            "abs_freqs_AF": ("AFR", "abs_freqs.AA"),
-            "n_sample_AF": ("AFR", "n_sample.AA"),
-            f"{self._snp_alias} Beta_HISP": ("HISP", f"{self._snp_alias}.Beta.HISP"),
-            f"{self._snp_alias} SE_HISP": ("HISP", f"{self._snp_alias}.SE.HISP"),
-            f"{self._snp_alias} P-value_HISP": ("HISP", f"{self._snp_alias}.P.value.HISP"),
-            "rel_freqs_HISP": ("HISP", "rel_freqs.HISP"),
-            "abs_freqs_HISP": ("HISP", "abs_freqs.HISP"),
-            "n_sample_HISP": ("HISP", "n_sample.HISP"),
-            "Allele1": ("META", "Allele1"),
-            "Allele2": ("META", "Allele2"),
-            "Effect": ("META", "Effect"),
-            "StdErr": ("META", "StdErr"),
-            "P-value": ("META", "P.value"),
-            "Direction": ("META", "Direction"),
-            "total_count": ("META", "META.ALLELE.COUNT"),
-            "total_population": ("META", "META.ALLELE.N"),
-            "trait": ("META", "trait")
-            },
-            inplace=True)
-        df.columns = pd.MultiIndex.from_tuples(df.columns)
-        if multi_line_header is False:
-            df.columns = df.columns.droplevel(0)
+    def formatting_final_result(self, df, multi_line_header=False, rename=False):
+        df["total_count"] = sum((df[f"abs_freqs_{i}"].fillna(0) for i in self._ethnicity))
+        df["total_population"] = sum((df[f"n_sample_{i}"].fillna(0) for i in self._ethnicity))
+        colnames = [[f"{self._snp_alias} Beta_{i}", f"{self._snp_alias} SE_{i}",
+                     f"{self._snp_alias} P-value_{i}",
+                     f"rel_freqs_{i}", f"abs_freqs_{i}", f"n_sample_{i}"] for i in self._ethnicity]
+        df = df[["index"]+
+                [item for sublist in colnames for item in sublist]+
+                 ["Allele1", "Allele2", "Effect", "StdErr", "P-value",
+                 "Direction", "total_count", "total_population", "trait"]
+               ]
+        if rename == True:
+            df.rename(columns={
+                "index": ("SNPs", "MarkerName"),
+                f"{self._snp_alias} Beta_EU": ("EUR", f"{self._snp_alias}.Beta.EUR"),
+                f"{self._snp_alias} SE_EU": ("EUR", f"{self._snp_alias}.SE.EUR"),
+                f"{self._snp_alias} P-value_EU": ("EUR", f"{self._snp_alias}.P.value.EUR"),
+                "rel_freqs_EU": ("EUR", "rel_freqs.EUR"),
+                "abs_freqs_EU": ("EUR", "abs_freqs.EUR"),
+                "n_sample_EU": ("EUR", "n_sample.EUR"),
+                f"{self._snp_alias} Beta_AF": ("AFR", f"{self._snp_alias}.Beta.AA"),
+                f"{self._snp_alias} SE_AF": ("AFR", f"{self._snp_alias}.SE.AA"),
+                f"{self._snp_alias} P-value_AF": ("AFR", f"{self._snp_alias}.P.value.AA"),
+                "rel_freqs_AF": ("AFR", "rel_freqs.AA"),
+                "abs_freqs_AF": ("AFR", "abs_freqs.AA"),
+                "n_sample_AF": ("AFR", "n_sample.AA"),
+                f"{self._snp_alias} Beta_HISP": ("HISP", f"{self._snp_alias}.Beta.HISP"),
+                f"{self._snp_alias} SE_HISP": ("HISP", f"{self._snp_alias}.SE.HISP"),
+                f"{self._snp_alias} P-value_HISP": ("HISP", f"{self._snp_alias}.P.value.HISP"),
+                "rel_freqs_HISP": ("HISP", "rel_freqs.HISP"),
+                "abs_freqs_HISP": ("HISP", "abs_freqs.HISP"),
+                "n_sample_HISP": ("HISP", "n_sample.HISP"),
+                "Allele1": ("META", "Allele1"),
+                "Allele2": ("META", "Allele2"),
+                "Effect": ("META", "Effect"),
+                "StdErr": ("META", "StdErr"),
+                "P-value": ("META", "P.value"),
+                "Direction": ("META", "Direction"),
+                "total_count": ("META", "META.ALLELE.COUNT"),
+                "total_population": ("META", "META.ALLELE.N"),
+                "trait": ("META", "trait")
+                },
+                inplace=True)
+            df.columns = pd.MultiIndex.from_tuples(df.columns)
+            if multi_line_header is False:
+                df.columns = df.columns.droplevel(0)
         df.reset_index(drop=True, inplace=True)
         return df
 
@@ -471,6 +467,8 @@ class METALToolkit():
             print(log)
 
 
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(prog="metal_toolkit.py",
@@ -491,8 +489,6 @@ This script copies the result of Association.py to a new folder
         help="""the path to METAL binary, you can either
                 1. "module load METAL && echo $PATH" find the path
                 2. modify generate_metal_running_script() method.""")
-    parser.add_argument("-A", "--snp_alias", type=str, required=True,
-        help="the setting from association module")
     parser.add_argument("-V", "--verbosity", type=int, choices=[0, 1],
         required=False, default=1,
         help="verbosity 0 or 1, if set to 1, will print some logs, default 1")
@@ -502,8 +498,7 @@ This script copies the result of Association.py to a new folder
     Args = parser.parse_args()
     mtk = METALToolkit(ethnicity=Args.ethnicity,
                        verbose=Args.verbosity,
-                       metal_path=Args.metal_path,
-                       snp_alias=Args.snp_alias)
+                       metal_path=Args.metal_path)
     mtk.run_metal(path_association=Args.input_path,
                   path_meta=Args.output_path,
                   multi_line_header=Args.multi_line_header)
