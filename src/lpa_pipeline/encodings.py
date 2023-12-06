@@ -68,17 +68,20 @@ class EncodingCoassinOutput:
     """
 
     Algorithm:
+
     1. Read and encode each folder individually,
        if a snp position didn't give mutation result, save them as pos, else pos-ref/alt,
     2. When we get all the encodings, concat them together and deal with all the pos conflict
 
     Hardware Requirement:
+
     The algorithm is preventing the growth of the number of cross-table accesses
     and queries, especially minimizing the time read in dataframe from the file
     system(= 2*n_samples) and its memory cost (a raw.txt and a variantsAnnotate.txt
     at any specific time) during 1st step encoding. Which is at the cost of
     HUGE memory requirement dealing with concatenation (which is more customizable
     on our cluster).
+
     For reproducing with ~4000 subjects, generate_encoded_results() method need at least 10GB memories.
     For a smooth running, 20GB to 30GB memories for the kernel is suggested.
     """
@@ -133,7 +136,7 @@ class EncodingCoassinOutput:
         # this warning is triggered by generate_encoded_results() method, and is properly dealt with
         warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
-    def _verify_coassin_output(self, path):
+    def _verify_coassin_output(self, path: str):
         """
         assert <path> is a complete Coassin path output
 
@@ -153,7 +156,7 @@ class EncodingCoassinOutput:
             os.path.join(path, "variantsAnnotate", "variantsAnnotate.txt")
         ))
 
-    def _encode_individual(self, bam_path):
+    def _encode_individual(self, bam_path: str):
         """The procedure reading in, encoding, then tidy up the output for an individual"""
         # read the coverage total column from raw.txt file
         coverage_total, SampleID = self._get_coverage_total(
@@ -179,7 +182,11 @@ class EncodingCoassinOutput:
         gc.collect()
         return coverage_total, encode_result
 
-    def _encode_position(self, pos, coverage_total, annotated_files):
+    def _encode_position(
+            self,
+            pos: int,
+            coverage_total: int,
+            annotated_files):
         """actual encoding logic, apply to each specific row(allele) in variantsAnnotate file
 
         both pos and coverage_total is obtained from pd.DataFrameGroupBy object's apply method
@@ -216,6 +223,7 @@ class EncodingCoassinOutput:
         """read in a 1st step encoded_result from path, then tidy the format up
 
         inplace=True is applied to minimize the memory cost
+
         Args:
             df: pd.DataFrame, the output to be checked
         Returns:

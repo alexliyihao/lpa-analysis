@@ -7,31 +7,35 @@ Given two pandas.DataFrame
 * ``class_info_table`` has one have columns ``class_variable`` indicate the group
 * ``one_hot_table`` has all one-hot-variables(SNPs encoding),
 
-Compute the SNPs frequency in each class defined in <class_variable>::
+Compute the SNPs frequency in each class defined in <class_variable>:
 
-    ftg = freq_table_generator.FreqTableGenerator(
-        threshold = 0.01
-        encoding = {0: "Not Detected",
-                    1: "Rare",
-                    2: "Common"})
+    Initialize::
 
-    freq_table = ftg.generate_freq_table(
-        class_info_table = class_info_table,
-        one_hot_table = one_hot_table,
-        class_variable = "<class_variable>"
-        class_variable_list = ["<class_name_1>","<class_name_2>",...]
-        #if only need a part of <class_variable> column
-        )
+        ftg = freq_table_generator.FreqTableGenerator(
+            threshold = 0.01
+            encoding = {0: "Not Detected",
+                        1: "Rare",
+                        2: "Common"})
 
-if you need a rarity classification as columns as well::
+    Generate the table::
 
-    freq_table_with_rarity = ftg.generate_freq_table_with_rarity(
-        class_info_table = class_info_table,
-        one_hot_table = one_hot_table,
-        class_variable = "<class_variable>"
-        class_variable_list = ["<class_name_1>","<class_name_2>",...]
-        #if only need a part of <class_variable> column
-        )
+        freq_table = ftg.generate_freq_table(
+            class_info_table = class_info_table,
+            one_hot_table = one_hot_table,
+            class_variable = "<class_variable>"
+            class_variable_list = ["<class_name_1>","<class_name_2>",...]
+            #if only need a part of <class_variable> column
+            )
+
+    If you need a rarity classification as columns as well::
+
+        freq_table_with_rarity = ftg.generate_freq_table_with_rarity(
+            class_info_table = class_info_table,
+            one_hot_table = one_hot_table,
+            class_variable = "<class_variable>"
+            class_variable_list = ["<class_name_1>","<class_name_2>",...]
+            #if only need a part of <class_variable> column
+            )
 
 Where threshold and encoding are for generating rarity:
 

@@ -2,20 +2,20 @@
 
 Example:
 
-Initialize::
+    The class should be initiated as follows::
 
-    mtk = metal_toolkit.METALToolkit(
-        ethnicity = ["EU", "AF", "HISP"],
-        verbose = 1,
-        metal_path = "/mnt/mfs/cluster/bin/METAL/metal"
-        )
+        mtk = metal_toolkit.METALToolkit(
+            ethnicity = ["EU", "AF", "HISP"],
+            verbose = 1,
+            metal_path = "/mnt/mfs/cluster/bin/METAL/metal"
+            )
 
-One-line Pipeline::
+    One-line Pipeline::
 
-    mtk.run_metal(
-        path_association: str,
-        path_meta: str,
-        multi_line_header: bool)
+        mtk.run_metal(
+            path_association: str,
+            path_meta: str,
+            multi_line_header: bool)
 
 The ``multi_line_header`` only makes difference at the output header,
 it will create another header row, just for the visualization pipeline
