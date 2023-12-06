@@ -131,3 +131,5 @@ dmypy.json
 
 # Apple MacOS saving
 .DS_Store
+
+.idea
