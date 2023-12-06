@@ -532,7 +532,7 @@ For a smooth running, 20GB to 30GB memories for the kernel is suggested.
     parser.add_argument("--variant_level_threshold", type = float, required = False, default = 0.01,
                         help = "variant_level threshold for variantsAnnotate/variantsAnnotate.txt default 0.01")
     parser.add_argument("--read_supporting_threshold", type = float, required = False, default = 10,
-                        help = "read supporting (variant_level*total_coverage) threshold for variantsAnnotate/variantsAnnotate.txt, default 0.01")
+                        help = "read supporting (variant_level*total_coverage) threshold for variantsAnnotate/variantsAnnotate.txt, default 10")
     Args = parser.parse_args()
 
     eco = EncodingCoassinOutput(
