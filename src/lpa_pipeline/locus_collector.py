@@ -16,7 +16,8 @@ import gc
 import os
 import glob
 
-class LocusCollector():
+
+class LocusCollector:
     """
     Collecting the locus information of Coassin's output
 
@@ -44,12 +45,10 @@ class LocusCollector():
                     line.rstrip(),
                     "variantsAnnotate",
                     "variantsAnnotate.txt")
-                   for line in file)
+                    for line in file)
 
     def read_locus(self, path: str):
-        '''
-        read a coassin output, tidy the output
-        '''
+        """read a coassin output, tidy the output"""
         df = pd.read_csv(path, sep="\t")
         df = df[['Pos', "Ref", "Variant", "mylocus"]]
         return (df)
@@ -69,12 +68,12 @@ class LocusCollector():
         # If the mylocus gives Exon421 or 422, give "Exon", otherwise "Intron"
         locus_table["coding"] = np.where(
             locus_table["mylocus"].isin(["Exon421", "Exon422"]),
-             "Exon",
-             "Intron")
+            "Exon",
+            "Intron")
         # generate "pos-ref/var" format
         locus_table["pos-ref/var"] = locus_table["Pos"].astype(str) + "-" + \
-            locus_table["Ref"].astype(str) + "/" + \
-            locus_table["Variant"].astype(str)
+                                     locus_table["Ref"].astype(str) + "/" + \
+                                     locus_table["Variant"].astype(str)
         locus_table = locus_table.sort_values(by="Pos").reset_index(drop=True)
         locus_table = locus_table.set_index("pos-ref/var")
         return locus_table
@@ -82,20 +81,21 @@ class LocusCollector():
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(
         prog="locus_collector.py",
         description="Collecting the locus information of Coassin's output",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-I', "--input_path", type=str, default=None,
-        help="path to the folder storing Coassin's output folders")
+                             help="path to the folder storing Coassin's output folders")
     input_group.add_argument('-L', "--bam_list", type=str, default=None,
-        help="path to a file recording Coassin's output folders path by row")
+                             help="path to a file recording Coassin's output folders path by row")
     parser.add_argument('-O', "--output_path", type=str, required=True,
-        help="path saving the output and intermediate results")
+                        help="path saving the output and intermediate results")
     Args = parser.parse_args()
 
-    lc = locus_collector(input_path=Args.input_path,
-                         bam_list=Args.bam_list)
+    lc = LocusCollector(input_path=Args.input_path,
+                        bam_list=Args.bam_list)
     locus_table = lc.generate_locus_table()
     locus_table.to_csv(Args.output_path)
