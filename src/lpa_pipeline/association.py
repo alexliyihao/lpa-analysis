@@ -229,8 +229,11 @@ class SNPAssociation:
                      if true, provide the frequencies, total, counts data useful for
                      meta analysis(METAL)
 
-            verbose: Optional[int] in {0,1} default 0
+            verbose: Optional[int] in {0,1,2} default 0
                      if verbose = 1, the regression will give the saving path
+                     if verbose = 2, the regression will output all the related
+                     values during the computation, only for debugging purpose,
+                     use with care for it will create massive I/O
         """
         self._encoded_snp = encoded_snp
         self._other_exogs = other_exogs
@@ -308,7 +311,10 @@ class SNPAssociation:
         elif isinstance(endog, pd.core.frame.DataFrame):
             endog_variable = endog.columns[0]
         else:
-            raise ValueError("not a proper endogenous variable format, it should be either a pd.Series or pd.DataFrame")
+            raise ValueError(
+                "not a proper endogenous variable format, "
+                "it should be either a pd.Series or pd.DataFrame"
+                )
         N_snp = len(processed_snp)
         return {"filename": self._generate_filename(
             N_snp=N_snp,
@@ -337,7 +343,22 @@ class SNPAssociation:
 
     def _calculate_freq(self, df, cols):
         """
-        given a pandas.dataFrame X and specific column name, compute the frequency
+        given a pandas.dataFrame <df> and specific column name <cols>,
+        compute the frequency
+
+        Please note that this is only designed for 0/1 or boolean column
+        When using quantitative value the freq it's not making realistic sense,
+        So the computing is awkward... just want to keep the code running even
+        with quantitative columns. Feel free to override it.
+
+        Args:
+            df: pd.DataFrame, a data table
+            cols: str, column name in df
+
+        Returns:
+            float, the relative frequency of 1s in this column
+            float, the number of 1s in the column
+            float, the number of rows in the column
         """
         col = df[[cols]]
         return col.sum()[0] / col.shape[0], col.sum()[0], col.shape[0]
@@ -434,11 +455,9 @@ class SNPAssociation:
                 # so, for calculating frequencies-related, use the following
                 if (NA_strategy == "drop") & meta_info:
                     exog.dropna(axis=0, inplace=True)
-                    endog_drop = endog.dropna(axis=0)
-                else:
-                    endog_drop = endog
+                    endog.dropna(axis=0, inplace=True)
                 # align the exog and endog table
-                exog, endog_drop = exog.align(endog_drop, join="inner", axis=0)
+                exog, endog = exog.align(endog, join="inner", axis=0)
                 # apply the preprocessing function to snps(filter_C)
                 if snps_preprocessing_strategy is not None:
                     # find the snp column from current exog table
@@ -452,11 +471,24 @@ class SNPAssociation:
                 # initialize <engine> for regression
                 # if NA_strategy == "drop" and group_NA_strategy is "snp-wise"
                 # the sample will be dropped here
-                # if it's group-wise, the input should have no NAs,
-                # and it's fine to run missing = drop
-                regression = engine(exog=exog, endog=endog_drop, missing=NA_strategy)
+                # if it's group-wise, the input should have no NAs
+                # ,and it's fine to run missing = drop
+                if self._verbose == 2:
+                    print("exogs", exog, "endogs", endog)
+                # This astype(float) will consume a lot of memory, but it's a must
+                # otherwise statsmodels.Logit and OLS will throw an error
+                # see https://stackoverflow.com/q/33833832
+                regression = engine(
+                    exog=exog.astype(float),
+                    endog=endog_drop.astype(float),
+                    missing=NA_strategy)
+                if self._verbose == 2:
+                    print("regression", regression)
                 # run the regression
                 results = regression.fit(disp=0)
+                if self._verbose == 2:
+                    print("result", results)
+                    print("result summary", results.summary)
                 # record the result
                 params.append(results.params)
                 bse.append(results.bse)
@@ -471,6 +503,8 @@ class SNPAssociation:
                 gc.collect()
             except Exception as e:
                 # record errors in errors[snp]
+                if self._verbose == 2:
+                    print(e)
                 errors[snp] = str(e)
         # the name of all variables
         variable_name = exog.columns.tolist()
@@ -489,10 +523,11 @@ class SNPAssociation:
         if meta_info:
             df_result["rel_freqs"] = rel_freqs
             df_result["abs_freqs"] = abs_freqs
-        df_result["n_sample"] = n_sample
-
+            df_result["n_sample"] = n_sample
+            if len(n_sample) == 0:
+                raise ValueError("no n_sample is recorded")
         # generate an info dictionary
-        analysis_info = self._generate_info(endog=endog_drop,
+        analysis_info = self._generate_info(endog=endog,
                                             engine=engine,
                                             variable_name=variable_name,
                                             extra_label=extra_label,
@@ -509,14 +544,14 @@ class SNPAssociation:
                          output_path: str = "",
                          one_to_one_exogs=None,
                          one_to_one_strategy=None,
-                         one_to_one_alias: List[str] = None,
+                         one_to_one_alias: str = None,
                          NA_strategy: str = "drop",
-                         extra_iterate_on: list = None,
+                         extra_iterate_on: list = [],
                          group_NA_strategy: str = "snp_wise",
                          snps_preprocessing_strategy=None,
                          snp_alias: str = "snp_pos",
                          verbose: int = 0,
-                         meta_info: bool = False
+                         meta_info: bool = True
                          ):
         """API running regression test
 
@@ -546,7 +581,6 @@ class SNPAssociation:
                             specific exog variable based on encoded_snp
             one_to_one_strategy: funcs, when given a snp name, this function should output
                                  the corresponding one_to_one_exogs column name
-            one_to_one_alias: list[str], the name used to take the one-to-one column
             snps_preprocessing_strategy: Optional[funcs] the preprocessing applied to snps
                            before the regression analysis
                            this function should take a pd.DataFrame as input and output
@@ -561,10 +595,16 @@ class SNPAssociation:
                                extra_iterate_on, can be "snp-wise" or "group-wise",
                                it's working for status when NA_strategy == "drop"
             snp_alias: Optional[str], the name used for snp column
-            meta_info: Optional[bool]: default True, if True, provide the frequencies, total, counts data useful for
-                       meta analysis(METAL)
-            verbose: Optional[int] in {0,1} default 0, if verbose = 1, the regression will give the saving path
 
+            meta_info: Optional[bool]: default True
+                     if true, provide the frequencies, total, counts data useful for
+                     meta analysis(METAL)
+
+            verbose: Optional[int] in {0,1,2} default 0
+                     if verbose = 1, the regression will give the saving path
+                     if verbose = 2, the regression will output all the related
+                     values during the computation, only for debugging purpose,
+                     use with care for it will create massive I/O
         Returns:
 
             dict, a dict recording output brief information
@@ -586,7 +626,7 @@ class SNPAssociation:
             else:
                 endogenous = preprocessing(target_dataset[[target]])
             # when not given extra iterates
-            if extra_iterate_on is None:
+            if extra_iterate_on == []:
                 # run the association analysis
                 result, info = self._association_snp(
                     snp_table=encoded_snp,
