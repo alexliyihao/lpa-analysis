@@ -454,10 +454,14 @@ class SNPAssociation:
                 # but statsmodels.models cannot return nan mask now
                 # so, for calculating frequencies-related, use the following
                 if (NA_strategy == "drop") & meta_info:
-                    exog.dropna(axis=0, inplace=True)
-                    endog.dropna(axis=0, inplace=True)
+                    exog = exog.dropna(axis=0)
+                    endog_dropped = endog.dropna(axis=0)
+                else:
+                    endog_dropped = endog
+                if self._verbose == 2:
+                    print("exogs", exog, "endogs", endog_dropped)
                 # align the exog and endog table
-                exog, endog = exog.align(endog, join="inner", axis=0)
+                exog, endog_dropped = exog.align(endog_dropped, join="inner", axis=0)
                 # apply the preprocessing function to snps(filter_C)
                 if snps_preprocessing_strategy is not None:
                     # find the snp column from current exog table
@@ -474,13 +478,13 @@ class SNPAssociation:
                 # if it's group-wise, the input should have no NAs
                 # ,and it's fine to run missing = drop
                 if self._verbose == 2:
-                    print("exogs", exog, "endogs", endog)
+                    print("exogs", exog, "endogs", endog_dropped)
                 # This astype(float) will consume a lot of memory, but it's a must
                 # otherwise statsmodels.Logit and OLS will throw an error
                 # see https://stackoverflow.com/q/33833832
                 regression = engine(
                     exog=exog.astype(float),
-                    endog=endog_drop.astype(float),
+                    endog=endog_dropped.astype(float),
                     missing=NA_strategy)
                 if self._verbose == 2:
                     print("regression", regression)
