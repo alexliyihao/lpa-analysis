@@ -306,7 +306,7 @@ class METALToolkit:
             # Describe and process the DGI input files
 
             MARKER   POS-REF/ALT
-            ALLELE   REF_ALLELE ALT_ALLELE
+            ALLELE   ALT_ALLELE REF_ALLELE
             FREQ     FREQ
             EFFECT   BETA
             STDERR   SE
