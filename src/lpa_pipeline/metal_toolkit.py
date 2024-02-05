@@ -353,8 +353,7 @@ class METALToolkit:
         """give a folder with METAL result, combine all the results"""
         meta = pd.read_csv(os.path.join(
             path, "METAANALYSIS1.TBL"), sep="\t", index_col=0)
-        test_list = [
-                        meta] + [self._get_snp_pos_data(path, key) for key in self._ethnicity]
+        test_list = [meta] + [self._get_snp_pos_data(path, key) for key in self._ethnicity]
         final = pd.concat(test_list, axis=1, join="outer")
         final = final.reset_index()
         final["pos"] = final["index"].apply(self._get_pos)
