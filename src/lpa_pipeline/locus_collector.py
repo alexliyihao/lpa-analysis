@@ -50,8 +50,8 @@ class LocusCollector:
     def read_locus(self, path: str):
         """read a coassin output, tidy the output"""
         df = pd.read_csv(path, sep="\t")
-        df = df[['Pos', "Ref", "Variant", "mylocus"]]
-        return (df)
+        df = df[['Pos', "Ref", "Variant", "mylocus","wt","mut"]]
+        return df
 
     def generate_locus_table(self):
         """Generate the locus table in one line
