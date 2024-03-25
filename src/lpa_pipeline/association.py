@@ -38,11 +38,12 @@ import pandas as pd
 import os
 import gc
 import statsmodels.api as sm
+import statsmodels
+import scipy
 import json
 import warnings
 from tqdm import tqdm
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
-from typing import List
 
 
 def is_notebook() -> bool:
