@@ -16,8 +16,9 @@ class PostProcessor:
             method = method)
 
     def post_process_association(self, df):
-        df_output = self.fa.appending_corrections_association(df = df)
-        df_output = self.cmd.append_locus(df_output, mode = "association")
+        df_output = df.reset_index()
+        df_output = self.fa.appending_corrections_association(df = df_output)
+        df_output = self.cmd.append_locus(df_output)
         return df_output.reset_index(drop = True)
 
     def post_process_meta_analysis(self, df):
@@ -53,12 +54,10 @@ class CorrectMetalDirection:
         df["Direction_corrected"] = df.apply(lambda x: self.correct_direction(x), axis = 1)
         return(df)
 
-    def append_locus(self, df, mode: str = "association"):
+    def append_locus(self, df):
         """append locus table to the output"""
         if self.locus_table is None:
             raise ValueError("locus table is not given")
-        if mode == "association":
-            df = df.reset_index()
         df = df.loc[(df["index"] != "666-A/T")]
         df = pd.merge(
             left = df,
@@ -71,7 +70,7 @@ class CorrectMetalDirection:
 
     def correct_metal_complete(self, df):
         """complete pipeline correct the direction"""
-        df = self.append_locus(df, mode = "meta")
+        df = self.append_locus(df)
         df = self.correct_metal_direction(df)
         return df
 
@@ -188,7 +187,7 @@ class CorrectMetalDirection:
             left_on = "index",
             right_index = True,
             how = "left"
-            ).sort_values("p_vals_corrected_FDR_method")
+            ).sort_values("FDR_adjusted_p-value")
         return df
 
     def correct_metal_complete(self, df):
