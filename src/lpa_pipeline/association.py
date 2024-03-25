@@ -362,21 +362,23 @@ class SNPAssociation:
         """
         col = df[[cols]]
         return col.sum()[0] / col.shape[0], col.sum()[0], col.shape[0]
-
-    def _association_snp(self,
-                         snp_table,
-                         other_exogs,
-                         endog,
-                         engine,
-                         one_to_one_exogs=None,
-                         one_to_one_strategy=None,
-                         one_to_one_alias: list = None,
-                         snps_preprocessing_strategy=None,
-                         NA_strategy="drop",
-                         group_NA_strategy="snp_wise",
-                         snp_alias="snp_pos",
-                         extra_label=None,
-                         meta_info: bool = False):
+        
+    def _association_snp(
+        self,
+        snp_table,
+        other_exogs,
+        endog,
+        engine,
+        one_to_one_exogs=None,
+        one_to_one_strategy=None,
+        one_to_one_alias: list = None,
+        snps_preprocessing_strategy=None,
+        NA_strategy="drop",
+        group_NA_strategy="snp_wise",
+        snp_alias="snp_pos",
+        extra_label=None,
+        meta_info: bool = False
+    ):
         """association test designed for snp variants analysis
 
         For each column in snp_table, run an individual <endog>~column+<other> on <engine>
@@ -421,7 +423,9 @@ class SNPAssociation:
             dict, additional information that is included.
         """
         # the list saving output values
-        params, bse, p_values, processed_snp, n_sample, errors = [], [], [], [], [], {}
+        params, bse, p_values, processed_snp, n_sample = [], [], [], [], []
+        model_metric_1, model_metric_2,model_metric_3, model_metric_4 = [], [], [], []
+        errors = {}
         if meta_info:
             rel_freqs, abs_freqs, totals = [], [], []
         # if there's a given NA_strategy as group-wise drop NA
@@ -466,7 +470,12 @@ class SNPAssociation:
                 if snps_preprocessing_strategy is not None:
                     # find the snp column from current exog table
                     # apply the snps_preprocessing_strategy given
+                    if self._verbose == 2:
+                        print("for SNP preprocessing", exog[[snp]])
+                        print("distribution", exog[[snp]].value_counts())
                     snp_table_exog = snps_preprocessing_strategy(exog[[snp]])
+                    if self._verbose == 2:
+                        print("after SNP preprocessing", snp_table_exog)
                     # if no column is left
                     if len(snp_table_exog.columns) == 0:
                         raise ValueError("filtered out by snps_preprocessing_strategy")
@@ -479,6 +488,7 @@ class SNPAssociation:
                 # ,and it's fine to run missing = drop
                 if self._verbose == 2:
                     print("exogs", exog, "endogs", endog_dropped)
+                    print("corr", exog.corr())
                 # This astype(float) will consume a lot of memory, but it's a must
                 # otherwise statsmodels.Logit and OLS will throw an error
                 # see https://stackoverflow.com/q/33833832
@@ -486,19 +496,39 @@ class SNPAssociation:
                     exog=exog.astype(float),
                     endog=endog_dropped.astype(float),
                     missing=NA_strategy)
+                #exog.to_excel(f"label_{extra_label[1]}_exog.xlsx")
+                #endog.to_excel(f"label_{extra_label[1]}_endog.xlsx")
                 if self._verbose == 2:
                     print("regression", regression)
                 # run the regression
-                results = regression.fit(disp=0)
+                result = regression.fit(disp=0)
                 if self._verbose == 2:
-                    print("result", results)
-                    print("result summary", results.summary)
+                    print("result", result)
+                    print("result summary", result.summary())
                 # record the result
-                params.append(results.params)
-                bse.append(results.bse)
-                p_values.append(results.pvalues)
+                if self._verbose == 2:
+                    print(result)
+                params.append(result.params)
+                bse.append(result.bse)
+                p_values.append(result.pvalues)
                 processed_snp.append(snp)
-                n_sample.append(results.nobs)
+                n_sample.append(result.nobs)
+                # add metrics evaluating model performances
+                if isinstance(result, statsmodels.discrete.discrete_model.BinaryResultsWrapper):
+                    #auc_roc = roc_auc_score(endog_dropped.astype(float),
+                    #                        result.predict(exog.astype(float)))
+                    #model_metric_1.append(auc_roc)
+                    #model_metric_2.append(result.prsquared)
+                    count = pd.concat([exog[snp], endog_dropped], axis = 1).value_counts()
+                    #print(count)
+                    model_metric_1.append(count[(1.0,1.0)] if count.index.isin([(1.0,1.0)]).any() else 0)
+                    model_metric_2.append(count[(1.0,0.0)] if count.index.isin([(1.0,0.0)]).any() else 0)
+                    model_metric_3.append(count[(0.0,1.0)] if count.index.isin([(0.0,1.0)]).any() else 0)
+                    model_metric_4.append(count[(0.0,0.0)] if count.index.isin([(0.0,0.0)]).any() else 0)
+                    #print(model_metric_1,model_metric_2,model_metric_3,model_metric_4)
+                elif isinstance(result, statsmodels.regression.linear_model.RegressionResultsWrapper):
+                    model_metric_1.append(result.rsquared)
+                # when asking for meta info, provide them
                 if meta_info:
                     rel_freqs.append(rel_freq)
                     abs_freqs.append(abs_freq)
@@ -524,6 +554,32 @@ class SNPAssociation:
             columns=self._get_column_name(variable_name),
             index=processed_snp
         )
+
+        try:
+            # only trying to capture if result exist...
+            result
+        except Exception as e:
+            raise RuntimeError("no valid result is recorded, usually because of all the SNPs are filtered out by snps_preprocessing_strategy")
+
+        if isinstance(result, statsmodels.discrete.discrete_model.BinaryResultsWrapper):
+            #df_result["auc_roc"] = model_metric_1
+            #df_result["pesudo_rqsuared"] = model_metric_2
+            df_result["with_SNP_with_trait"] = model_metric_1
+            df_result["with_SNP_without_trait"] = model_metric_2
+            df_result["without_SNP_with_trait"] = model_metric_3
+            df_result["without_SNP_without_trait"] = model_metric_4
+            df_result["chi_sq_p_value"] = df_result.apply(
+                lambda x: scipy.stats.chi2_contingency(
+                    [[x["with_SNP_with_trait"], x["with_SNP_without_trait"]],
+                    [x["without_SNP_with_trait"], x["without_SNP_without_trait"]]],
+                    correction = False
+                )[1], axis = 1)
+        elif isinstance(result, statsmodels.regression.linear_model.RegressionResultsWrapper):
+            df_result["rsquared"] = model_metric_1
+        else:
+            # only left here for completeness, if need other sanity check for other result,
+            # write here
+            pass
         if meta_info:
             df_result["rel_freqs"] = rel_freqs
             df_result["abs_freqs"] = abs_freqs
@@ -531,13 +587,14 @@ class SNPAssociation:
             if len(n_sample) == 0:
                 raise ValueError("no n_sample is recorded")
         # generate an info dictionary
-        analysis_info = self._generate_info(endog=endog,
-                                            engine=engine,
-                                            variable_name=variable_name,
-                                            extra_label=extra_label,
-                                            processed_snp=processed_snp,
-                                            n_sample=n_sample[-1],
-                                            errors=errors)
+        analysis_info = self._generate_info(
+            endog=endog,
+            engine=engine,
+            variable_name=variable_name,
+            extra_label=extra_label,
+            processed_snp=processed_snp,
+            n_sample=n_sample[-1],
+            errors=errors)
         return df_result, analysis_info
 
     def association_test(self,
