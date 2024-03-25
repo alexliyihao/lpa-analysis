@@ -18,12 +18,12 @@ class PostProcessor:
     def post_process_association(self, df):
         df_output = self.fa.appending_corrections_association(df = df)
         df_output = self.cmd.append_locus(df_output, mode = "association")
-        return df_output
+        return df_output.reset_index(drop = True)
 
     def post_process_meta_analysis(self, df):
         df_output = self.fa.appending_corrections_meta(df = df)
         df_output = self.cmd.correct_metal_complete(df = df_output)
-        return df_output
+        return df_output.reset_index(drop = True)
 
 class CorrectMetalDirection:
     """correct the beta and direction discrepancy caused by metal"""
@@ -67,13 +67,13 @@ class CorrectMetalDirection:
             right_index = True,
             how = "left"
             ).sort_values("FDR_adjusted_p-value")
-        return df.reset_index(drop = True)
+        return df
 
     def correct_metal_complete(self, df):
         """complete pipeline correct the direction"""
         df = self.append_locus(df, mode = "meta")
         df = self.correct_metal_direction(df)
-        return df.reset_index(drop = True)
+        return df
 
 class FdrAdjustment:
     "computing FDR adjustment for the output of association or metal_toolkit"
