@@ -46,6 +46,8 @@ Where threshold and encoding are for generating rarity:
 Thus, for encoding, please only modify the value, not the key.
 """
 import pandas as pd
+from typing import Dict, Optional, List, Tuple
+from pandas.core.groupby import DataFrameGroupBy
 
 
 class FreqTableGenerator:
@@ -68,36 +70,27 @@ class FreqTableGenerator:
             frequency is between threshold to 1-threshold
     """
 
-    def __init__(self,
-                 threshold: float = 0.01,
-                 class_lower_case: bool = False,
-                 encoding: dict = {0: "Not Detected",
-                                   1: "Rare",
-                                   2: "Common"}
-                 ):
+    def __init__(
+            self,
+            threshold: float = 0.01,
+            class_lower_case: bool = False,
+            encoding: Dict[int, str] = {
+             0: "Not Detected",
+             1: "Rare",
+             2: "Common"}
+            ):
         self.threshold = threshold
         self.class_lower_case = class_lower_case
         self.encoding = encoding
 
-    def get_freq(self, class_string: str, class_wise_group, one_hot_table):
-        """Compute the freq for each class"""
-        class_subgroup = class_wise_group.get_group(class_string)
-        class_subgroup, one_hot_table_subgroup = class_subgroup.align(
-            one_hot_table, axis=0, join="inner")
-        class_freq = pd.DataFrame(
-            {f"count_{class_string}": one_hot_table_subgroup.sum(axis=0),
-             f"total_{class_string}_detected": one_hot_table_subgroup.notna().sum(axis=0),
-             f"total_{class_string}_population": one_hot_table_subgroup.shape[0]})
-        class_freq[f"freq_{class_string}"] = class_freq[f"count_{class_string}"] / class_freq[
-            f"total_{class_string}_detected"]
-        return class_freq
-
-    def generate_freq_table(self,
-                            class_info_table,
-                            one_hot_table,
-                            class_variable: str,
-                            class_variable_list=None,
-                            return_class_variable_list=False):
+    def generate_freq_table(
+            self,
+            class_info_table: pd.DataFrame,
+            one_hot_table: pd.DataFrame,
+            class_variable: str,
+            class_variable_list: Optional[List[str]] = None,
+            return_class_variable_list: bool = False
+    ) -> Tuple[pd.DataFrame, List[str]]:
         """Generate the whole freq table for all class
 
         Args:
@@ -109,9 +102,9 @@ class FreqTableGenerator:
             return_class_variable_list: bool, if True, will return the
                 class_variable_list use, even if not provided as variable
 
-        Return:
-            pd.DataFrame, the frequency table generated
-            list[str], the list of group name included if return_class_variable_list == True
+        Returns:
+            pd.DataFrame: the frequency table generated
+            list[str]: the list of group name included if return_class_variable_list == True
         """
         class_wise_group = class_info_table.groupby(class_variable)
         if class_variable_list is None:
@@ -125,13 +118,33 @@ class FreqTableGenerator:
         if return_class_variable_list:
             return freq_table, class_variable_list
         else:
-            return freq_table
+            return freq_table, []
 
-    def common_check(self, freq_table,
-                     class_variable_list: list,
-                     threshold: float = None,
-                     class_lower_case: bool = None,
-                     encoding: dict = None):
+    def get_freq(
+            self,
+            class_string: str,
+            class_wise_group: DataFrameGroupBy,
+            one_hot_table: pd.DataFrame) -> pd.DataFrame:
+        """Compute the freq for each class"""
+        class_subgroup = class_wise_group.get_group(class_string)
+        class_subgroup, one_hot_table_subgroup = class_subgroup.align(
+            one_hot_table, axis=0, join="inner")
+        class_freq = pd.DataFrame(
+            {f"count_{class_string}": one_hot_table_subgroup.sum(axis=0),
+             f"total_{class_string}_detected": one_hot_table_subgroup.notna().sum(axis=0),
+             f"total_{class_string}_population": one_hot_table_subgroup.shape[0]})
+        class_freq[f"freq_{class_string}"] = class_freq[f"count_{class_string}"] / class_freq[
+            f"total_{class_string}_detected"]
+        return class_freq
+
+    def common_check(
+            self,
+            freq_table: pd.DataFrame,
+            class_variable_list: List[str],
+            threshold: Optional[float] = None,
+            class_lower_case: Optional[bool] = None,
+            encoding: Optional[Dict[int, str]] = None
+    ) -> pd.DataFrame:
         """Append the commonness check to a frequency table
 
         Args:
@@ -143,7 +156,6 @@ class FreqTableGenerator:
             encoding: dict{int: "str"}, will cover the class setting if provided
 
         Returns:
-
             pd.DataFrame, the freq_table with rarity columns
         """
         if threshold is None:
@@ -166,13 +178,13 @@ class FreqTableGenerator:
 
     def generate_freq_table_with_rarity(
             self,
-            class_info_table,
-            one_hot_table,
+            class_info_table: pd.DataFrame,
+            one_hot_table: pd.DataFrame,
             class_variable: str,
-            class_variable_list=None,
+            class_variable_list: Optional[List[str]] = None,
             threshold: float = None,
             class_lower_case: bool = None,
-            encoding: dict = None
+            encoding: Dict[int, str] = None
     ):
         """Generate the whole freq table for all class
 
@@ -186,8 +198,8 @@ class FreqTableGenerator:
             class_lower_case: bool, will cover the class setting if provided
             encoding: dict{int: "str"}, will cover the class setting if provided
 
-        Return:
-            pd.DataFrame, the frequency table with rarity indicators
+        Returns:
+            pd.DataFrame: the frequency table with rarity indicators
         """
 
         freq_table, class_variable_list = self.generate_freq_table(
@@ -208,19 +220,20 @@ class FreqTableGenerator:
 
 if __name__ == "__main__":
     import argparse
+    import textwrap
 
     parser = argparse.ArgumentParser(prog="freq_table_generator.py",
-                                     description="""
-Given two table in csv format.
-class_info_table has one have columns <class_variable> that indicate each row belongs to,
-one_hot_table has all one-hot-encoded variables(SNPs)
-Compute the SNPs' frequency in each class defined in <class_variable>
+                                     description=textwrap.dedent("""
+        Given two table in csv format.
+        class_info_table has one have columns <class_variable> that indicate each row belongs to,
+        one_hot_table has all one-hot-encoded variables(SNPs)
+        Compute the SNPs' frequency in each class defined in <class_variable>
 
-With a given <threshold> :
-if the threshold < freq < 1- threshold, it will be encoded as "Common"
-if the 0 < freq < threshold or 1 - threshold < freq < 1, it will be encoded as "Rare"
-if freq = 0 or freq = 1, it will be "Not Detected".
-""", formatter_class=argparse.RawDescriptionHelpFormatter)
+        With a given <threshold> :
+        if the threshold < freq < 1- threshold, it will be encoded as "Common"
+        if the 0 < freq < threshold or 1 - threshold < freq < 1, it will be encoded as "Rare"
+        if freq = 0 or freq = 1, it will be "Not Detected".
+        """), formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-C', "--class_info_table", type=str, required=True,
                         help="path to the table with class_info_data")
     parser.add_argument('-S', "--snps_table", type=str, required=True,
@@ -236,11 +249,11 @@ if freq = 0 or freq = 1, it will be "Not Detected".
     Args = parser.parse_args()
 
     ftg = FreqTableGenerator(threshold=Args.threshold)
-    class_info_table = pd.read_csv(Args.class_info_table, index_col=0)
+    class_info = pd.read_csv(Args.class_info_table, index_col=0)
     snps_table = pd.read_csv(Args.snps_table, index_col=0)
-    freq_table_with_rarity = ftg.generate_freq_table_with_rarity(
-        class_info_table=class_info_table,
+    freq_with_rarity = ftg.generate_freq_table_with_rarity(
+        class_info_table=class_info,
         one_hot_table=snps_table,
         class_variable=Args.class_variable,
         class_variable_list=Args.class_variable_list)
-    freq_table_with_rarity.to_csv(Args.output)
+    freq_with_rarity.to_csv(Args.output)

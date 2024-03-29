@@ -41,6 +41,7 @@ import os
 import gc
 import glob
 import warnings
+from typing import Optional, Tuple, Hashable
 
 
 def is_notebook() -> bool:
@@ -87,13 +88,13 @@ class EncodingCoassinOutput:
     """
 
     def __init__(self,
-                 output_path,
-                 input_path=None,
-                 bam_list=None,
-                 raw_total_coverage_threshold=50,
-                 variant_level_threshold=0.01,
-                 read_supporting_threshold=10,
-                 verbosity: int = 1):
+                 output_path: str,
+                 input_path: Optional[str] = None,
+                 bam_list: Optional[str] = None,
+                 raw_total_coverage_threshold: int = 50,
+                 variant_level_threshold: float = 0.01,
+                 read_supporting_threshold: int = 10,
+                 verbosity: int = 1) -> None:
         """
         The initializer input all the results
         Args:
@@ -136,7 +137,8 @@ class EncodingCoassinOutput:
         # this warning is triggered by generate_encoded_results() method, and is properly dealt with
         warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
-    def _verify_coassin_output(self, path: str):
+    @staticmethod
+    def _verify_coassin_output(path: str) -> bool:
         """
         assert <path> is a complete Coassin path output
 
@@ -146,8 +148,9 @@ class EncodingCoassinOutput:
 
         Args:
             path: str, the path to a Coassin pipeline output
-        Returns
-            bool, if the output is valid, return True, otherwise False
+
+        Returns:
+            bool: if the output is valid, return True, otherwise False
         """
         #
         return (os.path.isfile(
@@ -156,7 +159,7 @@ class EncodingCoassinOutput:
             os.path.join(path, "variantsAnnotate", "variantsAnnotate.txt")
         ))
 
-    def _encode_individual(self, bam_path: str):
+    def _encode_individual(self, bam_path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """The procedure reading in, encoding, then tidy up the output for an individual"""
         # read the coverage total column from raw.txt file
         coverage_total, SampleID = self._get_coverage_total(
@@ -176,7 +179,7 @@ class EncodingCoassinOutput:
         coverage_total = coverage_total.rename(columns={"COV-TOTAL": SampleID})
         encode_result = encode_result.reset_index().drop(
             columns=["COV-TOTAL", "POS", "level_2"]
-        ).set_index("snp_pos").astype(pd.Float64Dtype())
+        ).set_index("variant").astype(pd.Float64Dtype())
         encode_result = encode_result.rename(columns={"encoding": SampleID})
         # clean the memory
         gc.collect()
@@ -186,7 +189,7 @@ class EncodingCoassinOutput:
             self,
             pos: int,
             coverage_total: int,
-            annotated_files):
+            annotated_files: pd.DataFrame) -> pd.DataFrame:
         """actual encoding logic, apply to each specific row(allele) in variantsAnnotate file
 
         both pos and coverage_total is obtained from pd.DataFrameGroupBy object's apply method
@@ -196,12 +199,15 @@ class EncodingCoassinOutput:
             coverage_total: int, the coverage_total read from the raw.txt
             annotated_files: pd.DataFrame, reading from
                              variantsAnnotate/variantsAnnotate.txt
+
+        Returns:
+            pd.DataFrame: the encoded result for pd.DataFrame.apply()
         """
 
         # if the coverage_total is less than raw_total_coverage_threshold
         if coverage_total < self._raw_total_coverage_threshold:
             # encode it as pos, pd.NA
-            return pd.DataFrame([[pos, pd.NA]], columns=["snp_pos", "encoding"])
+            return pd.DataFrame([[pos, pd.NA]], columns=["variant", "encoding"])
         else:
             # If position is present in the annotated, then variant_level>0.01
             # and the total reads supporting (variant_level*total_coverage) the variant should be>=10
@@ -211,31 +217,30 @@ class EncodingCoassinOutput:
                 # (variant_level*total_coverage) the variant should be>=10
                 related_annotation["encoding"] = \
                     (related_annotation["Variant-Level"] > self._variant_level_threshold) & \
-                    (related_annotation["Variant-Level"] * related_annotation["Coverage-Total"] \
+                    (related_annotation["Variant-Level"] * related_annotation["Coverage-Total"]
                      > self._read_supporting_threshold)
                 # encode the True or False to 1 or 0
-                return related_annotation[["snp_pos", "encoding"]].replace({True: 1, False: 0})
+                return related_annotation[["variant", "encoding"]].replace({True: 1, False: 0})
             # if the annotated files doesn't have this row, encode them as 0
             else:
-                return pd.DataFrame([[pos, 0]], columns=["snp_pos", "encoding"])
+                return pd.DataFrame([[pos, 0]], columns=["variant", "encoding"])
 
-    def _tidy_encoded_results(self, df):
+    @staticmethod
+    def _tidy_encoded_results(df: pd.DataFrame) -> pd.DataFrame:
         """read in a 1st step encoded_result from path, then tidy the format up
 
         inplace=True is applied to minimize the memory cost
 
         Args:
             df: pd.DataFrame, the output to be checked
+
         Returns:
-            pd.DataFrame, the encoded_result
+            pd.DataFrame: the encoded_result
         """
-        df.fillna(-1, inplace=True)
-        df.reset_index(inplace=True)
-        df.drop_duplicates(inplace=True)
-        df.set_index("snp_pos", inplace=True)
+        df = df.fillna(-1).reset_index().drop_duplicates().set_index("variant")
         return df
 
-    def encode_individual(self, saving_step=1):
+    def encode_individual(self, saving_step: int = 1):
         """API for the first step individual-wise encoding procedure,
 
         It will take very long time, so for loop and huge amount of intermediate
@@ -244,6 +249,7 @@ class EncodingCoassinOutput:
 
         Args:
             saving_step: int, after every <save_step> sample, the program will save the result
+            
         Saves:
             self._output_path/coverage_totals/<sample_name>.csv
             self._output_path/encoded_results/<sample_name>.csv
@@ -281,15 +287,14 @@ class EncodingCoassinOutput:
             del encode_result_list, encode_result_combined
             gc.collect()
 
-    def generate_coverage_total(self, save=False):
+    def generate_coverage_total(self, save: bool = False) -> pd.DataFrame:
         """API generate final coverage_total table
 
         Args:
-            save: Bool, default False, if True, it will save the final result at
+            save: bool, default False, if True, it will save the final result at
                   self._output_path/coverage_total_final.csv
         Returns:
-
-            pd.DataFrame, the final coverage_total table
+            pd.DataFrame: the final coverage_total table
 
         Saves:
             if save == True, self._output_path/coverage_total_final.csv, same as above
@@ -305,18 +310,21 @@ class EncodingCoassinOutput:
         gc.collect()
         return coverage_total
 
-    def generate_encoded_results(self, save=False, tidy_when_load=False):
+    def generate_encoded_results(
+            self,
+            save: bool = False,
+            tidy_when_load: bool = False
+    ) -> pd.DataFrame:
         """The procedure generate final encoded_results table
 
         Args:
-            save: Bool, default False, if True, it will save the final result at
+            save: bool, default False, if True, it will save the final result at
                   self._output_path/encoded_result_final.csv
-            tidy_when_load: Bool, default False, if True, when load each separate encoded_result
+            tidy_when_load: bool, default False, if True, when load each separate encoded_result
                             will apply self._tidy_encoded_results, just for running different version code
                             please use False in your application.
         Returns:
-
-            pandas.DataFrame, the final encoded_result table
+            pd.DataFrame: the final encoded_result table
 
         Saves:
             if save == True, self._output_path/encoded_result_final.csv, same as above
@@ -358,12 +366,12 @@ class EncodingCoassinOutput:
         combined_er["pos"] = combined_er["pos"].apply(lambda x: int(x))
         combined_er = combined_er.sort_values("pos")
         combined_er = combined_er.drop(columns=["index", "pos"], errors="ignore")
-        combined_er.set_index("snp_pos", inplace=True)
+        combined_er.set_index("variant", inplace=True)
         if save:
             combined_er.to_csv(os.path.join(self._output_path, "encoded_result_final.csv"))
         return combined_er
 
-    def _combine_position_wrapper(self, x):
+    def _combine_position_wrapper(self, x: pd.DataFrame) -> pd.DataFrame:
         """wrapper function apply self._combine_encoded_on_position() to a DataFrame"""
         base = x.name
         x = x.apply(self._combine_encoded_on_position, axis=0, base=base)
@@ -371,7 +379,8 @@ class EncodingCoassinOutput:
         gc.collect()
         return x
 
-    def _combine_encoded_on_position(self, col, base):
+    @staticmethod
+    def _combine_encoded_on_position(col, base: Hashable):
         """the actual logic combine the result of a column
 
         Run the following logic:
@@ -411,7 +420,7 @@ class EncodingCoassinOutput:
             If all "position-ref/alt" is NA: The final encoding should be 0,
             the coverage total is proven > 50
         """
-        # convert base to str, just format problem
+        # convert base to str, just formatting
         base = f"{base}"
         # if a "<position>" is in the case, "position" will only be 0/missing/NA
         if base in col.index:
@@ -435,94 +444,95 @@ class EncodingCoassinOutput:
             return col.fillna(0)
 
     # ----------------------------reading files--------------------------------------
-    def _extract_ID(self, SampleID):
+    @staticmethod
+    def _extract_id(sample_id: str) -> str:
         """
         Helper function clean Sample ID to pure digits
 
         Args:
-            SampleID: String, in "washei*****.BQSR.recalled.bam" format
-        Return:
-            String, the WES ID (the part before ".BQSR...")
+            sample_id: String, in "washei*****.BQSR.recalled.bam" format
+        Returns:
+            str: the WES ID (the part before ".BQSR...")
         """
-        return SampleID.split(".")[0]
+        return sample_id.split(".")[0]
 
-    def _get_file_annotated(self, bam_path):
+    @staticmethod
+    def _get_file_annotated(bam_path: str) -> pd.DataFrame:
         """
         given a bam name, read the variantsAnnotate.txt inside the output of Coassin pipeline
         Args:
             input_path, the input path with all the bam output inside
             bam_path: str, the name of the original bam file
-        Return:
-            pandas.DataFrame instance, the variantsAnnotate.txt file read
+        Returns:
+            pd.DataFrame: the variantsAnnotate.txt file read
         """
         return pd.read_csv(os.path.join(bam_path, "variantsAnnotate", "variantsAnnotate.txt"), delimiter="\t")
 
-    def _data_cleaning_annotated(self, df):
+    def _data_cleaning_annotated(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         existing variantsAnnotate.txt data cleaning procedure
         Args:
-            df: pandas.DataFrame instance, the dataframe
-        Return:
-            df: pandas.DataFrame instance, the dataframe with cleaned ID
+            df: pd.DataFrame, the dataframe
+        Returns:
+            pd.DataFrame: the dataframe with cleaned ID
         """
-        df["SampleID"] = df["SampleID"].apply(self._extract_ID)
-        # prepare a snp_pos format label("pos-ref/alt") for annotated_files
-        df["snp_pos"] = df.apply(lambda x: f"{x['Pos']}-{x['Ref']}/{x['Variant']}", axis=1)
+        df["SampleID"] = df["SampleID"].apply(self._extract_id)
+        # prepare a variant format label("pos-ref/alt") for annotated_files
+        df["variant"] = df.apply(lambda x: f"{x['Pos']}-{x['Ref']}/{x['Variant']}", axis=1)
         return df
 
-    def _get_file_raw(self, bam_path):
+    @staticmethod
+    def _get_file_raw(bam_path: str) -> pd.DataFrame:
         """
         given a bam name, read the <bam_path>/raw/raw.txt inside the output of Coassin pipeline
         Args:
-            input_path, the input path with all the bam output inside
             bam_path: str, the name of the original bam file
-        Return:
-            pandas.DataFrame instance, the variantsAnnotate.txt file read
+        Returns:
+            pd.DataFrame: the variantsAnnotate.txt file read
         """
         return pd.read_csv(os.path.join(bam_path, "raw", "raw.txt"), delimiter="\t")
 
-    def _data_cleaning_raw(self, df):
+    def _data_cleaning_raw(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         existing raw.txt data cleaning procedure
         Args:
-            df: pandas.DataFrame instance, the dataframe
-        Return:
-            df: pandas.DataFrame instance, the dataframe with cleaned ID
+            df: pd.DataFrame, the dataframe
+        Returns:
+            pd.DataFrame: the dataframe with cleaned ID
         """
-        df["SAMPLE"] = df["SAMPLE"].apply(self._extract_ID)
+        df["SAMPLE"] = df["SAMPLE"].apply(self._extract_id)
         df = df.rename(columns={"SAMPLE": "SampleID"})
         return df
 
-    def _get_coverage_total(self, raw):
+    @staticmethod
+    def _get_coverage_total(raw: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
         """get the coverage_total info from dataFrame read from raw/raw.txt"""
         # get the Sample ID
         SampleID = raw.SampleID.loc[0]
         # Pick POS and coverage total, set index as POS, rename the coverage total as SampleID
-        raw = raw[["POS", "COV-TOTAL"]]
-        raw = raw.set_index("POS")
-        raw = raw.sort_index()
+        raw = raw[["POS", "COV-TOTAL"]].sort_values("POS").set_index("POS")
         return raw, SampleID
 
 
 if __name__ == "__main__":
     import argparse
+    import textwrap
 
     parser = argparse.ArgumentParser(prog="encodings.py",
-                                     description= \
-"""
-Encoding Rule:
-If raw/raw.txt file total coverage < raw_total_coverage_threshold, encode as missing.
-If raw/raw.txt total coverage >= raw_total_coverage_threshold, then look at annotated file
- If position is missing in annotated file, the variant is coded 0
- If position is present in the annotated,
-     If 1. variant_level> variant_level_threshold, and
-        2. the total reads supporting (variant_level*total_coverage) the variant >= read_supporting_threshold,
-        the variant is coded 1, otherwise 0
+                                     description=textwrap.dedent("""
+         Encoding Rule:
+            If raw/raw.txt file total coverage < raw_total_coverage_threshold, encode as missing.
+            If raw/raw.txt total coverage >= raw_total_coverage_threshold, then look at annotated file
+             If position is missing in annotated file, the variant is coded 0
+             If position is present in the annotated,
+                 If 1. variant_level> variant_level_threshold, and
+                    2. variant_level*total_coverage >= read_supporting_threshold,
+                    the variant is coded 1, otherwise 0
 
-Hardware Requirement
-For reproducing with ~4000 subjects, generate_encoded_results() method need at least 10GB memories.
-For a smooth running, 20GB to 30GB memories for the kernel is suggested.
-""", formatter_class=argparse.RawTextHelpFormatter)
+         Hardware Requirement:
+         For reproducing with ~4000 subjects, generate_encoded_results() method need at least 10GB memories.
+         For a smooth running, 20GB to 30GB memories for the kernel is suggested.
+         """), formatter_class=argparse.RawTextHelpFormatter)
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-I', "--input_path", type=str, default=None,
                              help="path to the folder storing Coassin's output folders")

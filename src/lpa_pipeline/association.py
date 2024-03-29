@@ -34,16 +34,19 @@ Two APIs provided
         snp_asso.association_test(**kwargs_1) #kwargs_1 can be new kwargs
 """
 
-import pandas as pd
-import os
 import gc
-import statsmodels.api as sm
-import statsmodels
-import scipy
 import json
+import os
 import warnings
-from tqdm import tqdm
+from typing import Dict, List, Optional, Union, Callable, Tuple, Hashable
+import pandas as pd
+import scipy
+import statsmodels
+import statsmodels.api as sm
 from statsmodels.tools.sm_exceptions import ConvergenceWarning
+from statsmodels.discrete.discrete_model import BinaryResultsWrapper
+from statsmodels.regression.linear_model import RegressionResultsWrapper
+from tqdm import tqdm
 
 
 def is_notebook() -> bool:
@@ -70,19 +73,25 @@ tqdm.pandas()
 
 # ----------------------------------Encoding Strategy Example--------------------------------------
 
-def encode_dementia(df):
-    """An example preprocessing strategy used in target_strategy"""
+def encode_dementia(df: pd.DataFrame) -> pd.DataFrame:
+    """An example preprocessing strategy used in target_strategy,
+
+    It should be a callable takes in a pd.DataFrame and returns another one
+    """
     df.dropna(inplace=True)
     df = df[df != 3] - 1
     return df
 
 
-def dropna(df):
-    """A simpler preprocessing strategy used in target_strategy"""
+def dropna(df: pd.DataFrame) -> pd.DataFrame:
+    """A simpler preprocessing strategy used in target_strategy
+
+    It should be a callable takes in a pd.DataFrame and returns another one
+    """
     return df.dropna()
 
 
-def filter_C(df, threshold=5):
+def filter_c(df: pd.DataFrame, threshold=5) -> pd.DataFrame:
     """The filter C on existing frequency,
 
     both 0 and 1 should appear for more than <threshold> times
@@ -95,9 +104,14 @@ def filter_C(df, threshold=5):
     return df[filtered_snp]
 
 
-def target_strategy():
+def target_strategy() -> Dict[str, Dict[str, Union[sm.Logit, sm.OLS, Callable]]]:
     """
     An example target_strategy used in the association analysis
+
+    The key for main dict is the variable name
+    The value is a dict with the following keys:
+        "engine", whose value is a statsmodels model
+        "preprocessing", whose value is a callable takes in a pd.DataFrame and returns another one
     """
     return {'STROKE': {"engine": sm.Logit,
                        "preprocessing": dropna},
@@ -128,13 +142,13 @@ def target_strategy():
             }
 
 
-def target_strategy_serum():
+def target_strategy_serum() -> Dict[str, Dict[str, Union[sm.Logit, sm.OLS, Callable]]]:
     """
     An example target_strategy used in the serum analysis
     """
     return {'lpa': {"engine": sm.OLS,
                     "preprocessing": None},
-            'wAS': {"engine": sm.OLS,
+            'wIS': {"engine": sm.OLS,
                     "preprocessing": None},
             'isoform': {"engine": sm.OLS,
                         "preprocessing": None}
@@ -146,28 +160,46 @@ def target_strategy_serum():
 class SNPAssociation:
     """a class for running SNP association pipeline"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         pd.set_option('mode.chained_assignment', None)
         warnings.simplefilter('ignore', ConvergenceWarning)
         warnings.filterwarnings("ignore", category=RuntimeWarning)
+        self._encoded_snp = None
+        self._other_exogs = None
+        self._target_dataset = None
+        self._target_strategy = None
+        self._output_path = None
+        self._snp_alias = None
+        self._one_to_one_exogs = None
+        self._one_to_one_strategy = None
+        self._one_to_one_alias = None
+        self._na_strategy = None
+        self._group_na_strategy = None
+        self._extra_iterate_on = None
+        self._snps_preprocessing_strategy = None
+        self._verbose = None
+
+    def debug_log(self, *args) -> None:
+        """only print the result when it's in verbose mode == 2"""
+        if self._verbose == 2:
+            print(*args)
 
     def fit(self,
-            encoded_snp,
-            other_exogs,
-            target_dataset,
-            target_strategy: dict,
+            encoded_snp: pd.DataFrame,
+            other_exogs: pd.DataFrame,
+            target_dataset: pd.DataFrame,
+            target_strategy: Dict[str, Dict[str, Union[sm.Logit, sm.OLS, Callable]]],
             output_path: str,
-            snp_alias: str = "snp_pos",
-            one_to_one_exogs=None,
-            one_to_one_strategy=None,
-            one_to_one_alias: str = None,
-            NA_strategy: str = "drop",
-            group_NA_strategy: str = "snp_wise",
-            extra_iterate_on: list = [],
-            snps_preprocessing_strategy=None,
-            meta_info: bool = True,
+            snp_alias: str = "variant",
+            one_to_one_exogs: Optional[pd.DataFrame] = None,
+            one_to_one_strategy: Optional[Callable] = None,
+            one_to_one_alias: Optional[str] = None,
+            na_strategy: str = "drop",
+            group_na_strategy: str = "snp_wise",
+            extra_iterate_on: Optional[list] = None,
+            snps_preprocessing_strategy: Optional[Callable] = None,
             verbose: int = 0
-            ):
+            ) -> None:
         """API setting up the regression (not running)
 
         Args:
@@ -209,15 +241,15 @@ class SNPAssociation:
             one_to_one_alias: Optional[str]: the name used for one-to-one variables
                               in output DataFrame
 
-            NA_strategy: Optional[str], the strategy statsmodels dealing with NAs,
+            na_strategy: Optional[str], the strategy statsmodels dealing with NAs,
                          Available options are ‘none’, ‘drop’, and ‘raise’.
                          If ‘none’, no nan checking is done.
                          If ‘drop’, any observations with nans are dropped.
                          If ‘raise’, an error is raised.
 
-            group_NA_strategy: Optional[str], how NA_strategy apply when have
+            group_na_strategy: Optional[str], how na_strategy apply when have
                                extra_iterate_on, can be "snp-wise" or "group-wise",
-                               it's working for status when NA_strategy == "drop"
+                               it's working for status when na_strategy == "drop"
 
             extra_iterate_on: Optional[list], the list of extra iterate variable in other_exog
                               please be noticed that it may cause severe explosions in running time
@@ -225,10 +257,6 @@ class SNPAssociation:
             snps_preprocessing_strategy: Optional[funcs], the preprocessing applied to snps
                            before the regression analysis
                            this function should take a pd.DataFrame as input and output
-
-            meta_info: Optional[bool]: default True
-                     if true, provide the frequencies, total, counts data useful for
-                     meta analysis(METAL)
 
             verbose: Optional[int] in {0,1,2} default 0
                      if verbose = 1, the regression will give the saving path
@@ -245,14 +273,13 @@ class SNPAssociation:
         self._one_to_one_exogs = one_to_one_exogs
         self._one_to_one_strategy = one_to_one_strategy
         self._one_to_one_alias = one_to_one_alias
-        self._NA_strategy = NA_strategy
-        self._group_NA_strategy = group_NA_strategy
+        self._na_strategy = na_strategy
+        self._group_na_strategy = group_na_strategy
         self._extra_iterate_on = extra_iterate_on
         self._snps_preprocessing_strategy = snps_preprocessing_strategy
         self._verbose = verbose
-        self._meta_info = meta_info
 
-    def transform(self, output_path: str = None, verbose: int = None):
+    def transform(self, output_path: str = None, verbose: int = None) -> Dict:
         """API Run the actual association test
 
         Args:
@@ -275,13 +302,12 @@ class SNPAssociation:
             one_to_one_exogs=self._one_to_one_exogs,
             one_to_one_strategy=self._one_to_one_strategy,
             one_to_one_alias=self._one_to_one_alias,
-            NA_strategy=self._NA_strategy,
+            na_strategy=self._na_strategy,
             extra_iterate_on=self._extra_iterate_on,
-            group_NA_strategy=self._group_NA_strategy,
+            group_na_strategy=self._group_na_strategy,
             snps_preprocessing_strategy=self._snps_preprocessing_strategy,
             snp_alias=self._snp_alias,
-            verbose=verbose,
-            meta_info=self._meta_info
+            verbose=verbose
         )
 
     def fit_transform(self, **kwargs):
@@ -289,23 +315,34 @@ class SNPAssociation:
         self.fit(**kwargs)
         self.transform()
 
-    def _get_column_name(self, col):
+    def _get_column_name(self, col: List[str]) -> List[str]:
         """for a list of given column, generate suffix necessary as header"""
         col_set = [[f"{i} Beta", f"{i} SE", f"{i} P-value"] for i in col]
         return [i for j in col_set for i in j]
 
-    def _generate_filename(self, N_snp, endog_variable, engine, extra_label):
+    def _generate_filename(
+            self,
+            n_snp: int,
+            endog_variable: str,
+            engine: str,
+            extra_label: Optional[Tuple[Tuple[str], Tuple[str]]]) -> str:
         """generate a file name"""
         if extra_label is None:
             extra = ""
         else:
             extra = "_".join([f"{case[0]}={case[1]}"
                               for case in zip(extra_label[0], extra_label[1])]) + "_"
-        engine_string = engine.__name__
-        return f"{endog_variable}_{engine_string}_{extra}N_snp={N_snp}.csv"
+        return f"{endog_variable}_{engine}_{extra}N_snp={n_snp}.csv"
 
-    def _generate_info(self, endog, engine, variable_name,
-                       extra_label, processed_snp, n_sample, errors):
+    def _generate_info(
+            self,
+            endog: Union[pd.Series, pd.DataFrame],
+            engine: str,
+            variable_name: List[str],
+            extra_label: Optional[Tuple[Tuple[str], Tuple[str]]],
+            processed_snp: List[str],
+            n_sample: int,
+            errors: Dict[str, str]) -> Dict[str, Union[str, int, List[str]]]:
         """generate an info dictionary for a regression task"""
         if isinstance(endog, pd.core.series.Series):
             endog_variable = endog.name
@@ -315,10 +352,10 @@ class SNPAssociation:
             raise ValueError(
                 "not a proper endogenous variable format, "
                 "it should be either a pd.Series or pd.DataFrame"
-                )
+            )
         N_snp = len(processed_snp)
         return {"filename": self._generate_filename(
-            N_snp=N_snp,
+            n_snp=N_snp,
             endog_variable=endog_variable,
             engine=engine,
             extra_label=extra_label),
@@ -328,7 +365,12 @@ class SNPAssociation:
             "errors": errors
         }
 
-    def _save_association_result(self, result, info, output_path, verbose):
+    def _save_association_result(
+            self,
+            result: pd.DataFrame,
+            info: Dict[str, Union[str, int, List[str]]],
+            output_path: str,
+            verbose: int):
         """save result and info to output path as the name specified in info"""
         # update the filename
         saving_path = os.path.join(output_path, info["filename"])
@@ -342,7 +384,7 @@ class SNPAssociation:
         if verbose == 1:
             print(f"{saving_path}/.txt saved")
 
-    def _calculate_freq(self, df, cols):
+    def _calculate_freq(self, df: pd.DataFrame, cols: str) -> Tuple[float, int, int]:
         """
         given a pandas.dataFrame <df> and specific column name <cols>,
         compute the frequency
@@ -357,36 +399,36 @@ class SNPAssociation:
             cols: str, column name in df
 
         Returns:
-            float, the relative frequency of 1s in this column
-            float, the number of 1s in the column
-            float, the number of rows in the column
+            tuple containing
+
+            - float: the relative frequency of 1s in this column.
+            - float: the number of 1s in the column.
+            - float: the number of rows in the column.
         """
-        col = df[[cols]]
-        return col.sum()[0] / col.shape[0], col.sum()[0], col.shape[0]
-        
+        col: pd.Series = df[cols]
+        return (col.sum() / len(col.shape)), col.sum(), len(col.shape)
+
     def _association_snp(
-        self,
-        snp_table,
-        other_exogs,
-        endog,
-        engine,
-        one_to_one_exogs=None,
-        one_to_one_strategy=None,
-        one_to_one_alias: list = None,
-        snps_preprocessing_strategy=None,
-        NA_strategy="drop",
-        group_NA_strategy="snp_wise",
-        snp_alias="snp_pos",
-        extra_label=None,
-        meta_info: bool = False
-    ):
+            self,
+            snp_table: pd.DataFrame,
+            other_exogs: pd.DataFrame,
+            endog: Union[pd.DataFrame, pd.Series],
+            engine: Callable,
+            one_to_one_exogs: Optional[pd.DataFrame] = None,
+            one_to_one_strategy: Optional[Callable] = None,
+            one_to_one_alias: List[str] = None,
+            snps_preprocessing_strategy: Optional[Callable] = None,
+            na_strategy: str = "drop",
+            group_na_strategy: str = "snp_wise",
+            snp_alias: str = "variant",
+            extra_label: Optional[Tuple[List[str], List[Hashable]]] = None
+    ) -> Tuple[pd.DataFrame, Dict]:
         """association test designed for snp variants analysis
 
         For each column in snp_table, run an individual <endog>~column+<other> on <engine>
         return the beta/weight/effect size, standard error and p-values
 
         Args:
-
             snp_table: pd.DataFrame, the table encoding snps,
                        the columns is snp name, rows are individuals, values are numerics
             other_exogs: pd.DataFrame, the table encoding other traits,
@@ -397,7 +439,7 @@ class SNPAssociation:
                     statsmodels.regression.linear_model.OLS,
                     but any model's .fit results provide .params .bse .pvalues will work
             one_to_one_exogs: pd.DataFrame, the dataframe providing
-                            specific exog variable based on encoded_snp
+                              specific exog variable based on encoded_snp
             one_to_one_strategy: funcs, when given a snp name, this function should output
                                  the corresponding one_to_one_exogs column name
             one_to_one_alias: list[str], the name used to take the one-to-one column
@@ -405,33 +447,30 @@ class SNPAssociation:
                    before the regression analysis
                    this function should take a pd.DataFrame as input and output
             snp_alias: str, the name used for snp column
-            NA_strategy: Optional[str], stands for the strategy dealing with NAs,
+            na_strategy: Optional[str], stands for the strategy dealing with NAs,
                  Available options are ‘none’, ‘drop’, and ‘raise’.
                  If ‘none’, no nan checking is done.
                  If ‘drop’, any observations with nans are dropped.
                  If ‘raise’, an error is raised. Default is ‘none’.
-            group_NA_strategy: Optional[str], how NA_strategy apply when have
+            group_na_strategy: Optional[str], how na_strategy apply when have
                               extra_iterate_on, can be "snp-wise" or "group-wise",
-                              it's working for status when NA_strategy == "drop"
+                              it's working for status when na_strategy == "drop"
             extra_label: Optional[tuple[tuple[str], tuple[str]]]
-            meta_info: Optional[bool]: default False
-                     if true, provide the frequencies, total, counts data useful for
-                     meta-analysis(METAL)
 
         Returns:
-            pd.DataFrame, the beta/weight/effect size, standard error and p-values
-                for each <endog>~column+<other> on <engine>
-            dict, additional information that is included.
+            tuple containing
+
+            - pd.DataFrame: the effect size, se and p-values for each <endog>~column+<other> on <engine>.
+            - dict: additional information that is included.
         """
         # the list saving output values
         params, bse, p_values, processed_snp, n_sample = [], [], [], [], []
-        model_metric_1, model_metric_2,model_metric_3, model_metric_4 = [], [], [], []
+        model_metric_1, model_metric_2, model_metric_3, model_metric_4 = [], [], [], []
         errors = {}
-        if meta_info:
-            rel_freqs, abs_freqs, totals = [], [], []
-        # if there's a given NA_strategy as group-wise drop NA
+        rel_freqs, abs_freqs, totals = [], [], []
+        # if there's a given na_strategy as group-wise drop NA
         # for the given group, drop every row with NA
-        if (NA_strategy == "drop") & (group_NA_strategy == "group-wise"):
+        if (na_strategy == "drop") & (group_na_strategy == "group-wise"):
             # drop NA's
             snp_table.dropna(axis=0, how="any", inplace=True)
             other_exogs.dropna(axis=0, how="any", inplace=True)
@@ -439,7 +478,7 @@ class SNPAssociation:
             # when have one-to-one, drop the one-to-one as well
             if one_to_one_strategy is not None:
                 one_to_one_exogs.dropna(axis=0, how="any", inplace=True)
-        # Otherwise the drop will be operated by statsmodels "missing" argument
+        # Otherwise the drop in each regression(i.e, based on each SNPs' data availability)
         # for columns run the regression
         for snp in tqdm(snp_table.columns, position=0, leave=False):
             # this try is to capture regression running errors
@@ -458,88 +497,70 @@ class SNPAssociation:
                 # this drop is unnecessary from regression perspective,
                 # but statsmodels.models cannot return nan mask now
                 # so, for calculating frequencies-related, use the following
-                if (NA_strategy == "drop") & meta_info:
+                if na_strategy == "drop":
                     exog = exog.dropna(axis=0)
                     endog_dropped = endog.dropna(axis=0)
                 else:
                     endog_dropped = endog
-                if self._verbose == 2:
-                    print("exogs", exog, "endogs", endog_dropped)
+                self.debug_log("exogs", exog, "endogs", endog_dropped)
                 # align the exog and endog table
                 exog, endog_dropped = exog.align(endog_dropped, join="inner", axis=0)
-                # apply the preprocessing function to snps(filter_C)
+                # apply the preprocessing function to snps(filter_c)
                 if snps_preprocessing_strategy is not None:
                     # find the snp column from current exog table
                     # apply the snps_preprocessing_strategy given
-                    if self._verbose == 2:
-                        print("for SNP preprocessing", exog[[snp]])
-                        print("distribution", exog[[snp]].value_counts())
+                    self.debug_log("for SNP preprocessing", exog[[snp]])
+                    self.debug_log("distribution", exog[[snp]].value_counts())
                     snp_table_exog = snps_preprocessing_strategy(exog[[snp]])
-                    if self._verbose == 2:
-                        print("after SNP preprocessing", snp_table_exog)
+                    self.debug_log("after SNP preprocessing", snp_table_exog)
                     # if no column is left
                     if len(snp_table_exog.columns) == 0:
                         raise ValueError("filtered out by snps_preprocessing_strategy")
-                if meta_info:
-                    rel_freq, abs_freq, total = self._calculate_freq(exog, snp)
+                rel_freq, abs_freq, total = self._calculate_freq(exog, snp)
                 # initialize <engine> for regression
-                # if NA_strategy == "drop" and group_NA_strategy is "snp-wise"
+                # if na_strategy == "drop" and group_na_strategy is "snp-wise"
                 # the sample will be dropped here
                 # if it's group-wise, the input should have no NAs
                 # ,and it's fine to run missing = drop
-                if self._verbose == 2:
-                    print("exogs", exog, "endogs", endog_dropped)
-                    print("corr", exog.corr())
+                self.debug_log("exogs", exog, "endogs", endog_dropped, "corr", exog.corr())
                 # This astype(float) will consume a lot of memory, but it's a must
                 # otherwise statsmodels.Logit and OLS will throw an error
                 # see https://stackoverflow.com/q/33833832
                 regression = engine(
                     exog=exog.astype(float),
                     endog=endog_dropped.astype(float),
-                    missing=NA_strategy)
-                #exog.to_excel(f"label_{extra_label[1]}_exog.xlsx")
-                #endog.to_excel(f"label_{extra_label[1]}_endog.xlsx")
-                if self._verbose == 2:
-                    print("regression", regression)
+                    missing=na_strategy)
+                # exog.to_excel(f"label_{extra_label[1]}_exog.xlsx")
+                # endog.to_excel(f"label_{extra_label[1]}_endog.xlsx")
+                self.debug_log("regression", regression)
                 # run the regression
                 result = regression.fit(disp=0)
-                if self._verbose == 2:
-                    print("result", result)
-                    print("result summary", result.summary())
+                self.debug_log("result", result)
+                self.debug_log("result summary", result.summary())
                 # record the result
-                if self._verbose == 2:
-                    print(result)
                 params.append(result.params)
                 bse.append(result.bse)
                 p_values.append(result.pvalues)
                 processed_snp.append(snp)
                 n_sample.append(result.nobs)
                 # add metrics evaluating model performances
-                if isinstance(result, statsmodels.discrete.discrete_model.BinaryResultsWrapper):
-                    #auc_roc = roc_auc_score(endog_dropped.astype(float),
-                    #                        result.predict(exog.astype(float)))
-                    #model_metric_1.append(auc_roc)
-                    #model_metric_2.append(result.prsquared)
-                    count = pd.concat([exog[snp], endog_dropped], axis = 1).value_counts()
-                    #print(count)
-                    model_metric_1.append(count[(1.0,1.0)] if count.index.isin([(1.0,1.0)]).any() else 0)
-                    model_metric_2.append(count[(1.0,0.0)] if count.index.isin([(1.0,0.0)]).any() else 0)
-                    model_metric_3.append(count[(0.0,1.0)] if count.index.isin([(0.0,1.0)]).any() else 0)
-                    model_metric_4.append(count[(0.0,0.0)] if count.index.isin([(0.0,0.0)]).any() else 0)
-                    #print(model_metric_1,model_metric_2,model_metric_3,model_metric_4)
-                elif isinstance(result, statsmodels.regression.linear_model.RegressionResultsWrapper):
+                if isinstance(result, BinaryResultsWrapper):
+                    count = pd.concat([exog[snp], endog_dropped], axis=1).value_counts()
+                    model_metric_1.append(count[(1.0, 1.0)] if count.index.isin([(1.0, 1.0)]).any() else 0)
+                    model_metric_2.append(count[(1.0, 0.0)] if count.index.isin([(1.0, 0.0)]).any() else 0)
+                    model_metric_3.append(count[(0.0, 1.0)] if count.index.isin([(0.0, 1.0)]).any() else 0)
+                    model_metric_4.append(count[(0.0, 0.0)] if count.index.isin([(0.0, 0.0)]).any() else 0)
+                elif isinstance(result, RegressionResultsWrapper):
                     model_metric_1.append(result.rsquared)
                 # when asking for meta info, provide them
-                if meta_info:
-                    rel_freqs.append(rel_freq)
-                    abs_freqs.append(abs_freq)
-                    totals.append(total)
+                rel_freqs.append(rel_freq)
+                abs_freqs.append(abs_freq)
+                totals.append(total)
                 # Memory efficiency
                 gc.collect()
             except Exception as e:
                 # record errors in errors[snp]
-                if self._verbose == 2:
-                    print(e)
+                self.debug_log(e)
                 errors[snp] = str(e)
         # the name of all variables
         variable_name = exog.columns.tolist()
@@ -560,11 +581,12 @@ class SNPAssociation:
             # only trying to capture if result exist...
             result
         except Exception as e:
-            raise RuntimeError("no valid result is recorded, usually because of all the SNPs are filtered out by snps_preprocessing_strategy")
+            print(e)
+            raise RuntimeError(
+                "no valid result is recorded, usually because of all the SNPs are filtered out by "
+                "snps_preprocessing_strategy")
 
         if isinstance(result, statsmodels.discrete.discrete_model.BinaryResultsWrapper):
-            #df_result["auc_roc"] = model_metric_1
-            #df_result["pesudo_rqsuared"] = model_metric_2
             df_result["with_SNP_with_trait"] = model_metric_1
             df_result["with_SNP_without_trait"] = model_metric_2
             df_result["without_SNP_with_trait"] = model_metric_3
@@ -572,25 +594,24 @@ class SNPAssociation:
             df_result["chi_sq_p_value"] = df_result.apply(
                 lambda x: scipy.stats.chi2_contingency(
                     [[x["with_SNP_with_trait"], x["with_SNP_without_trait"]],
-                    [x["without_SNP_with_trait"], x["without_SNP_without_trait"]]],
-                    correction = False
-                )[1], axis = 1)
+                     [x["without_SNP_with_trait"], x["without_SNP_without_trait"]]],
+                    correction=False
+                )[1], axis=1)
         elif isinstance(result, statsmodels.regression.linear_model.RegressionResultsWrapper):
-            df_result["rsquared"] = model_metric_1
+            df_result["r_squared"] = model_metric_1
         else:
-            # only left here for completeness, if need other sanity check for other result,
+            # only left here for completeness in case need other sanity check for other result,
             # write here
             pass
-        if meta_info:
-            df_result["rel_freqs"] = rel_freqs
-            df_result["abs_freqs"] = abs_freqs
-            df_result["n_sample"] = n_sample
-            if len(n_sample) == 0:
-                raise ValueError("no n_sample is recorded")
+        df_result["rel_freqs"] = rel_freqs
+        df_result["abs_freqs"] = abs_freqs
+        df_result["n_sample"] = n_sample
+        if len(n_sample) == 0:
+            raise ValueError("no n_sample is recorded")
         # generate an info dictionary
         analysis_info = self._generate_info(
             endog=endog,
-            engine=engine,
+            engine=engine.__name__,
             variable_name=variable_name,
             extra_label=extra_label,
             processed_snp=processed_snp,
@@ -598,41 +619,40 @@ class SNPAssociation:
             errors=errors)
         return df_result, analysis_info
 
-    def association_test(self,
-                         encoded_snp,
-                         other_exogs,
-                         target_dataset,
-                         target_strategy: dict,
-                         output_path: str = "",
-                         one_to_one_exogs=None,
-                         one_to_one_strategy=None,
-                         one_to_one_alias: str = None,
-                         NA_strategy: str = "drop",
-                         extra_iterate_on: list = [],
-                         group_NA_strategy: str = "snp_wise",
-                         snps_preprocessing_strategy=None,
-                         snp_alias: str = "snp_pos",
-                         verbose: int = 0,
-                         meta_info: bool = True
-                         ):
+    def association_test(
+            self,
+            encoded_snp: pd.DataFrame,
+            other_exogs: pd.DataFrame,
+            target_dataset: Union[pd.DataFrame, pd.Series],
+            target_strategy: Dict[str, Dict[str, Union[sm.Logit, sm.OLS, Callable]]],
+            output_path: str = "",
+            one_to_one_exogs: Optional[pd.DataFrame] = None,
+            one_to_one_strategy: Optional[Callable] = None,
+            one_to_one_alias: str = None,
+            na_strategy: str = "drop",
+            extra_iterate_on: List[str] = None,
+            group_na_strategy: str = "snp_wise",
+            snps_preprocessing_strategy: Optional[Callable] = None,
+            snp_alias: str = "variant",
+            verbose: int = 0
+    ) -> Dict:
         """API running regression test
 
         Args:
-
             encoded_snp: pd.DataFrame, the dataframe to be looped on columns
             other_exogs: pd.DataFrame, the dataframe taking all the other variables
             target_dataset: pd.DataFrame, the dataframe taking all the target variables
-            target_strategy: dict[str, dict[str, funcs or models]],
-                 The dictionary provide pre-processing to specific column,
-                 Only column mentioned in keys will be included in the running.
-                 The inner dictionary should have two keys:
+            target_strategy: dict[str, dict[str, funcs or models]], the dictionary
+                provide pre-processing to specific column. Only column mentioned in
+                keys will be included in the running. The inner dictionary should
+                have two keys:
 
-                 "engine": statsmodels.api models,
+                 - "engine": statsmodels.api models,
                      designed for statsmodels.discrete.discrete_model.Logit or
                      statsmodels.regression.linear_model.OLS,
                      but any model's .fit results provide .params .bse .pvalues will work
 
-                 "preprocessing": funcs
+                 - "preprocessing": funcs
                      the function should take a pd.DataFrame/pd.Series as input
                      and a pd.DataFrame/pd.Series as output,
                      This strategy is None, the column will be used as
@@ -643,33 +663,28 @@ class SNPAssociation:
                             specific exog variable based on encoded_snp
             one_to_one_strategy: funcs, when given a snp name, this function should output
                                  the corresponding one_to_one_exogs column name
+            one_to_one_alias: str, the name for one_to_one settings
             snps_preprocessing_strategy: Optional[funcs] the preprocessing applied to snps
                            before the regression analysis
                            this function should take a pd.DataFrame as input and output
-            NA_strategy: Optional[str], stands for the strategy dealing with NAs,
+            na_strategy: Optional[str], stands for the strategy dealing with NAs,
                  Available options are ‘none’, ‘drop’, and ‘raise’.
                  If ‘none’, no nan checking is done.
                  If ‘drop’, any observations with nans are dropped.
                  If ‘raise’, an error is raised. Default is ‘none’.
             extra_iterate_on: Optional[list], the list of extra iterate variable in other_exog
                               please be noticed that it may cause severe explosions in running time
-            group_NA_strategy: Optional[str], how NA_strategy apply when have
+            group_na_strategy: Optional[str], how na_strategy apply when have
                                extra_iterate_on, can be "snp-wise" or "group-wise",
-                               it's working for status when NA_strategy == "drop"
+                               it's working for status when na_strategy == "drop"
             snp_alias: Optional[str], the name used for snp column
-
-            meta_info: Optional[bool]: default True
-                     if true, provide the frequencies, total, counts data useful for
-                     meta analysis(METAL)
-
             verbose: Optional[int] in {0,1,2} default 0
                      if verbose = 1, the regression will give the saving path
                      if verbose = 2, the regression will output all the related
                      values during the computation, only for debugging purpose,
                      use with care for it will create massive I/O
         Returns:
-
-            dict, a dict recording output brief information
+            dict: a dict recording output brief information
         """
         os.makedirs(output_path, exist_ok=True)
         output_info = {}
@@ -688,7 +703,7 @@ class SNPAssociation:
             else:
                 endogenous = preprocessing(target_dataset[[target]])
             # when not given extra iterates
-            if extra_iterate_on == []:
+            if extra_iterate_on is None:
                 # run the association analysis
                 result, info = self._association_snp(
                     snp_table=encoded_snp,
@@ -700,10 +715,9 @@ class SNPAssociation:
                     one_to_one_alias=one_to_one_alias,
                     snps_preprocessing_strategy=snps_preprocessing_strategy,
                     snp_alias=snp_alias,
-                    NA_strategy=NA_strategy,
-                    group_NA_strategy=group_NA_strategy,
-                    extra_label=None,
-                    meta_info=meta_info
+                    na_strategy=na_strategy,
+                    group_na_strategy=group_na_strategy,
+                    extra_label=None
                 )
                 self._save_association_result(result, info, output_path, verbose)
                 output_info[target]["output"] = info
@@ -722,10 +736,9 @@ class SNPAssociation:
                         one_to_one_alias=one_to_one_alias,
                         snps_preprocessing_strategy=snps_preprocessing_strategy,
                         snp_alias=snp_alias,
-                        NA_strategy=NA_strategy,
-                        group_NA_strategy=group_NA_strategy,
-                        extra_label=(extra_iterate_on, [sub_exogs[0]]),
-                        meta_info=meta_info
+                        na_strategy=na_strategy,
+                        group_na_strategy=group_na_strategy,
+                        extra_label=(extra_iterate_on, [sub_exogs[0]])
                     )
                     self._save_association_result(result, info, output_path, verbose)
                     output_info[target][sub_exogs[0]] = info

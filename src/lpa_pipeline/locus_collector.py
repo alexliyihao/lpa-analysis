@@ -15,6 +15,7 @@ import pandas as pd
 import gc
 import os
 import glob
+from typing import Optional
 
 
 class LocusCollector:
@@ -23,14 +24,18 @@ class LocusCollector:
 
     Initialize:
 
-        lc = LocusCollector(input_path: Optional[str],
-                            bam_list: Optional[str])
+        lc = LocusCollector(input_path = "input/path")
+
+        or
+
+        lc = LocusCollector(bam_list = "bam/list/path")
+
     Generate Table:
 
         locus_table = lc.generate_locus_table()
     """
 
-    def __init__(self, input_path: str = None, bam_list: str = None):
+    def __init__(self, input_path: Optional[str] = None, bam_list: Optional[str] = None):
         if bam_list is None:
             self.annotated_variant_iter = glob.iglob(
                 os.path.join(
@@ -47,23 +52,23 @@ class LocusCollector:
                     "variantsAnnotate.txt")
                     for line in file)
 
-    def read_locus(self, path: str):
+    @staticmethod
+    def read_locus(path: str) -> pd.DataFrame:
         """read a coassin output, tidy the output"""
         df = pd.read_csv(path, sep="\t")
-        df = df[['Pos', "Ref", "Variant", "mylocus","wt","mut"]]
+        df = df[['Pos', "Ref", "Variant", "mylocus", "wt", "mut"]]
         return df
 
-    def generate_locus_table(self):
+    def generate_locus_table(self) -> pd.DataFrame:
         """Generate the locus table in one line
 
         Returns:
-
-            pd.DataFrame, all the locus result
+            pd.DataFrame: all the locus result
         """
         locus_iter = (self.read_locus(output_files)
                       for output_files in self.annotated_variant_iter)
         # for memory efficiency
-        locus_table = pd.concat(locus_iter, axis=0).drop_duplicates()
+        locus_table: pd.DataFrame = pd.concat(locus_iter, axis=0).drop_duplicates()
         gc.collect()
         # If the mylocus gives Exon421 or 422, give "Exon", otherwise "Intron"
         locus_table["coding"] = np.where(
@@ -71,11 +76,11 @@ class LocusCollector:
             "Exon",
             "Intron")
         # generate "pos-ref/var" format
-        locus_table["pos-ref/var"] = locus_table["Pos"].astype(str) + "-" + \
-                                     locus_table["Ref"].astype(str) + "/" + \
-                                     locus_table["Variant"].astype(str)
+        locus_table["variant"] = locus_table["Pos"].astype(str) + "-" + \
+            locus_table["Ref"].astype(str) + "/" + \
+            locus_table["Variant"].astype(str)
         locus_table = locus_table.sort_values(by="Pos").reset_index(drop=True)
-        locus_table = locus_table.set_index("pos-ref/var")
+        locus_table = locus_table.set_index("variant")
         return locus_table
 
 
@@ -97,5 +102,5 @@ if __name__ == "__main__":
 
     lc = LocusCollector(input_path=Args.input_path,
                         bam_list=Args.bam_list)
-    locus_table = lc.generate_locus_table()
-    locus_table.to_csv(Args.output_path)
+    locus = lc.generate_locus_table()
+    locus.to_csv(Args.output_path)
