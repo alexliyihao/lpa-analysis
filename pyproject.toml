@@ -2,7 +2,7 @@
 name = "lpa_pipeline"
 version = "0.1.0"
 description = "The pipeline analyzing the output of Coassin et.al's KIV-2 region analysis pipeline"
-authors = ["Yihao Li", "Badri Vardarajan", "Soffer Gissette"]
+authors = ["Yihao Li", "Badri Vardarajan", "Reyes-Soffer Gissette"]
 license = "MIT"
 readme = "README.md"
 

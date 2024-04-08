@@ -110,7 +110,9 @@ def target_strategy() -> Dict[str, Dict[str, Union[sm.Logit, sm.OLS, Callable]]]
 
     The key for main dict is the variable name
     The value is a dict with the following keys:
+
         "engine", whose value is a statsmodels model
+
         "preprocessing", whose value is a callable takes in a pd.DataFrame and returns another one
     """
     return {'STROKE': {"engine": sm.Logit,
@@ -243,8 +245,11 @@ class SNPAssociation:
 
             na_strategy: Optional[str], the strategy statsmodels dealing with NAs,
                          Available options are ‘none’, ‘drop’, and ‘raise’.
+
                          If ‘none’, no nan checking is done.
+
                          If ‘drop’, any observations with nans are dropped.
+
                          If ‘raise’, an error is raised.
 
             group_na_strategy: Optional[str], how na_strategy apply when have
@@ -259,10 +264,14 @@ class SNPAssociation:
                            this function should take a pd.DataFrame as input and output
 
             verbose: Optional[int] in {0,1,2} default 0
-                     if verbose = 1, the regression will give the saving path
-                     if verbose = 2, the regression will output all the related
-                     values during the computation, only for debugging purpose,
-                     use with care for it will create massive I/O
+
+                    if verbose == 0, no output will be printed except the progress bar
+
+                    if verbose == 1, the regression will give the saving path
+
+                    if verbose == 2, the regression will output all the related
+                    values during the computation, only for debugging purpose,
+                    use with care for it will create massive I/O
         """
         self._encoded_snp = encoded_snp
         self._other_exogs = other_exogs
