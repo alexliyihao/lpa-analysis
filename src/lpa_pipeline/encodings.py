@@ -3,7 +3,7 @@
 Encoding Rule:
 
 * If raw/raw.txt file total coverage < ``raw_total_coverage_threshold``,
-  encode that position "missing"(NA) for that person
+  encode that position NA for that person
 * If total coverage >= ``raw_total_coverage_threshold``, in annotated file
 
     * If position is missing in annotated file, the variant is coded 0
