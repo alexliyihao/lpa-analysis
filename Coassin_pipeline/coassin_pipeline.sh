@@ -8,6 +8,9 @@
 # This sets the task range in the array
 #$ -t 1-3917:1
 
+# Memory requirement
+#$ -l h_vmem=15G
+
 # Change directory to the current
 #$ -cwd
 
@@ -15,18 +18,25 @@
 #$ -S /bin/bash
 
 # Specify the outerr file
-#$ -o /mnt/mfs/hgrcgrid/shared/LPA_analysis/logs/$JOB_NAME_$TASK_ID.outerr
-#$ -e /mnt/mfs/hgrcgrid/shared/LPA_analysis/logs/$JOB_NAME_$TASK_ID.outerr
+#$ -o /mnt/mfs/hgrcgrid/shared/LPA_analysis/coassin_pipeline/logs/$JOB_NAME/$JOB_NAME_$TASK_ID.outerr
+#$ -e /mnt/mfs/hgrcgrid/shared/LPA_analysis/coassin_pipeline/logs/$JOB_NAME/$JOB_NAME_$TASK_ID.outerr
+
 
 
 ## Section 2: Transfering Data & Path Settings ----------------------------------------------------
 echo "Setting: Current Working directory is $PWD, current task id is $SGE_TASK_ID"
 
 # Specify the data inflow and home directory
+# bam saving path
 INPUTPATH="/mnt/mfs/hgrcgrid/data/whicap/WHICAP_WES/BAM/washeiDragenBamsList/washeiBamsUpdate2/BQSR/bqsrRGbam"
-HOMEPATH="/mnt/mfs/hgrcgrid/shared/LPA_analysis"
+# project path
+HOMEPATH="/mnt/mfs/hgrcgrid/shared/LPA_analysis/coassin_pipeline"
+# the txt file have the relative path of all bam files from INPUTPATH
+DATA_INFLOW="/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/coassin_pipeline/data_inflow/bam_list.txt"
+# Name the output subdirectory
+PROJECT_SUBDIR="pipeline_output"
 
-# this region is using in SAMTOOLS filtering the reads from source bam file (line 151)
+# REGION is using in SAMTOOLS filtering the reads from source bam file (line 156-163)
 # e.g. retrict to "6" missing all the unaligned reads
 # "6:161033785-161066618" extract only the KIV2 region that means even fewer reads
 # which will also significantly save the storage computational time cost
@@ -37,7 +47,7 @@ REGION=""
 
 # Specifying the name of the data
 cd $HOMEPATH
-readarray -t INPUTFILES < data_inflow/bam_list.txt
+readarray -t INPUTFILES < $DATA_INFLOW
 echo "Setting: ${#INPUTFILES[@]} files detected"
 echo "Setting: working on ${INPUTFILES[$SGE_TASK_ID - 1]}"
 
@@ -47,9 +57,6 @@ INPUTFILENAME="$INPUTPATH/${INPUTFILES[$SGE_TASK_ID - 1]}"
 # Deal with the additional /hispanic, preventing additional folders created
 FILENAME_CLEANED="`echo "${INPUTFILES[$SGE_TASK_ID - 1]}" | sed 's/hispanic\///g'`"
 echo "Setting: For input $INPUTFILENAME, cleaned into $FILENAME_CLEANED"
-
-# Name the project subdirectory
-PROJECT_SUBDIR="pipeline_output"
 
 # Specify working directory under the /tempdata
 WORKING_DIR="$PROJECT_SUBDIR/tempdata/$PROJECT_SUBDIR-$SGE_TASK_ID"
@@ -75,6 +82,9 @@ fi
 
 
 ## Section 3: Deploying the Program ----------------------------------------------------
+
+# make bam2fastq and bwa are optional in each task, but cloudgene has to be
+# running seperately in each task, or the task cannot find its corresponding output.
 
 # Copy the materials to the working directory
 # Bam2fastq
@@ -144,13 +154,13 @@ echo "Deployment: necessary data installation package cleaned"
 cd $HOMEPATH/$WORKING_DIR
 
 # Copy the input data to the working directory
-#cp $INPUTFILENAME $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
-#echo "Deployment: copying original data $INPUTFILENAME to $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED"
+cp $INPUTFILENAME $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
+echo "Deployment: copying original data $INPUTFILENAME to $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED"
 
-module load SAMTOOLS
-samtools view -b $INPUTFILENAME $REGION > $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
-echo "Running: filter original data $INPUTFILENAME, on $CHROMOSOME only"
-echo "Running: the output is saved as $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED"
+# if use filter from REGION
+#samtools view -b $INPUTFILENAME $REGION > $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
+#echo "Running: filter original data $INPUTFILENAME, on $CHROMOSOME only"
+#echo "Running: the output is saved as $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED"
 
 # Prepare a folder for the fastq output
 mkdir fastqs
