@@ -26,6 +26,15 @@ echo "Setting: Current Working directory is $PWD, current task id is $SGE_TASK_I
 INPUTPATH="/mnt/mfs/hgrcgrid/data/whicap/WHICAP_WES/BAM/washeiDragenBamsList/washeiBamsUpdate2/BQSR/bqsrRGbam"
 HOMEPATH="/mnt/mfs/hgrcgrid/shared/LPA_analysis"
 
+# this region is using in SAMTOOLS filtering the reads from source bam file (line 151)
+# e.g. retrict to "6" missing all the unaligned reads
+# "6:161033785-161066618" extract only the KIV2 region that means even fewer reads
+# which will also significantly save the storage computational time cost
+# in our experience "6" is slightly fewer than "" but the difference is not too much
+# but it saved more than 95% of the storage for bam2fastq output.
+REGION=""
+
+
 # Specifying the name of the data
 cd $HOMEPATH
 readarray -t INPUTFILES < data_inflow/bam_list.txt
@@ -66,9 +75,6 @@ fi
 
 
 ## Section 3: Deploying the Program ----------------------------------------------------
-# Copy the input data to the working directory
-cp $INPUTFILENAME $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
-echo "Deployment: copying original data $INPUTFILENAME to $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED"
 
 # Copy the materials to the working directory
 # Bam2fastq
@@ -137,18 +143,23 @@ echo "Deployment: necessary data installation package cleaned"
 # Navigate to the working directory
 cd $HOMEPATH/$WORKING_DIR
 
+# Copy the input data to the working directory
+#cp $INPUTFILENAME $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
+#echo "Deployment: copying original data $INPUTFILENAME to $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED"
+
+module load SAMTOOLS
+samtools view -b $INPUTFILENAME $REGION > $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
+echo "Running: filter original data $INPUTFILENAME, on $CHROMOSOME only"
+echo "Running: the output is saved as $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED"
+
 # Prepare a folder for the fastq output
 mkdir fastqs
 
-# Run the program
-cd bam2fastq
+# Run the bam2fastq
 # Pass the .bam file, generate a <bam_name>_output_1.fastq and <bam_name>_output_2.fastq in fastqs folder
-./bam2fastq -o $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output#.fastq \
+bam2fastq/bam2fastq -o $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output#.fastq \
               $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
 echo "Execution: bam2fastq finished"
-
-# Get back to the working directory
-cd $HOMEPATH/$WORKING_DIR
 
 # Remove the original file
 rm $FILENAME_CLEANED
@@ -157,13 +168,12 @@ rm $FILENAME_CLEANED
 mkdir bams
 
 # Run bwa
-cd bwa
 # bwa need to index the reference provided by Coassin first
-./bwa index $HOMEPATH/$WORKING_DIR/coassin_pipeline_data/kiv2_6.fasta
+bwa/bwa index $HOMEPATH/$WORKING_DIR/coassin_pipeline_data/kiv2_6.fasta
 
 # Align <bam_name>_output_1.fastq and <bam_name>_output_2.fastq against Coassin reference,
 # -v 1 only print errors, 0-4 will increase the verbosity, default 3 will give 10K+ line output
-./bwa mem -v 1 \
+bwa/bwa mem -v 1 \
   $HOMEPATH/$WORKING_DIR/coassin_pipeline_data/kiv2_6.fasta \
   $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output_1.fastq \
   $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output_2.fastq \
@@ -178,23 +188,18 @@ rm -rf fastqs
 echo "Execution: fastq files cleaned"
 
 # Navigate into the cloudgene
-cd cloudgene
 # Run Coassin pipeline with bam input in bams folder,
 # refernce, annotate base, and annotate region are provided by Coassin
-./cloudgene run lpa-mutation-server \
+cloudgene/cloudgene run lpa-mutation-server \
   --input $HOMEPATH/$WORKING_DIR/bams \
   --archive $HOMEPATH/$WORKING_DIR/coassin_pipeline_data/kiv2_6.fasta \
   --annotateBase $HOMEPATH/$WORKING_DIR/coassin_pipeline_data/typeb_annotation.txt \
   --annotateRegion $HOMEPATH/$WORKING_DIR/coassin_pipeline_data/maplocus_v3.txt
 echo "Execution: cloudgene finished"
 
-cd $HOMEPATH/$WORKING_DIR
 # Delete the intermediate .bam files
 rm -rf bams
 echo "Execution: bam files cleaned"
-
-
-
 
 ## Section 5: Copy the Result to Destination ----------------------------------------------------
 
