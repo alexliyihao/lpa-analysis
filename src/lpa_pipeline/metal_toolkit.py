@@ -50,10 +50,6 @@ Example:
 
 The ``multi_line_header`` only makes difference at the output header,
 it will create another header row, just for the visualization pipeline
-
-If you need docs for each step, after Initializing run::
-
-    print(mtk.__doc__)
 """
 
 import pandas as pd
