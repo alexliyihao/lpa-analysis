@@ -179,7 +179,8 @@ mkdir bams
 
 # Run bwa
 # bwa need to index the reference provided by Coassin first
-bwa/bwa index $HOMEPATH/$WORKING_DIR/coassin_pipeline_data/kiv2_6.fasta
+# the index is provided in coassin_pipeline_data.tgz. if it doesn't work run this line
+# bwa/bwa index $HOMEPATH/$WORKING_DIR/coassin_pipeline_data/kiv2_6.fasta
 
 # Align <bam_name>_output_1.fastq and <bam_name>_output_2.fastq against Coassin reference,
 # -v 1 only print errors, 0-4 will increase the verbosity, default 3 will give 10K+ line output
@@ -188,6 +189,7 @@ bwa/bwa mem -v 1 \
   $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output_1.fastq \
   $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output_2.fastq \
   | gzip -3 > $HOMEPATH/$WORKING_DIR/bams/$FILENAME_CLEANED
+# this output is actually a sam file named bam
 echo "Execution: bwa-mem finished at $HOMEPATH/$WORKING_DIR/bams/$FILENAME_CLEANED"
 
 # Navigate to the working directory
