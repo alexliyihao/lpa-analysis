@@ -148,14 +148,12 @@ echo "Deployment: necessary data installed"
 rm coassin_pipeline_data.tgz
 echo "Deployment: necessary data installation package cleaned"
 
+module load SAMTOOLS
+
 ## Section 4:Executing the Program ----------------------------------------------------
 
 # Navigate to the working directory
 cd $HOMEPATH/$WORKING_DIR
-
-# Copy the input data to the working directory
-cp $INPUTFILENAME $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
-echo "Deployment: copying original data $INPUTFILENAME to $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED"
 
 # if use filter from REGION
 #samtools view -b $INPUTFILENAME $REGION > $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
@@ -168,7 +166,9 @@ mkdir fastqs
 # Run the bam2fastq
 # Pass the .bam file, generate a <bam_name>_output_1.fastq and <bam_name>_output_2.fastq in fastqs folder
 bam2fastq/bam2fastq -o $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output#.fastq \
-              $HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
+              $INPUTFILENAME
+              # if using REGION
+              #$HOMEPATH/$WORKING_DIR/$FILENAME_CLEANED
 echo "Execution: bam2fastq finished"
 
 # Remove the original file
@@ -188,7 +188,7 @@ bwa/bwa mem -v 1 \
   $HOMEPATH/$WORKING_DIR/coassin_pipeline_data/kiv2_6.fasta \
   $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output_1.fastq \
   $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output_2.fastq \
-  | gzip -3 > $HOMEPATH/$WORKING_DIR/bams/$FILENAME_CLEANED
+  | samtools sort -o $HOMEPATH/$WORKING_DIR/bams/$FILENAME_CLEANED
 # this output is actually a sam file named bam
 echo "Execution: bwa-mem finished at $HOMEPATH/$WORKING_DIR/bams/$FILENAME_CLEANED"
 
