@@ -1,0 +1,1037 @@
+---
+title: "Manuscript Visuzaliation"
+author: "Yihao Li(yl4326)"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+library(dplyr)
+library(tidyr)
+library(plyr)
+library(ggplot2)
+library(readxl)
+library(tibble)
+library(stringr)
+library(ggVennDiagram)
+library(lemon)
+library(ggrepel)
+library(purrr)
+library(ggnewscale)
+library(viridis)
+library(stringr)
+library(RColorBrewer)
+library(patchwork)
+```
+```{r}
+sessionInfo()
+```
+From Yihao: I'm a more pythonic and Cpp-ish person, the R code is not very following R practice, I'm sorry about that.
+
+0. Data Loading
+
+
+```{r}
+convert_race_note = function(df){
+  return(df %>% 
+   plyr::mapvalues(
+     from = c("EU", "AF", "HISP"),
+     to = c("NHW", "B", "CH")) %>% 
+   factor(levels = c("NHW","B","CH")))
+} 
+
+convert_phenotype_note = function(df){
+  return(df %>% plyr::mapvalues(
+    from = c("HEART","DEMENTIA","DIABETES",
+             "LIP01_B","LIP02_B","LIP03_B","LIP04_2",
+             "INSL01_2","INSL02_2","INSL03_2",
+             "HYPERTENSION","STROKE","HBA1C_2"),
+    to = c("History of Heart Disease", 
+           "Clinical Alzheimer's Disease",
+           "History of Diabetes", 
+           "Cholestrol", "HDL", "Triglycerides", "LDL",
+           "Glucose", "Insulin", "C-Peptide", 
+           "Hypertension", "Stroke", 
+           "Hemoglobin A1C")
+  ))
+}
+
+```
+
+Personal infomation, can be obtained from **other_exog** in the main GWAS pipeline.
+```{r}
+personal_info = utils::read.csv("data/personal_info_N=3815.csv")
+personal_info %>% utils::head(5)
+personal_info = personal_info %>% 
+  dplyr::mutate(
+    ethnicity = ethnicity %>% base::toupper(),
+    GENDER = plyr::mapvalues(
+      personal_info$GENDER, 
+      from = c(0,1),
+      to = c("Male", "Female")))
+```
+
+variant rarity and freq table can be obtained from the **visualization.freq_table_generator** module.
+```{r}
+variant_table = utils::read.csv("data/info_table_new_phenotypes.csv")
+variant_table %>% utils::head()
+variant_table = variant_table %>% 
+  magrittr::set_colnames(
+    c("variant", "EU", "AF", "HISP", "population", 
+      "Male", "Female", "Novelty", "mylocus", "coding"))
+```
+
+```{r}
+aggregate_freqs = utils::read.csv(
+  "data/aggregate_freq_table_new_phenotypes_N_subject=3817.csv") %>% 
+  dplyr::rename(SNPs = X)
+aggregate_freqs %>% utils::head()
+```
+
+# Supplemental Figure S1: distribution of the Locus for all variants
+
+```{r}
+for_figure = variant_table %>% 
+  dplyr::rename(Locus = mylocus) %>% 
+  dplyr::mutate(
+    Novel = Novelty %>% 
+      plyr::mapvalues(
+        from = c("True", "False"), 
+        to = c("Novel", "Previously identified")
+        ) %>% 
+      factor(level = c("Novel", "Previously identified")))
+```
+
+
+```{r}
+all_variants_by_locus = ggplot2::ggplot(
+  data = for_figure, 
+  mapping = aes(x = Locus, fill = Novel))+
+  ggplot2::geom_bar(stat = "count")+
+  ggplot2::geom_text(
+    stat='count', 
+    mapping = aes(
+      label=after_stat(count),
+      color = Novel),
+    position = "stack",
+    vjust = -0.5,
+    size=3.5)+
+  ggplot2::theme_classic()+
+  ggplot2::scale_y_continuous(expand = c(0,0), limits = c(0, 700))+
+  ggplot2::scale_color_grey()+
+  ggplot2::scale_fill_grey()+
+  ggplot2::theme(legend.title = element_blank())+
+  ggplot2::coord_fixed(ratio = 1/150)
+#ggplot2::ggsave("figures/supplemental_figure_S1_distribution_of_locus.png", plot = all_variants_by_locus)
+all_variants_by_locus
+```
+
+
+
+
+# Figure 1: Appearance Venn Diagram for variants
+
+```{r}
+appearance_venn_diagram = function(df, label){
+  for_figure = df %>% 
+    dplyr::select(tidyr::all_of(c("variant","EU", "AF", "HISP"))) %>% 
+    tidyr::pivot_longer(-"variant", names_to = "ethnicity") %>% 
+    dplyr::rename(Rarity = value) %>% 
+    dplyr::filter(Rarity != "Not Detected") %>% 
+    dplyr::mutate(Ethnicity = ethnicity %>% convert_race_note())
+  g = ggVennDiagram::ggVennDiagram(
+    list("NHW"= sort(for_figure[for_figure$Ethnicity=="NHW",]$variant),
+         "B"= sort(for_figure[for_figure$Ethnicity=="B",]$variant),
+         "CH"= sort(for_figure[for_figure$Ethnicity=="CH",]$variant)),
+    label_size = 4,
+    set_size = 4)+  
+    ggplot2::scale_fill_distiller(palette = "Greys")+
+    ggplot2::scale_color_brewer(palette = "Greys")+
+    ggplot2::scale_x_continuous(expand = expansion(mult = .2))+ 
+    ggplot2::labs(title = label)+
+    ggplot2::theme(
+        legend.title = element_text(size=8),
+        plot.title = element_text(size = 14, face = "bold"),
+        legend.position = "none")
+  return(g)
+}
+```
+
+Figure 1A All snps (N_snp = 1421) 
+Figure 1B Previously discovered Exons (N = 103)
+Figure 1C All novel exons (N = 164)
+Figure 1D All novel introns (N = 1154)
+```{r}
+all_variants_Venn = appearance_venn_diagram(
+  df = variant_table, 
+  label = "A")
+previouly_discovered_Venn = appearance_venn_diagram(
+  df = variant_table %>% dplyr::filter(Novelty == "False"), 
+  label = "B")
+novel_exonic_variants_Venn = appearance_venn_diagram(
+  df = variant_table %>% dplyr::filter((Novelty == "True") & (coding == "Exon")),
+  label = "C")
+novel_intronic_Venn = appearance_venn_diagram(
+  df = variant_table %>% dplyr::filter((Novelty == "True") & (coding == "Intron")) , 
+  label = "D")
+
+aggregate_venn = (all_variants_Venn + previouly_discovered_Venn) / 
+  (novel_exonic_variants_Venn + novel_intronic_Venn)
+#ggsave("figures/Figure_1_venn_diagrams_for_different_filter_condition.png",aggregate_venn)
+aggregate_venn
+```
+
+# Figure 2 
+
+variant rarity and freq table can be obtained from the **visualization.appearance_table_generator** module.
+```{r}
+rarity_distribution_plot = function(df, top_limit = 700, label = "A"){
+  appearance_table = df %>% 
+    dplyr::mutate(
+      Male_only = Male_appeared_in_sub_class - Both_appeared_in_sub_class,
+      Female_only = Female_appeared_in_sub_class - Both_appeared_in_sub_class,
+      Both_Gender = Both_appeared_in_sub_class
+    )
+  
+  for_figure = appearance_table %>% 
+    dplyr::select(tidyr::all_of(c("Ethnicity","Rarity","Male_only", 
+                                  "Female_only", "Both_Gender"))) %>% 
+    tidyr::pivot_longer(-c("Ethnicity","Rarity"), names_to = "Gender") 
+  
+  for_figure = for_figure %>% 
+    dplyr::mutate(
+      Ethnicity = for_figure$Ethnicity %>% convert_race_note(),
+      Rarity = factor(for_figure$Rarity, levels = c("Rare", "Common")),
+      Gender = for_figure$Gender %>% 
+        plyr::mapvalues(from = c("Female_only", "Male_only", "Both_Gender"), 
+                        to = c("Female only", "Male only", "Both Gender")) %>% 
+        factor(level = c("Female only", "Male only", "Both Gender")))
+  
+  g = ggplot2::ggplot(
+    data = for_figure[for_figure$value != 0,], 
+    mapping = aes(x = Rarity, y = value, fill = Gender)) + 
+    ggplot2::geom_bar(stat = "identity",
+             position = "stack") +
+    ggplot2::facet_grid(~ Ethnicity)+
+    ggplot2::scale_fill_grey() +
+    ggplot2::geom_text(stat='identity',
+                       aes(label = value,
+                           color= Gender),
+                       position = position_stack(vjust = 0.5),
+                       size=3.5)+
+    ggplot2::scale_color_manual(values = c("white", "black", "black"), drop = FALSE)+
+    ggplot2::theme_bw()+
+    ggplot2::scale_y_continuous(expand = c(0,0), limits = c(0, top_limit))+
+    ggplot2::coord_fixed(ratio= 1/(top_limit/5))+
+    ggplot2::labs(title = label, x = "", y="Number of Variants")+
+    ggplot2::theme(
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.spacing = unit(0, "lines")
+    )
+  return(g)
+}
+```
+
+## Figure 2A: all 1421 SNPs
+
+
+```{r}
+appearance_table = utils::read.csv("data/appearance_table_by_ethnicity_gender_new_phenotype.csv")[,-1]
+
+appearance_table %>% utils::head(5)
+all_variants_rarity_distribution = rarity_distribution_plot(df = appearance_table,top_limit = 700, label = "A")
+```
+
+
+## Figure 2B: previouly idnetified exons
+
+```{r}
+appearance_table = utils::read.csv("data/appearance_table_by_ethnicity_gender_coassin_snps_new_phenotype.csv")[,-1]
+identified_exons_rarity_distribution = rarity_distribution_plot(df = appearance_table,top_limit = 60, label = "B")
+```
+
+# Figure 2C Novel Exons
+```{r}
+appearance_table = utils::read.csv("data/appearance_table_by_ethnicity_gender_new_exons_new_phenotype.csv")[,-1]
+novel_exons_rarity_distribution = rarity_distribution_plot(df = appearance_table,top_limit = 80,label = "C")
+```
+
+
+# Figure 2D Introns:
+
+```{r}
+appearance_table = utils::read.csv("data/appearance_table_by_ethnicity_gender_introns_new_phenotype.csv")[,-1]
+intron_rarity_distribution = rarity_distribution_plot(df = appearance_table,top_limit = 550, label = "D")
+```
+
+
+```{r}
+figure_2_panel = lemon::grid_arrange_shared_legend(
+  all_variants_rarity_distribution,
+  identified_exons_rarity_distribution,
+  novel_exons_rarity_distribution,
+  intron_rarity_distribution,
+  nrow = 2,
+  ncol = 2,
+  position = "right"
+  )
+
+#ggsave("figures/Figure_2_variant_distribution_panel_by_gender_and_race.png", 
+#       figure_2_panel,
+#       width = 8,
+#       height = 7)
+```
+
+
+# Figure 3: Manhattan Plot: Phenotype vs SNPs
+
+The source file can be obtained from the output complete_output_tidied.xlsx in "trait_vs_SNP" folder
+```{r}
+association_result = readxl::read_xlsx(
+  "WHICAP_result_tables/phenotypes_vs_SNP/phenotypes_vs_SNP.xlsx")
+association_result = association_result[,-1]
+colnames(association_result)[1] = "SNP"
+association_result %>% head(5)
+```
+
+
+```{r}
+association_result = association_result %>% 
+  dplyr::mutate(
+    mylocus = mylocus %>% factor(),
+    pos = stringr::str_extract(SNP, "[0-9]+") %>% as.numeric(),
+    #P_value = `P-value` %>% as.numeric(),
+    P_value_FDR = `FDR_adjusted_p-value`,
+    Chr = 6,
+    trait = trait %>% convert_phenotype_note()) %>% 
+  dplyr::rename(phenotype = trait, locus = mylocus)
+```
+
+```{r}
+manhattan_plot_overall = function(threshold){
+  for_figure = association_result
+  significant_snps = for_figure %>% 
+    dplyr::filter(`FDR_adjusted_p-value` < threshold) %>% 
+    dplyr::mutate(locus = locus %>% factor(levels = for_figure$locus %>% levels),
+                  SNP = paste(SNP, phenotype, sep = " - "))
+  g = ggplot2::ggplot(for_figure)+
+    ggplot2::geom_rect(
+      color = "lightgrey",
+      fill = "lightgrey",
+      size = 0.01,
+      xmin = 581,
+      xmax = 740,
+      ymin = 0,
+      ymax = Inf,
+      alpha = 0.01)+
+    ggplot2::geom_rect(
+      color = "lightgrey",
+      fill = "lightgrey",
+      size = 0.01,
+      xmin = 4744,
+      xmax = 4925,
+      ymin = 0,
+      ymax = Inf,
+      alpha = 0.01)+
+    ggplot2::geom_point(
+      mapping = aes(
+        x = pos, 
+        y = -log10(`FDR_adjusted_p-value`),
+        fill = phenotype,
+        color = phenotype
+        ),
+        alpha=1, 
+        size=1,
+        stroke = FALSE
+      )+
+    ggplot2::scale_color_manual(
+      values = c("dodgerblue2", "#E31A1C", # red
+                 "green4",
+                 "#6A3D9A", # purple
+                 "#FF7F00", # orange
+                 "gold1",
+                 "#FB9A99", # lt pink
+                 "skyblue2", "black", 
+                 "palegreen2",
+                 "#CAB2D6", # lt purple
+                 "#FDBF6F", # lt orange
+                 "khaki2"))+
+    ggnewscale::new_scale_color()+
+    ggnewscale::new_scale_fill()+
+    ggrepel::geom_label_repel(
+      data = significant_snps,
+      mapping = aes(
+        label=SNP,
+        x = pos,
+        y = -log10(`FDR_adjusted_p-value`),
+        fill = locus,
+        color = locus),
+        segment.color = "grey50",
+        size=2.0,
+        max.overlaps = 9,
+        label.padding = 0.1,
+        box.padding = 0.5) +
+    ggplot2::scale_colour_manual(
+      values=c(
+        "Exon421"="white",
+        "Exon422"="white", 
+        "large-I" = "black",
+        "near_splice" = "black",
+        "short-I" = "black"), 
+      drop = FALSE)+
+    ggplot2::theme_bw() +
+    ggplot2::scale_fill_grey(drop=FALSE) +
+    ggplot2::theme( 
+      panel.border = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      legend.key.size = unit(0.4, 'cm')
+      )+
+    ggplot2::ylab("-log(FDR-adjusted p-value)")+
+    ggplot2::scale_y_continuous(
+      limits = c(0,2.0), 
+      expand = c(0,0))+
+    ggplot2::coord_fixed(ratio = 2500/1)
+  return(g)
+}
+
+```
+
+```{r}
+manhattan_plot_overall_result = manhattan_plot_overall(threshold = 0.05)
+#ggsave("figures/manhattan_plot_all_phenotypes.png", manhattan_plot_overall_result)
+manhattan_plot_overall_result
+```
+
+# Figure 4: VNTR Density
+
+The estimate is obtained from vntrwrap repository (https://github.com/alexliyihao/vntrwrap)
+```{r}
+vntr_estimate = utils::read.csv("data/predicted_result_20240102_new_mask_simple.csv")
+vntr_estimate %>% utils::head(5)
+```
+```{r}
+vntr_estimate = vntr_estimate %>% 
+  dplyr::mutate(Race = ethnicity %>% convert_race_note())
+```
+```{r}
+vntr_overall_distribution = ggplot2::ggplot(
+  data = vntr_estimate,
+  mapping = aes(x = estimate))+
+  ggplot2::geom_histogram(fill = "white", color = "black", binwidth = 0.25)+
+  ggplot2::scale_y_continuous(expand = c(0,0), limits = c(0,140))+
+  ggplot2::coord_fixed(ratio = 1/4)+
+  ggplot2::theme_bw()+
+  ggplot2::labs(title = "A", x = "CN Estimate", y = "Count")+
+  ggplot2::theme(
+      plot.title = element_text(size = 14, face = "bold")
+  )
+vntr_overall_distribution
+#ggplot2::ggsave("figures/vntr_distribution_overall_histogram.png", vntr_distribution)
+```
+
+
+```{r}
+vntr_distribution = ggplot2::ggplot(
+  data = vntr_estimate,
+  mapping = aes(x = estimate))+
+  ggplot2::geom_histogram(mapping = aes(y = after_stat(density)),
+                          fill = "white", color = "black", binwidth = 0.25)+
+  ggplot2::geom_density()+
+  ggplot2::scale_y_continuous(expand = c(0,0))+
+  ggplot2::coord_fixed(ratio = 300/1)+
+  ggplot2::theme_bw()+
+  ggplot2::labs(title = "A")+
+  ggplot2::theme(
+      plot.title = element_text(size = 14, face = "bold")
+  )
+vntr_distribution
+#ggplot2::ggsave("figures/vntr_distribution_overall_density.png", vntr_distribution)
+```
+
+```{r}
+vntr_distribution_density_by_race = ggplot2::ggplot(
+  data = vntr_estimate, 
+  mapping = aes(
+    x = estimate, 
+    color = Race))+
+  ggplot2::geom_density(stat = 'density')+
+  ggplot2::theme_bw()+
+  ggplot2::scale_y_continuous(limits = c(0, 0.125), expand = c(0,0))+
+  ggplot2::labs(title = "B", x = "CN Estimate", y = "Density")+
+  ggplot2::theme(
+      plot.title = element_text(size = 14, face = "bold")
+  )+
+  ggplot2::coord_fixed(ratio = 200/1)
+vntr_distribution_density_by_race
+#ggplot2::ggsave("figures/vntr_distribution_by_race_density_curve.png", vntr_distribution)
+```
+
+```{r}
+vntr_distribution_faceted = ggplot2::ggplot(
+  data = vntr_estimate,
+  mapping = aes(x = estimate))+
+  ggplot2::geom_histogram(
+    mapping = aes(y = ..density..,),
+    fill = "white", 
+    color = "black", 
+    binwidth = 0.5)+
+  ggplot2::geom_density()+
+  ggplot2::facet_grid(rows = vars(Race))+
+  ggplot2::theme_classic()+
+  ggplot2::scale_y_continuous(expand = c(0,0))+
+  ggplot2::labs(title = "C", x = "CN Estimate", y = "Density")+
+  ggplot2::theme(
+      plot.title = element_text(size = 14, face = "bold")
+  )+
+  ggplot2::coord_fixed(ratio = 150/1)
+vntr_distribution_faceted
+#ggsave("figures/vntr_estimate_distribution_by_race_facet.png", vntr_distribution)
+```
+vntr_overall_distribution
+```{r}
+vntr_panel = (vntr_overall_distribution / vntr_distribution_density_by_race) | vntr_distribution_faceted
+vntr_panel
+#ggsave("figures/Figure_4_VNTR_CN_distribution_panel.png",vntr_panel)
+```
+
+
+# Figure 5: Boxplot VNTR vs SNPs
+
+The output is from complete_output_tidied.xlsx from VNTR ~ SNP section in illustration.
+```{r}
+vntr_result = readxl::read_excel("WHICAP_result_tables/VNTR_VS_SNP/complete_output_tidied.xlsx")
+vntr_result %>% head()
+```
+This output is from the filtered_result in illustration
+```{r}
+encoding_result = utils::read.table(
+  "data/encoded_result_N_var=1421_N_subject=3817.csv", 
+  sep = ",")
+```
+
+```{r}
+vntr_result = vntr_result %>% dplyr::arrange(`FDR_adjusted_p-value`)
+```
+
+```{r}
+encoding_result = encoding_result %>% magrittr::set_colnames(encoding_result[1,])
+encoding_result = encoding_result[-c(1),]
+colnames(encoding_result)[1] = "FAM_ID"
+encoding_result = encoding_result %>% dplyr::mutate(dplyr::across(!FAM_ID,as.numeric))
+```
+```{r}
+vntr_result %>% 
+  utils::head(10) %>% 
+  dplyr::pull(index)
+```
+
+```{r}
+for_figure = merge(
+  x = encoding_result %>% 
+    dplyr::select(c("FAM_ID",vntr_result %>% dplyr::pull(index))) %>% 
+    dplyr::mutate(dplyr::across(!FAM_ID,as.factor)),
+  y = vntr_estimate)
+```
+
+```{r}
+boxplot_vntr = function(snp){
+  snp = ggplot2::sym(snp)
+  ggplot2::ggplot(
+    data = for_figure, 
+    mapping = aes(x = Race, y = estimate, color = !!snp))+
+  ggplot2::geom_boxplot(width = 0.8)+
+  ggplot2::theme_classic()
+}
+```
+
+this is #60 in the list which is the first reverse direction... 
+```{r}
+boxplot_vntr("4672-A/G")
+```
+
+```{r}
+boxplot_vntr("4755-T/C")
+```
+
+```{r}
+g = (boxplot_vntr("654-C/T")+boxplot_vntr("588-T/G")+boxplot_vntr("568-G/C")) / 
+  (boxplot_vntr("566-G/C")+boxplot_vntr("4894-G/A")+boxplot_vntr("690-A/C")) /
+  (boxplot_vntr("4816-T/A")+boxplot_vntr("600-T/C")+boxplot_vntr("4951-A/C"))
+#ggsave("figures/VNTR_vs_SNP_top_hits.png", plot = g, width = 14, height = 14)
+g
+```
+
+
+# Figure 6. Serum CF 
+
+The input is from lpa/wIS ~ SNP + adjustments section in the illustration
+```{r}
+wIS_result = readxl::read_xlsx(
+  "WHICAP_result_tables/Serum_vs_SNP/wIS_complete_tidied.xlsx") %>% 
+  dplyr::select(
+    tidyr::all_of(c(
+      "index", 
+      "variant Beta", 
+      #"variant P-value", 
+      #"coding",
+      "FDR_adjusted_p-value"))) %>% 
+  magrittr::set_colnames(c("variant", "effect_size", "p_value_FDR"))
+lpa_result = readxl::read_xlsx(
+  "WHICAP_result_tables/Serum_vs_SNP/lpa_complete_tidied.xlsx") %>% 
+  dplyr::select(
+    tidyr::all_of(c(
+      "index", 
+      "variant Beta", 
+      #"variant P-value", 
+      #"coding",
+      "FDR_adjusted_p-value"))) %>% 
+  magrittr::set_colnames(c("variant", "effect_size", "p_value_FDR"))
+
+p_value_threshold = 0.05
+```
+
+```{r}
+wIS_result_filtered = merge(
+  x = wIS_result %>% dplyr::filter(p_value_FDR <= p_value_threshold),
+  y = info_table %>% select(c("snp_pos", "Novelty")), 
+  by.x = c("variant"), 
+  by.y = c("snp_pos"),
+  all.x = TRUE) %>% 
+  dplyr::arrange(p_value_FDR)
+```
+
+```{r}
+wIS_result_filtered
+```
+
+
+```{r}
+lpa_result_filtered = merge(
+  x = lpa_result %>% dplyr::filter(p_value_FDR <= p_value_threshold),
+  y = info_table %>% select(c("snp_pos", "Novelty")), 
+  by.x = c("variant"), 
+  by.y = c("snp_pos"),
+  all.x = TRUE) %>% 
+  dplyr::arrange(p_value_FDR)
+```
+```{r}
+lpa_result_filtered
+```
+
+
+Split subjects into 2 groups (by threshold 38, 27 = 18+9)
+
+```{r}
+serum_freq = utils::read.csv("data/serum_snp_freq_2_group_by_38.csv")
+serum_data = utils::read.csv("data/serum_data_grouped_2_group_by_38.csv")
+serum_lpa = serum_data[,2]
+print(serum_lpa[order(serum_lpa)])
+print(summary(serum_lpa[order(serum_lpa)]))
+```
+
+```{r}
+freq_used = serum_freq[match(wIS_result_filtered$variant, serum_freq$X),] %>% drop_na()
+for_figure_wIS = rbind(
+            freq_used %>% 
+              dplyr::select(tidyr::all_of(c("X","freq_low_Lp.a."))) %>% 
+              tibble::add_column(Groups = "Low Lp(a) group") %>% 
+              dplyr::rename("Rel.Freq"= "freq_low_Lp.a."),
+            freq_used %>% 
+              dplyr::select(tidyr::all_of(c("X","freq_high_Lp.a."))) %>% 
+              tibble::add_column(Groups = "High Lp(a) group")%>% 
+              dplyr::rename("Rel.Freq"= "freq_high_Lp.a.")
+            ) %>% dplyr::rename("SNP" = "X")
+for_figure_wIS$Groups = for_figure_wIS$Groups %>% factor(
+                              levels = c("Low Lp(a) group", "High Lp(a) group"))
+for_figure_wIS$SNP = for_figure_wIS$SNP %>% factor(
+                             levels = wIS_result$variant)
+```
+
+```{r}
+freq_used = serum_freq[match(lpa_result_filtered$variant, serum_freq$X),] %>% drop_na()
+for_figure_lpa = rbind(
+            freq_used %>% 
+              dplyr::select(tidyr::all_of(c("X","freq_low_Lp.a."))) %>% 
+              tibble::add_column(Groups = "Low Lp(a) group") %>% 
+              dplyr::rename("Rel.Freq"= "freq_low_Lp.a."),
+            freq_used %>% 
+              dplyr::select(tidyr::all_of(c("X","freq_high_Lp.a."))) %>% 
+              tibble::add_column(Groups = "High Lp(a) group")%>% 
+              dplyr::rename("Rel.Freq"= "freq_high_Lp.a.")
+            ) %>% dplyr::rename("SNP" = "X")
+for_figure_lpa$Groups = factor(for_figure_lpa$Groups, 
+                           levels = c("Low Lp(a) group", 
+                                      "High Lp(a) group"))
+for_figure_lpa$SNP = factor(for_figure_lpa$SNP,
+                        levels = lpa_result$variant)
+```
+
+```{r}
+for_figure_merge = merge(for_figure_lpa %>% dplyr::rename("Rel.Freq_Lpa" = "Rel.Freq"), 
+                         for_figure_wIS %>% dplyr::rename("Rel.Freq_wIS" = "Rel.Freq"), 
+                         by = c("SNP", "Groups"), 
+                         all = TRUE, 
+                         suffixes = c("_Lpa", "_wIS"))
+for_figure_merge$SNP = for_figure_merge$SNP %>% factor()
+```
+
+```{r}
+for_figure_merge$pos = for_figure_merge$SNP %>% 
+  as.character() %>% 
+  stringr::str_extract(pattern = "^([0-9]+)") %>% 
+  as.numeric()
+```
+```{r}
+for_figure_merge$SNP = for_figure_merge$SNP %>% 
+  factor(levels = (for_figure_merge %>% arrange(pos))$SNP %>% 
+           unique() %>% 
+           as.character())
+```
+
+```{r}
+for_figure_merge = merge(for_figure_merge, 
+                         info_table %>% select(c(snp_pos, coding)) %>% unique(),
+                         by.x = "SNP",
+                         by.y = "snp_pos", 
+                         all.x = TRUE)
+```
+
+
+
+```{r}
+g_lpa = ggplot2::ggplot(for_figure_merge, 
+                        mapping = aes(x = SNP, 
+                                      y = Rel.Freq_Lpa, 
+                                      fill = Groups, 
+                                      color = coding))+
+  ggplot2::geom_bar(stat = 'identity', position = "dodge", width = 0.7)+
+  ggplot2::theme_bw()+
+  ggplot2::scale_y_continuous(expand = c(0,0.0),
+                     limits = c(0,1.03))+
+  ggplot2::scale_fill_grey()+
+  ggplot2::scale_color_manual(values = c("black", "white"))+
+  #ggplot2::scale_fill_manual(values = c("lightblue", "darkblue"))+
+  ggplot2::ylab("RF of Lp(a)-related SNP Carrier")+
+  ggplot2::theme(axis.title.x = element_blank(), 
+                 axis.text.x = element_text(angle = 90, 
+                                            hjust = 1.1, 
+                                            vjust = 0.5, 
+                                            size = 8,
+                                            margin = margin(t = 4, b = 4)
+                                            ),
+                 axis.ticks.x.bottom = element_line(),
+                 plot.margin = unit(c(0,0,-2,0), units = "pt"),
+                 axis.title.y = element_text(size = 8)) 
+
+g_was = ggplot2::ggplot(for_figure_merge, 
+                        mapping = aes(
+                          x = SNP, 
+                          y = Rel.Freq_wIS, 
+                          fill = Groups, 
+                          color = coding))+
+  ggplot2::geom_bar(stat = 'identity', position = "dodge", width = 0.7)+
+  ggplot2::theme_bw()+
+  #ggplot2::scale_fill_manual(values = c("lightblue", "darkblue"))+
+  ggplot2::scale_fill_grey()+
+  ggplot2::scale_color_manual(values = c("black", "white"))+
+  ggplot2::ylab("RF of wIS-related SNP Carrier")+
+  ggplot2::scale_y_reverse(expand = c(0,0),
+                           limits = c(1.03,0))+
+  ggplot2::scale_x_discrete(position = "top") +
+  ggplot2::theme(axis.title.x = element_blank(), 
+               axis.text.x = element_blank(),
+               axis.ticks.x.top = element_line(),
+               plot.margin = unit(c(-2,0,0,0), units = "pt"),
+               axis.title.y = element_text(size = 8))
+
+g = lemon::grid_arrange_shared_legend(g_lpa, g_was, ncol = 1, nrow = 2, 
+                                      heights = c(1.2, 1), 
+                                      padding = 2,
+                                      position='right',
+                                      plot = TRUE)
+#ggsave("figures/updated_serum_top_hits_adjusted_p_value.png", g)
+g
+```
+
+
+# Supplemental Table S1. Coassin dataset:
+
+Coassin mentioned "The 1000 Genomes project is a freely accessible public data resource including data from 2,504 individuals in its final phase (so called 1000 Genomes Phase 3). High coverage exome sequencing data of all individuals is available at ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data. Additionally, high coverage whole genome sequencing (WGS) data from 150 of these individuals was made publicly available by the HiSeqX Diversity Panel of the Illumina Polaris project (https://github.com/Illumina/Polaris/wiki/HiSeqX‐Diversity‐Panel; (https://www.ebi.ac.uk/ena/data/view/PRJEB20654)."
+
+ - **Note: the population description file gives total 2577 samples (vs 2504). Not quite sure what is dropped... I'll first run the frequency from this file. This frequency should be underestimated when compared with Coassin's, but very little**.
+ 
+ - Error may happened due to it's OCRed, I checked twice but it may happens.
+ 
+```{r, include = FALSE}
+#https://ddbj.nig.ac.jp/public/mirror_database/1000genomes/
+p3exome = utils::read.csv("data/20131219.populations.tsv", sep = "\t")
+coassin_population_size = p3exome %>% 
+  dplyr::group_by(Super.Population) %>% 
+  dplyr::summarise(sample_size = sum(Total)) %>% 
+  tidyr::drop_na()  
+print(coassin_population_size$sample_size %>% sum())
+```
+
+```{r}
+p3exome
+```
+```{r}
+coassin_population_size
+```
+
+```{r}
+coassin_s11
+```
+
+```{r}
+# OCRed from doi: 10.1194/jlr.M090381 supplementary table S11
+coassin_s11 = readxl::read_xlsx(
+  "data/Coassin_S11/Coassin_S11_table.xlsx", 
+  skip = 1) %>% 
+  dplyr::mutate_all(~replace(., is.na(.), 0))
+coassin_s11[,-c(1,2)] = apply(coassin_s11[,-c(1,2)], MARGIN = 2, FUN = as.integer)
+```
+
+```{r}
+coassin_freq = coassin_s11  %>% 
+  dplyr::mutate(
+    variant = variant %>% str_replace(pattern = " ", replacement = "-"),
+    EU = GBR+FIN+IBS+TSI+CEU,
+    AF = ASW+ESN+GWD+LWK+MSL+YRI,
+    HISP = CLM+MXL+PEL+PUR
+  ) %>% 
+  dplyr::select(tidyr::all_of(c("variant", "EU", "AF", "HISP", "PUR")))
+```
+
+
+```{r}
+coassin_freq = coassin_freq %>% 
+  dplyr::mutate(
+    EU_total = coassin_population_size[coassin_population_size$Super.Population == "EUR",]$sample_size,
+    AF_total = coassin_population_size[coassin_population_size$Super.Population == "AFR",]$sample_size,
+    HISP_total = coassin_population_size[coassin_population_size$Super.Population == "AMR",]$sample_size,
+    PUR_total = 105,
+    EU_freq = EU / EU_total,
+    AF_freq = AF / AF_total,
+    HISP_freq = HISP / HISP_total,
+    PUR = PUR %>% replace_na(0),
+    PUR_freq = PUR / PUR_total
+)
+#writexl::write_xlsx(coassin_freq, "data/coassin_S11_freq.xlsx")
+```
+
+Use top lines as example
+
+```{r, echo=TRUE}
+coassin_freq %>% head()
+```
+
+What worth notice is not all the exons Coassin discovered (208) has frequencies, only 204 of them have rows in the frequency table. 1 of these 4 is in our dataset, so we need to skip it when draw comparison figures
+
+```{r}
+# OCRed from doi: 10.1194/jlr.M090381 supplementary table S9
+coassin_Exons = readxl::read_xlsx("data/Coassin_exome_from_excel_OCR.xlsx")
+coassin_Exons = paste(coassin_Exons$pos, 
+                      "-", 
+                      coassin_Exons$Ref %>% toupper(), 
+                      "/" , 
+                      coassin_Exons$Var %>% toupper(), sep =  "")
+```
+
+```{r, include=TRUE, echo=TRUE}
+print(length(coassin_Exons))
+print(length(coassin_freq$variant))
+print(length(intersect(coassin_Exons, coassin_freq$variant)))
+print(setdiff(coassin_Exons,coassin_freq$variant))
+print(setdiff(coassin_freq$variant,coassin_Exons))
+```
+```{r, include=TRUE, echo=TRUE}
+for (i in setdiff(coassin_Exons,coassin_freq$variant)){
+  print(paste(i, "in our dataset:", i %in% info_table$snp_pos))
+}
+```
+
+I think Gissette need this figure, technically it should be histogram, but I used a density curve for better illustration. A foreseeable bias is the difference between each bin will be smoothed, but the general idea is still the same. The x-axis is the absolute difference between relative frequencies in two datasets.
+
+
+```{r}
+previously_discovered_Exons = dplyr::intersect(
+  coassin_freq$variant, 
+  aggregate_freqs$SNPs)
+```
+
+```{r}
+coassin_count_table = coassin_freq[coassin_freq$variant %in% previously_discovered_Exons,] %>% 
+  dplyr::select(tidyr::all_of(c("variant", 
+                                "EU","EU_total", 
+                                "AF","AF_total", 
+                                "HISP","HISP_total",
+                                "PUR", "PUR_total"))) %>% 
+  dplyr::rename("EU_count_coassin" = "EU", 
+                "EU_total_coassin" = "EU_total",
+                "AF_count_coassin" = "AF", 
+                "AF_total_coassin" = "AF_total",
+                "HISP_count_coassin" = "HISP",
+                "HISP_total_coassin" = "HISP_total",
+                "PUR_count_coassin" = "PUR",
+                "PUR_total_coassin" = "PUR_total") %>% 
+  dplyr::mutate(
+    EU_non_count_coassin = EU_total_coassin - EU_count_coassin,
+    AF_non_count_coassin = AF_total_coassin - AF_count_coassin,
+    HISP_non_count_coassin = HISP_total_coassin - HISP_count_coassin,
+    PUR_non_count_coassin = PUR_total_coassin - PUR_count_coassin,
+    population_count_coassin = EU_count_coassin + AF_count_coassin + HISP_count_coassin,
+    population_non_count_coassin = EU_non_count_coassin + AF_non_count_coassin + HISP_non_count_coassin)
+```
+```{r}
+whicap_count_table = aggregate_freqs[
+  aggregate_freqs$SNPs %in% previously_discovered_Exons,] %>% 
+  dplyr::select(tidyr::all_of(c("SNPs", "count_eu","total_eu_detected", 
+                                "count_af","total_af_detected", 
+                                "count_hisp","total_hisp_detected"))) %>% 
+  dplyr::rename(
+    "variant" = "SNPs",
+    "EU_count_whicap" = "count_eu", 
+    "EU_total_whicap" = "total_eu_detected",
+    "AF_count_whicap" = "count_af", 
+    "AF_total_whicap" = "total_af_detected",
+    "HISP_count_whicap" = "count_hisp",
+    "HISP_total_whicap" = "total_hisp_detected") %>% 
+  dplyr::mutate(
+    EU_non_count_whicap = EU_total_whicap - EU_count_whicap,
+    AF_non_count_whicap = AF_total_whicap - AF_count_whicap,
+    HISP_non_count_whicap = HISP_total_whicap - HISP_count_whicap,
+    population_count_whicap = EU_count_whicap + AF_count_whicap + HISP_count_whicap,
+    population_non_count_whicap = EU_non_count_whicap + AF_non_count_whicap + HISP_non_count_whicap)
+```
+```{r}
+merge_count_table = base::merge(
+  x = coassin_count_table, 
+  y = whicap_count_table,
+  by.x = "variant", 
+  by.y = "variant")
+```
+
+
+
+```{r}
+test = merge_count_table %>% 
+  dplyr::rowwise() %>%
+  dplyr::mutate(
+    EU_p_value = stats::chisq.test(
+      matrix(
+        c(EU_count_coassin, EU_non_count_coassin, 
+          EU_count_whicap,  EU_non_count_whicap),
+        nrow = 2)
+      )$p.value,
+    AF_p_value = stats::chisq.test(
+      matrix(
+        c(AF_count_coassin, AF_non_count_coassin, 
+          AF_count_whicap,  AF_non_count_whicap),
+        nrow = 2)
+      )$p.value,
+    HISP_p_value = stats::chisq.test(
+      matrix(
+        c(HISP_count_coassin, HISP_non_count_coassin, 
+          HISP_count_whicap,  HISP_non_count_whicap),
+        nrow = 2)
+      )$p.value,
+    PUR_p_value = stats::chisq.test(
+      matrix(
+        c(PUR_count_coassin, PUR_non_count_coassin, 
+          HISP_count_whicap,  HISP_non_count_whicap),
+        nrow = 2)
+      )$p.value,
+    Population_p_value = stats::chisq.test(
+      matrix(
+        c(population_count_coassin, population_non_count_coassin, 
+          population_count_whicap,  population_non_count_whicap),
+        nrow = 2)
+      )$p.value
+    
+  )
+```
+
+```{r}
+sheets = list(
+  "EU" = test %>% select(c(
+    variant,EU_count_coassin, EU_non_count_coassin, 
+    EU_count_whicap, EU_non_count_whicap, EU_p_value)) %>% ungroup(),
+  "AF" = test %>% select(c(
+    variant,AF_count_coassin, AF_non_count_coassin, 
+    AF_count_whicap, AF_non_count_whicap, AF_p_value)) %>% ungroup(),
+  "HISP" = test %>% select(c(
+    variant,HISP_count_coassin, HISP_non_count_coassin, 
+    HISP_count_whicap, HISP_non_count_whicap, HISP_p_value)) %>% ungroup(),
+  "PUR" = test %>% select(c(
+    variant,PUR_count_coassin, PUR_non_count_coassin, 
+    HISP_count_whicap, HISP_non_count_whicap, PUR_p_value)) %>% ungroup(),
+  "Population" = test %>% select(c(
+    variant, population_count_coassin, population_non_count_coassin,
+    population_count_whicap, population_non_count_whicap, 
+    Population_p_value)) %>% ungroup())
+```
+
+```{r}
+significant_count = test %>% 
+  ungroup() %>% 
+  mutate(
+    EU_significant = (EU_p_value < p_value_threshold) %>% as.numeric(),
+    AF_significant = (AF_p_value < p_value_threshold) %>% as.numeric(),
+    HISP_significant = (HISP_p_value < p_value_threshold) %>% as.numeric(),
+    PUR_significant = (PUR_p_value < p_value_threshold) %>% as.numeric(),
+    Population_significant = (Population_p_value < p_value_threshold) %>% as.numeric() 
+    )%>% 
+  select(c(EU_significant, AF_significant, HISP_significant, PUR_significant, Population_significant))
+```
+```{r}
+significant_count
+```
+```{r}
+significant_count %>% 
+  purrr::map(table) %>% 
+  reduce(rbind) %>% 
+  magrittr::set_colnames(c("insignificant", "significant")) %>%
+  magrittr::set_rownames(c("EU_significant", 
+                           "AF_significant",
+                           "HISP_significant", 
+                           "PUR_significant",
+                           "Population_significant")) %>% 
+  as.data.frame()
+```
+
+```{r}
+significant_count_output = significant_count %>% 
+  purrr::map(table) %>% 
+  reduce(rbind) %>% 
+  magrittr::set_colnames(c("insignificant", "significant")) %>%
+  magrittr::set_rownames(c("EU_significant", 
+                           "AF_significant",
+                           "HISP_significant", 
+                           "PUR_significant",
+                           "Population_significant")) %>% 
+  as.data.frame()
+significant_count_output$group = c("EU_significant", 
+                                   "AF_significant",
+                                   "HISP_significant",
+                                   "PUR_significant",
+                                   "Population_significant")
+significant_count_output = significant_count_output %>% 
+  dplyr::select(group, insignificant, significant) %>% 
+  dplyr::mutate(NA_count = (sheets$Population %>% nrow() - significant - insignificant))
+```
+```{r}
+sheets$Population %>% nrow()
+```
+
+
+```{r}
+sheets$significant_count_output = significant_count_output
+```
+```{r}
+sheets
+```
+
+
