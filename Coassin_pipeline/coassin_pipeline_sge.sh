@@ -189,7 +189,7 @@ bwa/bwa mem -v 1 \
   $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output_1.fastq \
   $HOMEPATH/$WORKING_DIR/fastqs/${FILENAME_CLEANED}_output_2.fastq \
   | samtools sort -o $HOMEPATH/$WORKING_DIR/bams/$FILENAME_CLEANED
-# this output is actually a sam file named bam
+
 echo "Execution: bwa-mem finished at $HOMEPATH/$WORKING_DIR/bams/$FILENAME_CLEANED"
 
 # Navigate to the working directory
