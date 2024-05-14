@@ -1,0 +1,328 @@
+:py:mod:`lpa_pipeline.association`
+==================================
+
+.. py:module:: lpa_pipeline.association
+
+.. autoapi-nested-parse::
+
+   This pipeline running an iterative association test for each snps.
+
+   The iterative strategy is as follows:
+
+   * for each the target variable in ``target_strategy``
+       #. Extract the column from ``target_dataset``:
+       #. run preprocessing, if the value of key ``preprocessing`` is given in ``target_strategy``
+       #. group the dataset by columns defined by ``extra_iterate_on`` if provided
+       #. for each group, iterate over columns of ``encoded_snp`` (each SNP):
+           1. concatenate it with ``other_exogs``, generate the exogenous dataset
+           2. if ``one_to_one_exogs`` is provided, use ``one_to_one_strategy``
+              finding other columns and concatenate them as well
+           3. run regressions specified by ``target_strategy``.engine
+           4. combine the results from each SNP
+           5. save the regression output
+
+   Two APIs provided
+    * sklearn style:
+
+        * 3-line style::
+
+           snp_asso = SNPAssociation()
+           snp_asso.fit(**kwargs)
+           snp_asso.transform()
+
+        * 2-line style::
+
+           snp_asso = SNPAssociation()
+           snp_asso.fit_transform(**kwargs)
+
+    * function style::
+
+           snp_asso = SNPAssociation()
+           snp_asso.association_test(**kwargs_1) #kwargs_1 can be new kwargs
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   lpa_pipeline.association.SNPAssociation
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   lpa_pipeline.association.encode_dementia
+   lpa_pipeline.association.dropna
+   lpa_pipeline.association.filter_c
+   lpa_pipeline.association.target_strategy
+   lpa_pipeline.association.target_strategy_serum
+
+
+
+.. py:function:: encode_dementia(df: pandas.DataFrame) -> pandas.DataFrame
+
+   An example preprocessing strategy used in target_strategy,
+
+   It should be a callable takes in a pd.DataFrame and returns another one
+
+
+.. py:function:: dropna(df: pandas.DataFrame) -> pandas.DataFrame
+
+   A simpler preprocessing strategy used in target_strategy
+
+   It should be a callable takes in a pd.DataFrame and returns another one
+
+
+.. py:function:: filter_c(df: pandas.DataFrame, threshold=5) -> pandas.DataFrame
+
+   The filter C on existing frequency,
+
+   both 0 and 1 should appear for more than <threshold> times
+
+   :param df: pandas DataFrame, the index should be the Sample ID, and the columns are the snps
+   :param threshold: int, the number threshold that both 0 and 1 should appear more than this number
+
+
+.. py:function:: target_strategy() -> Dict[str, Dict[str, Union[statsmodels.api.Logit, statsmodels.api.OLS, Callable]]]
+
+   An example target_strategy used in the association analysis
+
+   The key for main dict is the variable name
+   The value is a dict with the following keys:
+
+       "engine", whose value is a statsmodels model
+
+       "preprocessing", whose value is a callable takes in a pd.DataFrame and returns another one
+
+
+.. py:function:: target_strategy_serum() -> Dict[str, Dict[str, Union[statsmodels.api.Logit, statsmodels.api.OLS, Callable]]]
+
+   An example target_strategy used in the serum analysis
+
+
+.. py:class:: SNPAssociation
+
+
+   a class for running SNP association pipeline
+
+   .. py:method:: debug_log(*args) -> None
+
+      only print the result when it's in verbose mode == 2
+
+
+   .. py:method:: fit(encoded_snp: pandas.DataFrame, other_exogs: pandas.DataFrame, target_dataset: pandas.DataFrame, target_strategy: Dict[str, Dict[str, Union[statsmodels.api.Logit, statsmodels.api.OLS, Callable]]], output_path: str, snp_alias: str = 'variant', one_to_one_exogs: Optional[pandas.DataFrame] = None, one_to_one_strategy: Optional[Callable] = None, one_to_one_alias: Optional[str] = None, na_strategy: str = 'drop', group_na_strategy: str = 'snp_wise', extra_iterate_on: Optional[list] = None, snps_preprocessing_strategy: Optional[Callable] = None, verbose: int = 0) -> None
+
+      API setting up the regression (not running)
+
+      :param encoded_snp: pd.DataFrame, the dataframe to be looped on columns
+      :param other_exogs: pd.DataFrame, the dataframe taking all the other variables
+      :param target_dataset: pd.DataFrame, the dataframe taking all the target variables
+      :param target_strategy: dict[str, dict[str, funcs or models]],
+                              The dictionary provide pre-processing to specific column,
+                              Only column mentioned in keys will be included in the running.
+                              The inner dictionary should have two keys:
+
+                              "engine": statsmodels.api models
+                                  designed for statsmodels.discrete.discrete_model.Logit or
+                                  statsmodels.regression.linear_model.OLS,
+                                  but any model's .fit results provide .params .bse .pvalues will work
+
+                              "preprocessing": funcs
+                                  the function should take a pd.DataFrame/pd.Series as input
+                                  and a pd.DataFrame/pd.Series as output,
+                                  If this strategy is None, the column will be used as
+                                  exogenous variables as-is
+      :param output_path: str, the output root path,
+                          the saving name will be printed for reference
+      :param snp_alias: Optional[str], the name used for snp column in output DataFrame
+      :param one_to_one_exogs: Optional[pd.DataFrame], the dataframe providing
+                               specific exog variable based on encoded_snp
+      :param one_to_one_strategy: Optional[funcs], when given a snp name, this
+                                  function should output the corresponding
+                                  one_to_one_exogs column name
+      :param one_to_one_alias: Optional[str]: the name used for one-to-one variables
+                               in output DataFrame
+      :param na_strategy: Optional[str], the strategy statsmodels dealing with NAs,
+                          Available options are ‘none’, ‘drop’, and ‘raise’.
+
+                          If ‘none’, no nan checking is done.
+
+                          If ‘drop’, any observations with nans are dropped.
+
+                          If ‘raise’, an error is raised.
+      :param group_na_strategy: Optional[str], how na_strategy apply when have
+                                extra_iterate_on, can be "snp-wise" or "group-wise",
+                                it's working for status when na_strategy == "drop"
+      :param extra_iterate_on: Optional[list], the list of extra iterate variable in other_exog
+                               please be noticed that it may cause severe explosions in running time
+      :param snps_preprocessing_strategy: Optional[funcs], the preprocessing applied to snps
+                                          before the regression analysis
+                                          this function should take a pd.DataFrame as input and output
+      :param verbose: Optional[int] in {0,1,2} default 0
+
+                      if verbose == 0, no output will be printed except the progress bar
+
+                      if verbose == 1, the regression will give the saving path
+
+                      if verbose == 2, the regression will output all the related
+                      values during the computation, only for debugging purpose,
+                      use with care for it will create massive I/O
+
+
+   .. py:method:: transform(output_path: str = None, verbose: int = None) -> Dict
+
+      API Run the actual association test
+
+      :param output_path: Optional[str]: if provided, only in this run, it will cover
+                          the output_path previously provided
+      :param verbose: Optional[int]: if provided, only in this run, it will cover
+                      the verbose previously provided
+
+
+   .. py:method:: fit_transform(**kwargs)
+
+      API run fit and transform in one method
+
+
+   .. py:method:: _get_column_name(col: List[str]) -> List[str]
+
+      for a list of given column, generate suffix necessary as header
+
+
+   .. py:method:: _generate_filename(n_snp: int, endog_variable: str, engine: str, extra_label: Optional[Tuple[Tuple[str], Tuple[str]]]) -> str
+
+      generate a file name
+
+
+   .. py:method:: _generate_info(endog: Union[pandas.Series, pandas.DataFrame], engine: str, variable_name: List[str], extra_label: Optional[Tuple[Tuple[str], Tuple[str]]], processed_snp: List[str], n_sample: int, errors: Dict[str, str]) -> Dict[str, Union[str, int, List[str]]]
+
+      generate an info dictionary for a regression task
+
+
+   .. py:method:: _save_association_result(result: pandas.DataFrame, info: Dict[str, Union[str, int, List[str]]], output_path: str, verbose: int)
+
+      save result and info to output path as the name specified in info
+
+
+   .. py:method:: _calculate_freq(df: pandas.DataFrame, cols: str) -> Tuple[float, int, int]
+
+      given a pandas.dataFrame <df> and specific column name <cols>,
+      compute the frequency
+
+      Please note that this is only designed for 0/1 or boolean column
+      When using quantitative value the freq it's not making realistic sense,
+      So the computing is awkward... just want to keep the code running even
+      with quantitative columns. Feel free to override it.
+
+      :param df: pd.DataFrame, a data table
+      :param cols: str, column name in df
+
+      :returns: tuple containing
+
+                - float: the relative frequency of 1s in this column.
+                - float: the number of 1s in the column.
+                - float: the number of rows in the column.
+
+
+   .. py:method:: _association_snp(snp_table: pandas.DataFrame, other_exogs: pandas.DataFrame, endog: Union[pandas.DataFrame, pandas.Series], engine: Callable, one_to_one_exogs: Optional[pandas.DataFrame] = None, one_to_one_strategy: Optional[Callable] = None, one_to_one_alias: List[str] = None, snps_preprocessing_strategy: Optional[Callable] = None, na_strategy: str = 'drop', group_na_strategy: str = 'snp_wise', snp_alias: str = 'variant', extra_label: Optional[Tuple[List[str], List[Hashable]]] = None) -> Tuple[pandas.DataFrame, Dict]
+
+      association test designed for snp variants analysis
+
+      For each column in snp_table, run an individual <endog>~column+<other> on <engine>
+      return the beta/weight/effect size, standard error and p-values
+
+      :param snp_table: pd.DataFrame, the table encoding snps,
+                        the columns is snp name, rows are individuals, values are numerics
+      :param other_exogs: pd.DataFrame, the table encoding other traits,
+                          the columns is traits, rows are individuals, values are numerics
+      :param endog: pd.DataFrame or pd.Series, the target/endogenous variable
+      :param engine: statsmodels models, most of the time it's
+                     statsmodels.discrete.discrete_model.Logit or
+                     statsmodels.regression.linear_model.OLS,
+                     but any model's .fit results provide .params .bse .pvalues will work
+      :param one_to_one_exogs: pd.DataFrame, the dataframe providing
+                               specific exog variable based on encoded_snp
+      :param one_to_one_strategy: funcs, when given a snp name, this function should output
+                                  the corresponding one_to_one_exogs column name
+      :param one_to_one_alias: list[str], the name used to take the one-to-one column
+      :param snps_preprocessing_strategy: Optional[funcs] the preprocessing applied to snps
+                                          before the regression analysis
+                                          this function should take a pd.DataFrame as input and output
+      :param snp_alias: str, the name used for snp column
+      :param na_strategy: Optional[str], stands for the strategy dealing with NAs,
+                          Available options are ‘none’, ‘drop’, and ‘raise’.
+                          If ‘none’, no nan checking is done.
+                          If ‘drop’, any observations with nans are dropped.
+                          If ‘raise’, an error is raised. Default is ‘none’.
+      :param group_na_strategy: Optional[str], how na_strategy apply when have
+                                extra_iterate_on, can be "snp-wise" or "group-wise",
+                                it's working for status when na_strategy == "drop"
+      :param extra_label: Optional[tuple[tuple[str], tuple[str]]]
+
+      :returns: tuple containing
+
+                - pd.DataFrame: the effect size, se and p-values for each <endog>~column+<other> on <engine>.
+                - dict: additional information that is included.
+
+
+   .. py:method:: association_test(encoded_snp: pandas.DataFrame, other_exogs: pandas.DataFrame, target_dataset: Union[pandas.DataFrame, pandas.Series], target_strategy: Dict[str, Dict[str, Union[statsmodels.api.Logit, statsmodels.api.OLS, Callable]]], output_path: str = '', one_to_one_exogs: Optional[pandas.DataFrame] = None, one_to_one_strategy: Optional[Callable] = None, one_to_one_alias: str = None, na_strategy: str = 'drop', extra_iterate_on: List[str] = None, group_na_strategy: str = 'snp_wise', snps_preprocessing_strategy: Optional[Callable] = None, snp_alias: str = 'variant', verbose: int = 0) -> Dict
+
+      API running regression test
+
+      :param encoded_snp: pd.DataFrame, the dataframe to be looped on columns
+      :param other_exogs: pd.DataFrame, the dataframe taking all the other variables
+      :param target_dataset: pd.DataFrame, the dataframe taking all the target variables
+      :param target_strategy: dict[str, dict[str, funcs or models]], the dictionary
+                              provide pre-processing to specific column. Only column mentioned in
+                              keys will be included in the running. The inner dictionary should
+                              have two keys:
+
+                               - "engine": statsmodels.api models,
+                                   designed for statsmodels.discrete.discrete_model.Logit or
+                                   statsmodels.regression.linear_model.OLS,
+                                   but any model's .fit results provide .params .bse .pvalues will work
+
+                               - "preprocessing": funcs
+                                   the function should take a pd.DataFrame/pd.Series as input
+                                   and a pd.DataFrame/pd.Series as output,
+                                   This strategy is None, the column will be used as
+                                   exogenous variables as-is
+      :param output_path: str, the output root path, the saving name will be printed for reference
+      :param one_to_one_exogs: pd.DataFrame, the dataframe providing
+                               specific exog variable based on encoded_snp
+      :param one_to_one_strategy: funcs, when given a snp name, this function should output
+                                  the corresponding one_to_one_exogs column name
+      :param one_to_one_alias: str, the name for one_to_one settings
+      :param snps_preprocessing_strategy: Optional[funcs] the preprocessing applied to snps
+                                          before the regression analysis
+                                          this function should take a pd.DataFrame as input and output
+      :param na_strategy: Optional[str], stands for the strategy dealing with NAs,
+                          Available options are ‘none’, ‘drop’, and ‘raise’.
+                          If ‘none’, no nan checking is done.
+                          If ‘drop’, any observations with nans are dropped.
+                          If ‘raise’, an error is raised. Default is ‘none’.
+      :param extra_iterate_on: Optional[list], the list of extra iterate variable in other_exog
+                               please be noticed that it may cause severe explosions in running time
+      :param group_na_strategy: Optional[str], how na_strategy apply when have
+                                extra_iterate_on, can be "snp-wise" or "group-wise",
+                                it's working for status when na_strategy == "drop"
+      :param snp_alias: Optional[str], the name used for snp column
+      :param verbose: Optional[int] in {0,1,2} default 0
+                      if verbose = 1, the regression will give the saving path
+                      if verbose = 2, the regression will output all the related
+                      values during the computation, only for debugging purpose,
+                      use with care for it will create massive I/O
+
+      :returns: a dict recording output brief information
+      :rtype: dict
+
+
+

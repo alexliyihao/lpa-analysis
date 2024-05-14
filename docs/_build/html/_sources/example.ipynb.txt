@@ -1,0 +1,4805 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "93b5d0eb-6247-4367-9962-aefb6c136499",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import os\n",
+    "import statsmodels.api as sm\n",
+    "import statsmodels\n",
+    "\n",
+    "project_path = \"/mnt/vast/hpc/bvardarajan_lab/LPA_analysis\"\n",
+    "version_name = \"removed_subtype\"\n",
+    "\n",
+    "pd.options.mode.chained_assignment = None "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ac9a7767-7113-4d63-ad38-ff53d6a9ef8f",
+   "metadata": {},
+   "source": [
+    "Please note that all the table illustrations removed the index, the table should have subject index for aligning in actual running"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "09fc1045-dd40-4f89-a39a-a16b3872263c",
+   "metadata": {},
+   "source": [
+    "# Encode the output from Coassin pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8381fb83-bb5b-47ba-af46-c7095db2494c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from lpa_pipeline import encodings\n",
+    "print(encodings.__doc__)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "65fa0adf-10c6-4463-b04f-f5e1d3792f86",
+   "metadata": {},
+   "source": [
+    "Using parent path:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "1d74be65-8105-4327-a5ef-63aa4fcf77ef",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "eco = encodings.EncodingCoassinOutput(\n",
+    "    input_path=f\"{project_path}/coassin_pipeline/pipeline_output\",\n",
+    "    output_path=f\"{project_path}/dataset/tidied_output\",\n",
+    "    verbosity=0\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "76edd22e-3e08-4920-8078-7b15347a8eef",
+   "metadata": {},
+   "source": [
+    "For txt file, the txt file should have each path in a row"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c6df0775-042f-498c-83f3-a39f35b7d4c8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "eco = encodings.EncodingCoassinOutput(\n",
+    "    bam_list = f\"{project_path}/coassin_pipeline/data_inflow/bam_list_n=3.txt\",\n",
+    "    output_path = f\"{project_path}/dataset/tidied_output/illustration_run\",\n",
+    "    verbosity = 1  # you can set to 0 to mute output\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8aba5f61-8ec3-4dc7-8814-51ae4628b110",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "eco.encode_individual(saving_step = 1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e8a600e9-71cb-422f-8275-9b424e61cc7b",
+   "metadata": {},
+   "source": [
+    "When encoding, the class will search all the output under output_path"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2053dae1-3d67-42d4-905e-ea35f93947e5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "complete_coverage_total = eco.generate_coverage_total(save=True)\n",
+    "complete_encoded_result = eco.generate_encoded_results(save=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "edc14db4-fa37-48c1-9ed5-105f172856c9",
+   "metadata": {},
+   "source": [
+    "I suggest run this via SGE/SLURM rather than Jupyter, it took ~3-4 hrs at a sample size of ~4000"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "98a4cf94-cf14-423c-adb9-dcfc0ccab5fb",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "# Intersect with eigenstrat result \n",
+    "Any other table with ethnicity information is fine"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "1359d0e3-bf8b-441b-af98-1181f8fd7283",
+   "metadata": {
+    "scrolled": true,
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(3915, 2130) (3819, 4)\n"
+     ]
+    }
+   ],
+   "source": [
+    "# the complete_encoded_result on the cell above\n",
+    "encoding_result = pd.read_csv(\n",
+    "    f\"{project_path}/dataset/tidied_output/encoded_result_final.csv\", \n",
+    "    index_col = 0).T # One-hot-encoded table, Subject at index, snps on the header\n",
+    "\n",
+    "# A ethnicity information table\n",
+    "# Any table provided a \"ethnicity\" column, this gives PCA result from eigenstrat as well\n",
+    "eigen_result = pd.read_csv(\n",
+    "    f\"{project_path}/dataset/ethnicity_from_eigenstrat/eigenstrat_complete.csv\", \n",
+    "    index_col = 0) \n",
+    "print(encoding_result.shape, eigen_result.shape)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "01cfe250-39e1-426a-b513-b80ad6a365a2",
+   "metadata": {},
+   "source": [
+    "The eigenstrat format is as follows, number of PCs doesn't matter:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "26f5567d-4c53-41d7-8aff-79b1adb9f3b7",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>ethnicity</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>-0.0394</td>\n",
+       "      <td>0.0118</td>\n",
+       "      <td>-0.0001</td>\n",
+       "      <td>EU</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0280</td>\n",
+       "      <td>0.0030</td>\n",
+       "      <td>0.0480</td>\n",
+       "      <td>EU</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>-0.0429</td>\n",
+       "      <td>0.0254</td>\n",
+       "      <td>-0.0240</td>\n",
+       "      <td>EU</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      PC1     PC2     PC3 ethnicity\n",
+       "0 -0.0394  0.0118 -0.0001        EU\n",
+       "1  0.0280  0.0030  0.0480        EU\n",
+       "2 -0.0429  0.0254 -0.0240        EU"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# removed the index ID for illustration\n",
+    "eigen_result.head(3).reset_index(drop = True) "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fdeec0ba-29f1-4194-9a80-2fa2a21fa19a",
+   "metadata": {},
+   "source": [
+    "Align the encoding and ethnicity information"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "a50af53b-009f-4b85-a15c-48a8f8bd3eb2",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "(3817, 2130) (3817, 4)\n"
+     ]
+    }
+   ],
+   "source": [
+    "encoding_result_aligned, eigen_result_aligned = encoding_result.align(eigen_result, join = \"inner\", axis = 0)\n",
+    "print(encoding_result_aligned.shape, eigen_result_aligned.shape)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "aa41f126-d205-4265-b732-cd5e4e2b906c",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "# Filter the encoded variants"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "d5522dad-4c2e-4805-ba8c-3459aa6b48cd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from lpa_pipeline import snps_filter\n",
+    "filter_AB = snps_filter.SnpsFilter()\n",
+    "filtered_result, drop_mask, drop_report = filter_AB.filter_a_and_b(encoding_result_aligned)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "e2bcf2a6-34f8-4fa7-a8fb-60f3e0957723",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>filtered_A</th>\n",
+       "      <th>filtered_B</th>\n",
+       "      <th>filtered</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>snp_pos</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>11-G/A</th>\n",
+       "      <td>True</td>\n",
+       "      <td>False</td>\n",
+       "      <td>False</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>16-T/C</th>\n",
+       "      <td>True</td>\n",
+       "      <td>False</td>\n",
+       "      <td>False</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>17-G/A</th>\n",
+       "      <td>True</td>\n",
+       "      <td>False</td>\n",
+       "      <td>False</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         filtered_A  filtered_B  filtered\n",
+       "snp_pos                                  \n",
+       "11-G/A         True       False     False\n",
+       "16-T/C         True       False     False\n",
+       "17-G/A         True       False     False"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "drop_mask.head(3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "0a331555-b54f-4c12-9151-0c3350428621",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>left</th>\n",
+       "      <th>drop</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>filtered_A</th>\n",
+       "      <td>1764</td>\n",
+       "      <td>366</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>filtered_B</th>\n",
+       "      <td>1533</td>\n",
+       "      <td>597</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>filtered</th>\n",
+       "      <td>1421</td>\n",
+       "      <td>709</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "            left  drop\n",
+       "filtered_A  1764   366\n",
+       "filtered_B  1533   597\n",
+       "filtered    1421   709"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "drop_report"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "ee415b56-2091-4595-ad5b-0bc489e938f2",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(3817, 1421)"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "filtered_result.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "59f9f1f2-843a-49d8-b8ab-e00929a1f44d",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "# Locus table illustration"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b52d2a72-6f1e-4085-86cb-034558addba4",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from lpa_pipeline import locus_collector\n",
+    "lc = locus_collector.LocusCollector(\n",
+    "    input_path = f\"{project_path}/coassin_pipeline/pipeline_output\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8fc7a1cd-b7b2-455b-a2b9-040d28fc8318",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "# this will take a while\n",
+    "locus_table = lc.generate_locus_table()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "30c3176f-145a-41da-9f89-1d366d8d0b28",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "locus_table[\"mylocus\"].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8c81ac11-7e66-433e-b46f-9cf5bad67c3b",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "locus_table_filtered = locus_table.loc[locus_table.index.isin(filtered_result.columns)]\n",
+    "locus_table_filtered.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "57763f72-f5ee-4882-adca-8ffccac8c3f4",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "# New Exon variant compared with Coassin table S9\n",
+    "\n",
+    "This is just for novelty check, coassin_paper_exon is a pd.DataFrame with one column recording the previously discovered SNPs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "1fde3e2d-2cf7-4252-b28f-5ffe2b319482",
+   "metadata": {
+    "jp-MarkdownHeadingCollapsed": true,
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "coassin_paper_exon = pd.read_csv(\n",
+    "    f\"{project_path}/dataset/Coassin_exon_from_excel_OCR_tidied.csv\", \n",
+    "    index_col = 0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "85723a7a-e7b4-4b11-b275-4850fb919890",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(208, 1)"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "coassin_paper_exon.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "3e02929a-cde6-423e-b7f7-127b7e683f04",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(164, 1)"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# find the Exons in our table\n",
+    "locus_exon = locus_table_filtered[locus_table_filtered[\"coding\"] == \"Exon\"].index.drop_duplicates()\n",
+    "# find the variants in our exon but not in coassin's report\n",
+    "new = pd.DataFrame(locus_exon[~locus_exon.isin(coassin_paper_exon[\"pos-ref/var\"])])\n",
+    "new.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "24dc4a58-507c-48fe-84b4-78cac458aeea",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(103, 1)"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "identified = pd.DataFrame(locus_exon[locus_exon.isin(coassin_paper_exon[\"pos-ref/var\"])])\n",
+    "identified.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "75a05427-dbfd-4b4c-b8a6-fc9eb28ea5b1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "locus_table_filtered[\"novel\"] = ~locus_table_filtered.index.isin(coassin_paper_exon[\"pos-ref/var\"])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "d0c55b36-a992-4179-95be-82df50ac0846",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "locus_table_filtered.to_excel(f\"{project_path}/dataset/locus_table_novelty_and_missense.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "08f1d566-dd15-47cf-8134-08c1181dfd0d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "locus_table_filtered = pd.read_excel(\n",
+    "    f\"{project_path}/dataset/locus_table_novelty_and_missense.xlsx\",\n",
+    "    index_col = 0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "3723257e-5c79-40f1-8e76-5abcf6a211bb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "locus_table = locus_table_filtered"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7acffabf-17fa-4798-9a6a-a1171716b388",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "# Freq and appearance"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "769d68d3-7f0c-47fa-8f3d-b55b961f3eef",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from lpa_pipeline import freq_table_generator\n",
+    "ftg = freq_table_generator.FreqTableGenerator()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "6b61aa49-77c8-4fee-a682-929898922385",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>ethnicity</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>-0.0113</td>\n",
+       "      <td>0.0170</td>\n",
+       "      <td>-0.0402</td>\n",
+       "      <td>AF</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>-0.0414</td>\n",
+       "      <td>0.0200</td>\n",
+       "      <td>-0.0290</td>\n",
+       "      <td>EU</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0344</td>\n",
+       "      <td>-0.0184</td>\n",
+       "      <td>0.0465</td>\n",
+       "      <td>AF</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      PC1     PC2     PC3 ethnicity\n",
+       "0 -0.0113  0.0170 -0.0402        AF\n",
+       "1 -0.0414  0.0200 -0.0290        EU\n",
+       "2  0.0344 -0.0184  0.0465        AF"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#removed the index for illustration, the table should have index for aligning!\n",
+    "eigen_result_aligned.head(3).reset_index(drop = True) "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "138df2b7-6122-4c28-b28b-6bd6292092eb",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "freq_table_complete = ftg.generate_freq_table_with_rarity(\n",
+    "    one_hot_table = filtered_result,\n",
+    "    class_info_table = eigen_result_aligned,\n",
+    "    class_variable = \"ethnicity\"\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "c7984486-e1b0-4441-ac11-ecb29a2e99cd",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>count_AF</th>\n",
+       "      <th>total_AF_detected</th>\n",
+       "      <th>total_AF_population</th>\n",
+       "      <th>freq_AF</th>\n",
+       "      <th>count_EU</th>\n",
+       "      <th>total_EU_detected</th>\n",
+       "      <th>total_EU_population</th>\n",
+       "      <th>freq_EU</th>\n",
+       "      <th>count_HISP</th>\n",
+       "      <th>total_HISP_detected</th>\n",
+       "      <th>total_HISP_population</th>\n",
+       "      <th>freq_HISP</th>\n",
+       "      <th>AF</th>\n",
+       "      <th>EU</th>\n",
+       "      <th>HISP</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>snp_pos</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>21-G/A</th>\n",
+       "      <td>346.0</td>\n",
+       "      <td>988</td>\n",
+       "      <td>1120</td>\n",
+       "      <td>0.350202</td>\n",
+       "      <td>388.0</td>\n",
+       "      <td>815</td>\n",
+       "      <td>886</td>\n",
+       "      <td>0.476074</td>\n",
+       "      <td>945.0</td>\n",
+       "      <td>1769</td>\n",
+       "      <td>1811</td>\n",
+       "      <td>0.534200</td>\n",
+       "      <td>Common</td>\n",
+       "      <td>Common</td>\n",
+       "      <td>Common</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>31-T/C</th>\n",
+       "      <td>384.0</td>\n",
+       "      <td>1009</td>\n",
+       "      <td>1120</td>\n",
+       "      <td>0.380575</td>\n",
+       "      <td>403.0</td>\n",
+       "      <td>824</td>\n",
+       "      <td>886</td>\n",
+       "      <td>0.489078</td>\n",
+       "      <td>1015.0</td>\n",
+       "      <td>1777</td>\n",
+       "      <td>1811</td>\n",
+       "      <td>0.571187</td>\n",
+       "      <td>Common</td>\n",
+       "      <td>Common</td>\n",
+       "      <td>Common</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>33-T/C</th>\n",
+       "      <td>1.0</td>\n",
+       "      <td>1010</td>\n",
+       "      <td>1120</td>\n",
+       "      <td>0.000990</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>823</td>\n",
+       "      <td>886</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>1779</td>\n",
+       "      <td>1811</td>\n",
+       "      <td>0.000000</td>\n",
+       "      <td>Rare</td>\n",
+       "      <td>Not Detected</td>\n",
+       "      <td>Not Detected</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         count_AF  total_AF_detected  total_AF_population   freq_AF  count_EU  \\\n",
+       "snp_pos                                                                         \n",
+       "21-G/A      346.0                988                 1120  0.350202     388.0   \n",
+       "31-T/C      384.0               1009                 1120  0.380575     403.0   \n",
+       "33-T/C        1.0               1010                 1120  0.000990       0.0   \n",
+       "\n",
+       "         total_EU_detected  total_EU_population   freq_EU  count_HISP  \\\n",
+       "snp_pos                                                                 \n",
+       "21-G/A                 815                  886  0.476074       945.0   \n",
+       "31-T/C                 824                  886  0.489078      1015.0   \n",
+       "33-T/C                 823                  886  0.000000         0.0   \n",
+       "\n",
+       "         total_HISP_detected  total_HISP_population  freq_HISP      AF  \\\n",
+       "snp_pos                                                                  \n",
+       "21-G/A                  1769                   1811   0.534200  Common   \n",
+       "31-T/C                  1777                   1811   0.571187  Common   \n",
+       "33-T/C                  1779                   1811   0.000000    Rare   \n",
+       "\n",
+       "                   EU          HISP  \n",
+       "snp_pos                              \n",
+       "21-G/A         Common        Common  \n",
+       "31-T/C         Common        Common  \n",
+       "33-T/C   Not Detected  Not Detected  "
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "freq_table_complete.head(3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "a73fa214-0f22-4c12-96b2-87d0401508d9",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "True     1318\n",
+       "False     103\n",
+       "Name: Novel, dtype: int64"
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "freq_table_complete[\"Novel\"] = ~(freq_table_complete.index.isin(coassin_paper_exon[\"pos-ref/var\"]))\n",
+    "freq_table_complete[\"Novel\"].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ccbc0717-d7b5-43c8-8702-e58fb9cb4b75",
+   "metadata": {},
+   "source": [
+    "For more details, check visualization_freqs.ipynb"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "559fdfe2-f987-409a-acdd-95e05b45a9de",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "# Data Loading for Associations and meta-analysis"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "ceb85e75-77cd-4e39-b732-b6cb8922edbd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from lpa_pipeline import association"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "b74a05dc-cc72-436f-a1e7-cbb4c4f1cd50",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "personal_info = pd.read_csv(\n",
+    "    f\"{project_path}/dataset/phenotypes/WHICAP_pheno_lpa_202306022.csv\", \n",
+    "    index_col = 0)\n",
+    "personal_info.set_index(\"WES_ID\", inplace= True)\n",
+    "personal_info = personal_info[(~personal_info[\"AGE\"].isna()) & (~personal_info[\"DEM03\"].isna())]\n",
+    "# removed an outlier in Insulin (809 MIU/mL)\n",
+    "personal_info.loc[\"washei30170\",\"INSL02_2\"] = pd.NA"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "50c4366e-7935-4d70-8243-077e720b4c43",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "## APOE4+\n",
+    "\n",
+    "We defined the APOE4+ numerical value by the appearance of \"4\" in the genotype"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "65d41c45-ef4b-4233-8c74-ab8f02aa9272",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "personal_info[\"APOE4+\"] = personal_info[\"APOE\"].str.extract(\"(4+)\").replace({\"44\": 2.0, \"4\": 1.0, pd.NA: 0.0})\n",
+    "personal_info.loc[personal_info[\"APOE\"] == \"NANA\", \"APOE4+\"] = pd.NA"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "afbc67a9-9adb-44f3-8de2-0ca0be596a37",
+   "metadata": {},
+   "source": [
+    "## Others"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "893a71eb-d9c6-4dfe-925d-84c39d203352",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "encoding_aligned, personal_info_aligned = filtered_result.align(personal_info, join = \"inner\", axis = 0)\n",
+    "eigen_aligned, personal_info_aligned = eigen_result_aligned.align(personal_info_aligned, join = \"inner\", axis = 0)\n",
+    "other_exogs = pd.concat(\n",
+    "    [personal_info_aligned[[\"DEM03\", \"AGE\", \"APOE4+\"]], eigen_aligned], axis = 1, join = \"inner\"\n",
+    ").rename(columns = {\"DEM03\": \"GENDER\"})\n",
+    "other_exogs[\"intercept\"] = 1\n",
+    "phenotypes = personal_info_aligned[list(association.target_strategy().keys())]\n",
+    "VNTR_prediction = pd.read_csv(\n",
+    "    f\"{project_path}/VNTR_pipeline/analysis_results/estimate_KIV2_length_PSV/predicted_result_20240102_new_mask_simple.csv\", \n",
+    "    index_col = 0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 230,
+   "id": "e0076b10-48ad-4544-9297-3faf16bf255b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "filtered_result.to_csv(\"/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/dataset/tidied_output/filtered_result.csv\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e19fe990-1e68-42bd-b882-f71c24a776d9",
+   "metadata": {},
+   "source": [
+    "# Phenotypes vs SNP"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4c1e4cef-e93d-4033-b0e5-5be242d8153d",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "## Traits ~ SNP (meta-analysis)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "90b46fcc-5167-48b9-9670-a28c5c280a4a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_trait_vs_SNP\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "44c6d35c-e3dc-4584-977c-5e02ed969cfd",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>GENDER</th>\n",
+       "      <th>AGE</th>\n",
+       "      <th>APOE4+</th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>ethnicity</th>\n",
+       "      <th>intercept</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0</td>\n",
+       "      <td>81.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0113</td>\n",
+       "      <td>0.0170</td>\n",
+       "      <td>-0.0402</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1</td>\n",
+       "      <td>77.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0414</td>\n",
+       "      <td>0.0200</td>\n",
+       "      <td>-0.0290</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1</td>\n",
+       "      <td>71.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0344</td>\n",
+       "      <td>-0.0184</td>\n",
+       "      <td>0.0465</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1</td>\n",
+       "      <td>74.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0221</td>\n",
+       "      <td>0.0004</td>\n",
+       "      <td>-0.0222</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1</td>\n",
+       "      <td>68.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0367</td>\n",
+       "      <td>0.0121</td>\n",
+       "      <td>0.0452</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   GENDER   AGE APOE4+     PC1     PC2     PC3 ethnicity  intercept\n",
+       "0       0  81.0    0.0 -0.0113  0.0170 -0.0402        AF          1\n",
+       "1       1  77.0    0.0 -0.0414  0.0200 -0.0290        EU          1\n",
+       "2       1  71.0    1.0  0.0344 -0.0184  0.0465        AF          1\n",
+       "3       1  74.0    1.0  0.0221  0.0004 -0.0222        EU          1\n",
+       "4       1  68.0    0.0 -0.0367  0.0121  0.0452        EU          1"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "other_exogs.head().reset_index(drop = True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "id": "30cbd150-e012-4ef5-a47c-1daeab2d4add",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>STROKE</th>\n",
+       "      <th>DEMENTIA</th>\n",
+       "      <th>DIABETES</th>\n",
+       "      <th>HEART</th>\n",
+       "      <th>HYPERTENSION</th>\n",
+       "      <th>LIP01_B</th>\n",
+       "      <th>LIP02_B</th>\n",
+       "      <th>LIP03_B</th>\n",
+       "      <th>LIP04_2</th>\n",
+       "      <th>INSL01_2</th>\n",
+       "      <th>INSL02_2</th>\n",
+       "      <th>INSL03_2</th>\n",
+       "      <th>HBA1C_2</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>95.0</td>\n",
+       "      <td>83.0</td>\n",
+       "      <td>10.3</td>\n",
+       "      <td>5.82</td>\n",
+       "      <td>6.37</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   STROKE  DEMENTIA  DIABETES  HEART  HYPERTENSION  LIP01_B  LIP02_B  LIP03_B  \\\n",
+       "0     0.0       1.0         0      0             1      NaN      NaN      NaN   \n",
+       "1     0.0       2.0         0      1             1      NaN      NaN      NaN   \n",
+       "2     0.0       2.0         0      0             1      NaN      NaN      NaN   \n",
+       "3     0.0       2.0         0      0             1      NaN      NaN      NaN   \n",
+       "4     0.0       1.0         0      1             1      NaN      NaN      NaN   \n",
+       "\n",
+       "   LIP04_2  INSL01_2 INSL02_2  INSL03_2  HBA1C_2  \n",
+       "0     95.0      83.0     10.3      5.82     6.37  \n",
+       "1      NaN       NaN      NaN       NaN      NaN  \n",
+       "2      NaN       NaN      NaN       NaN      NaN  \n",
+       "3      NaN       NaN      NaN       NaN      NaN  \n",
+       "4      NaN       NaN      NaN       NaN      NaN  "
+      ]
+     },
+     "execution_count": 49,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# head has too many NAs, using tails\n",
+    "phenotypes.tail().reset_index(drop = True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "id": "c6da5906-1952-413a-b4a7-b272789a0646",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "  0%|          | 0/13 [00:00<?, ?it/s]\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:05<00:00, 41.85s/it]\u001b[A\n",
+      "  8%|▊         | 1/13 [02:05<25:03, 125.27s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:38<00:00, 53.73s/it]\u001b[A\n",
+      " 15%|█▌        | 2/13 [04:43<26:33, 144.84s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:53<00:00, 58.65s/it]\u001b[A\n",
+      " 23%|██▎       | 3/13 [07:37<26:18, 157.88s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:46<00:00, 56.08s/it]\u001b[A\n",
+      " 31%|███       | 4/13 [10:24<24:13, 161.46s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:52<00:00, 59.43s/it]\u001b[A\n",
+      " 38%|███▊      | 5/13 [13:16<22:02, 165.37s/it]A\n",
+      "                                                   \n",
+      "                                                    \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:57<00:00, 38.24s/it]\u001b[A\n",
+      " 46%|████▌     | 6/13 [15:13<17:23, 149.10s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:52<00:00, 37.43s/it]\u001b[A\n",
+      " 54%|█████▍    | 7/13 [17:06<13:42, 137.10s/it]A\n",
+      "                                                   \n",
+      "                                                    \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:02<00:00, 41.21s/it]\u001b[A\n",
+      " 62%|██████▏   | 8/13 [19:09<11:02, 132.53s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:52<00:00, 37.51s/it]\u001b[A\n",
+      " 69%|██████▉   | 9/13 [21:02<08:25, 126.40s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:02<00:00, 42.20s/it]\u001b[A\n",
+      " 77%|███████▋  | 10/13 [23:04<06:15, 125.28s/it]\n",
+      "                                                   \n",
+      "                                                    \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:57<00:00, 37.36s/it]\u001b[A\n",
+      " 85%|████████▍ | 11/13 [25:02<04:05, 122.89s/it]\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:56<00:00, 38.15s/it]\u001b[A\n",
+      " 92%|█████████▏| 12/13 [26:58<02:00, 120.88s/it]\n",
+      "                                                    \n",
+      "                                                    \n",
+      "                                                    \n",
+      "100%|██████████| 3/3 [01:27<00:00, 30.09s/it]\u001b[A\n",
+      "100%|██████████| 13/13 [28:26<00:00, 131.26s/it]\n"
+     ]
+    }
+   ],
+   "source": [
+    "snp_association = association.SNPAssociation()\n",
+    "snp_association.fit_transform(\n",
+    "    encoded_snp=encoding_aligned, \n",
+    "    other_exogs=other_exogs,\n",
+    "    target_dataset=phenotypes,\n",
+    "    target_strategy=association.target_strategy(),\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    extra_iterate_on=[\"ethnicity\"],\n",
+    "    snps_preprocessing_strategy=association.filter_c,\n",
+    "    snp_alias=\"variant\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "7f92c31c-567f-451b-800e-7d3c73bdd3b6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from lpa_pipeline import metal_toolkit\n",
+    "metal_pipeline_variant = metal_toolkit.METALToolkit(\n",
+    "    ethnicity=[\"EU\", \"AF\", \"HISP\"],\n",
+    "    verbose=1,\n",
+    "    metal_path=\"/mnt/mfs/cluster/bin/METAL/metal\",\n",
+    "    snp_alias=\"variant\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "4a8d997c-4b9f-40cb-a56e-0026732a3fef",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "517f5437d0bc46aebd931543b3ca5ff7",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/78 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "0e0a850857404531bfd9fb064d92aa8f",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/39 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_trait_vs_SNP\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "908da6746da043b9ac7505040c731bd7",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/13 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "d6011c202d55431aa28eaa638ba21f7c",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/13 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "aggregate_results = metal_pipeline_variant.run_metal(\n",
+    "    path_association=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    path_meta=f\"{project_path}/data_analysis_result/meta_analysis/{output_name}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "24d3207f-2f30-4a62-bee2-ba3184d3ec9c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from lpa_pipeline import post_processing\n",
+    "post_processor_variant = post_processing.PostProcessor(\n",
+    "    locus_table=locus_table,\n",
+    "    snp_alias=\"variant\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "d333430c-58c1-428f-ab5d-16a2a8750a81",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "complete_output = post_processor_variant.post_process_meta_analysis(aggregate_results)\n",
+    "complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "id": "16ed1ed3-8643-423d-9925-2677bf83925f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "tidied_complete_output = post_processor_variant.clean_output(complete_output)\n",
+    "tidied_complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0deb18cf-d689-4da7-9b2f-5ed990070eed",
+   "metadata": {},
+   "source": [
+    "## Phenotypes ~ SNP + VNTR (meta-analysis)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "515b9c92-db5f-45f3-9839-c7f890c46287",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_trait_vs_SNP_adjusted_by_VNTR\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "id": "709a7289-828b-43cd-9778-d78bd8672d2e",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>VNTR_estimate</th>\n",
+       "      <th>GENDER</th>\n",
+       "      <th>AGE</th>\n",
+       "      <th>APOE4+</th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>ethnicity</th>\n",
+       "      <th>intercept</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>14.386291</td>\n",
+       "      <td>1</td>\n",
+       "      <td>75.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0056</td>\n",
+       "      <td>0.0716</td>\n",
+       "      <td>-0.0368</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>19.352792</td>\n",
+       "      <td>1</td>\n",
+       "      <td>66.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0269</td>\n",
+       "      <td>-0.0093</td>\n",
+       "      <td>0.0084</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>18.638641</td>\n",
+       "      <td>1</td>\n",
+       "      <td>78.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0156</td>\n",
+       "      <td>-0.0250</td>\n",
+       "      <td>0.0519</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>18.183185</td>\n",
+       "      <td>1</td>\n",
+       "      <td>72.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>-0.0235</td>\n",
+       "      <td>-0.0488</td>\n",
+       "      <td>-0.0111</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>21.130558</td>\n",
+       "      <td>1</td>\n",
+       "      <td>78.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0208</td>\n",
+       "      <td>0.0224</td>\n",
+       "      <td>0.0116</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   VNTR_estimate  GENDER   AGE APOE4+     PC1     PC2     PC3 ethnicity  \\\n",
+       "0      14.386291       1  75.0    0.0  0.0056  0.0716 -0.0368        AF   \n",
+       "1      19.352792       1  66.0    0.0 -0.0269 -0.0093  0.0084        AF   \n",
+       "2      18.638641       1  78.0    1.0  0.0156 -0.0250  0.0519        AF   \n",
+       "3      18.183185       1  72.0    1.0 -0.0235 -0.0488 -0.0111        AF   \n",
+       "4      21.130558       1  78.0    0.0 -0.0208  0.0224  0.0116        AF   \n",
+       "\n",
+       "   intercept  \n",
+       "0          1  \n",
+       "1          1  \n",
+       "2          1  \n",
+       "3          1  \n",
+       "4          1  "
+      ]
+     },
+     "execution_count": 31,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "other_exogs_with_VNTR_estimate = pd.concat(\n",
+    "    [VNTR_prediction[[\"estimate\"]], other_exogs],\n",
+    "    join = \"inner\",\n",
+    "    axis = 1\n",
+    ").rename(\n",
+    "    columns = {\"estimate\": \"VNTR_estimate\"}\n",
+    ")\n",
+    "other_exogs_with_VNTR_estimate.head().reset_index(drop = True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "id": "c986cfd4-a534-44e0-8581-a6fa417ff788",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "  0%|          | 0/13 [00:00<?, ?it/s]\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:19<00:00, 45.78s/it]\u001b[A\n",
+      "  8%|▊         | 1/13 [02:19<27:52, 139.35s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:22<00:00, 48.11s/it]\u001b[A\n",
+      " 15%|█▌        | 2/13 [04:41<25:51, 141.03s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:24<00:00, 48.94s/it]\u001b[A\n",
+      " 23%|██▎       | 3/13 [07:05<23:44, 142.45s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:39<00:00, 54.21s/it]\u001b[A\n",
+      " 31%|███       | 4/13 [09:44<22:21, 149.04s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:38<00:00, 53.08s/it]\u001b[A\n",
+      " 38%|███▊      | 5/13 [12:23<20:19, 152.39s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:42<00:00, 34.38s/it]\u001b[A\n",
+      " 46%|████▌     | 6/13 [14:06<15:48, 135.57s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:50<00:00, 36.65s/it]\u001b[A\n",
+      " 54%|█████▍    | 7/13 [15:56<12:43, 127.26s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:48<00:00, 36.01s/it]\u001b[A\n",
+      " 62%|██████▏   | 8/13 [17:44<10:06, 121.23s/it]A\n",
+      "                                                   \n",
+      "                                                    \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:39<00:00, 33.74s/it]\u001b[A\n",
+      " 69%|██████▉   | 9/13 [19:23<07:37, 114.30s/it]A\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:42<00:00, 34.81s/it]\u001b[A\n",
+      " 77%|███████▋  | 10/13 [21:06<05:32, 110.81s/it]\n",
+      "                                                   \n",
+      "                                                    \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:42<00:00, 34.72s/it]\u001b[A\n",
+      " 85%|████████▍ | 11/13 [22:49<03:36, 108.38s/it]\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [01:45<00:00, 35.37s/it]\u001b[A\n",
+      " 92%|█████████▏| 12/13 [24:35<01:47, 107.60s/it]\n",
+      "                                                    \n",
+      "                                                    \n",
+      "                                                    \n",
+      "100%|██████████| 3/3 [01:36<00:00, 32.94s/it]\u001b[A\n",
+      "100%|██████████| 13/13 [26:12<00:00, 120.93s/it]\n"
+     ]
+    }
+   ],
+   "source": [
+    "snp_association = association.SNPAssociation()\n",
+    "snp_association.fit_transform(\n",
+    "    encoded_snp=encoding_aligned,\n",
+    "    other_exogs=other_exogs_with_VNTR_estimate,\n",
+    "    target_dataset=phenotypes,\n",
+    "    target_strategy=association.target_strategy(),\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    extra_iterate_on=[\"ethnicity\"],\n",
+    "    snps_preprocessing_strategy=association.filter_c,\n",
+    "    snp_alias=\"variant\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "id": "36e877d8-bb76-4fbc-9aa7-8484681234c8",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "357e5a9e6613456c9751467e0c584ebb",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/78 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "2cfac23aaddf4de981f20fc508a93b0d",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/39 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_trait_vs_SNP_adjusted_by_VNTR\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "dd9e36faf06a470ead222a2fb3be6cd3",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/13 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "b9e134c7af2344e79bc8f2b683273608",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/13 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "aggregate_results = metal_pipeline_variant.run_metal(\n",
+    "    path_association=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    path_meta=f\"{project_path}/data_analysis_result/meta_analysis/{output_name}\")\n",
+    "complete_output = post_processor_variant.post_process_meta_analysis(aggregate_results)\n",
+    "complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output.xlsx\")\n",
+    "tidied_complete_output = post_processor_variant.clean_output(complete_output)\n",
+    "tidied_complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e0c97cc4-00e7-4688-8fda-0fe9c47107e2",
+   "metadata": {},
+   "source": [
+    "# About APOE"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d5442f4a-9292-4a05-a41d-720faef0e4cc",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "## APOE ~ SNP (meta-analysis)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 56,
+   "id": "7800205b-217e-455a-82b4-7980c2a71735",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_APOE_vs_SNP\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "id": "56206537-7fa9-4178-adae-1592b95cff1f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>GENDER</th>\n",
+       "      <th>AGE</th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>ethnicity</th>\n",
+       "      <th>intercept</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0</td>\n",
+       "      <td>81.0</td>\n",
+       "      <td>-0.0113</td>\n",
+       "      <td>0.0170</td>\n",
+       "      <td>-0.0402</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1</td>\n",
+       "      <td>77.0</td>\n",
+       "      <td>-0.0414</td>\n",
+       "      <td>0.0200</td>\n",
+       "      <td>-0.0290</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1</td>\n",
+       "      <td>71.0</td>\n",
+       "      <td>0.0344</td>\n",
+       "      <td>-0.0184</td>\n",
+       "      <td>0.0465</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1</td>\n",
+       "      <td>74.0</td>\n",
+       "      <td>0.0221</td>\n",
+       "      <td>0.0004</td>\n",
+       "      <td>-0.0222</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1</td>\n",
+       "      <td>68.0</td>\n",
+       "      <td>-0.0367</td>\n",
+       "      <td>0.0121</td>\n",
+       "      <td>0.0452</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   GENDER   AGE     PC1     PC2     PC3 ethnicity  intercept\n",
+       "0       0  81.0 -0.0113  0.0170 -0.0402        AF          1\n",
+       "1       1  77.0 -0.0414  0.0200 -0.0290        EU          1\n",
+       "2       1  71.0  0.0344 -0.0184  0.0465        AF          1\n",
+       "3       1  74.0  0.0221  0.0004 -0.0222        EU          1\n",
+       "4       1  68.0 -0.0367  0.0121  0.0452        EU          1"
+      ]
+     },
+     "execution_count": 35,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "APOE_value = other_exogs[[\"APOE4+\"]].rename(columns = {\"APOE4+\":\"APOE4\"})\n",
+    "other_exogs_no_APOE = other_exogs.drop(columns = \"APOE4+\")\n",
+    "other_exogs_no_APOE.head().reset_index(drop = True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "id": "26f01d6c-695d-442a-b83b-a394e38a8c4e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "APOE_strategy = {'APOE4': {'engine': statsmodels.regression.linear_model.OLS,\n",
+    "                           'preprocessing': association.dropna}}"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "id": "9681cc30-60cb-42d1-a063-be9b95c97509",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "  0%|          | 0/1 [00:00<?, ?it/s]\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:27<00:00, 50.00s/it]\u001b[A\n",
+      "100%|██████████| 1/1 [02:28<00:00, 148.06s/it][A\n"
+     ]
+    }
+   ],
+   "source": [
+    "snp_association = association.SNPAssociation()\n",
+    "snp_association.fit_transform(\n",
+    "    encoded_snp=encoding_aligned, \n",
+    "    other_exogs=other_exogs_no_APOE,\n",
+    "    target_dataset=APOE_value,\n",
+    "    target_strategy=APOE_strategy,\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    extra_iterate_on=[\"ethnicity\"],\n",
+    "    snps_preprocessing_strategy=association.filter_c,\n",
+    "    snp_alias=\"variant\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 57,
+   "id": "fffad5c1-5df4-416c-a85b-f6199a609e8b",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "fef10ec1fc3140109ff1db1bcf16e772",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/6 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "b965f023a4474ed18abe0493f9bca18a",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/3 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_APOE_vs_SNP\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "fc476506d2b045c1989c8edeb9c737d8",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/1 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "2eb8e71a57464ce28f4de4ee8c54da9b",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/1 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "aggregate_results = metal_pipeline_variant.run_metal(\n",
+    "    path_association=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    path_meta=f\"{project_path}/data_analysis_result/meta_analysis/{output_name}\")\n",
+    "complete_output = post_processor_variant.post_process_meta_analysis(aggregate_results)\n",
+    "complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output.xlsx\")\n",
+    "tidied_complete_output = post_processor_variant.clean_output(complete_output)\n",
+    "tidied_complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f34c9d8d-ef08-4560-8eb9-f410e9e9bb1e",
+   "metadata": {},
+   "source": [
+    "## Phenotypes ~ APOE (meta-analysis)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a80a5736-5862-4912-82d2-a5e66fedede9",
+   "metadata": {},
+   "source": [
+    "We didn't restrict the value of encoded to be binary throughout the pipeline, except the frequency computation. But we don't care freqeuncy for those numerical results. Thus, just give the APOE a placeholder value and we can re-use the same pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "id": "135e47c4-9767-4230-814a-47d83cdb30af",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_trait_vs_APOE\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "id": "1c13efde-c216-4cb9-b3d2-2c53ce49cb5b",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>1-A/T</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>washei70623</th>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70345</th>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70493</th>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei71229</th>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70625</th>\n",
+       "      <td>0.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "            1-A/T\n",
+       "washei70623   0.0\n",
+       "washei70345   0.0\n",
+       "washei70493   1.0\n",
+       "washei71229   1.0\n",
+       "washei70625   0.0"
+      ]
+     },
+     "execution_count": 49,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "APOE_value = other_exogs[[\"APOE4+\"]].rename(columns = {\"APOE4+\":\"1-A/T\"})\n",
+    "APOE_value.head(5)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "id": "ca3bbd3c-a49c-4ff5-a3b3-d003c8fc28db",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>GENDER</th>\n",
+       "      <th>AGE</th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>ethnicity</th>\n",
+       "      <th>intercept</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>washei70623</th>\n",
+       "      <td>0</td>\n",
+       "      <td>81.0</td>\n",
+       "      <td>-0.0113</td>\n",
+       "      <td>0.0170</td>\n",
+       "      <td>-0.0402</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70345</th>\n",
+       "      <td>1</td>\n",
+       "      <td>77.0</td>\n",
+       "      <td>-0.0414</td>\n",
+       "      <td>0.0200</td>\n",
+       "      <td>-0.0290</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70493</th>\n",
+       "      <td>1</td>\n",
+       "      <td>71.0</td>\n",
+       "      <td>0.0344</td>\n",
+       "      <td>-0.0184</td>\n",
+       "      <td>0.0465</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei71229</th>\n",
+       "      <td>1</td>\n",
+       "      <td>74.0</td>\n",
+       "      <td>0.0221</td>\n",
+       "      <td>0.0004</td>\n",
+       "      <td>-0.0222</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70625</th>\n",
+       "      <td>1</td>\n",
+       "      <td>68.0</td>\n",
+       "      <td>-0.0367</td>\n",
+       "      <td>0.0121</td>\n",
+       "      <td>0.0452</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             GENDER   AGE     PC1     PC2     PC3 ethnicity  intercept\n",
+       "washei70623       0  81.0 -0.0113  0.0170 -0.0402        AF          1\n",
+       "washei70345       1  77.0 -0.0414  0.0200 -0.0290        EU          1\n",
+       "washei70493       1  71.0  0.0344 -0.0184  0.0465        AF          1\n",
+       "washei71229       1  74.0  0.0221  0.0004 -0.0222        EU          1\n",
+       "washei70625       1  68.0 -0.0367  0.0121  0.0452        EU          1"
+      ]
+     },
+     "execution_count": 50,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "other_exogs_no_APOE = other_exogs.drop(columns = \"APOE4+\")\n",
+    "other_exogs_no_APOE.head(5)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "id": "92217431-5174-4904-8f4a-bb5f5a2c9ab9",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "  0%|          | 0/13 [00:00<?, ?it/s]\n",
+      "                                     \u001b[A\n",
+      "                                             \u001b[A\n",
+      "                                     .03it/s]\u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  8.44it/s]\u001b[A\n",
+      "  8%|▊         | 1/13 [00:00<00:05,  2.28it/s][A\n",
+      "                                     \u001b[A\n",
+      "                                     .16it/s]\u001b[A\n",
+      "                                     .08it/s]\u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  8.64it/s]\u001b[A\n",
+      " 15%|█▌        | 2/13 [00:00<00:04,  2.32it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  8.23it/s]\u001b[A\n",
+      " 23%|██▎       | 3/13 [00:01<00:04,  2.29it/s][A\n",
+      "                                     \u001b[A\n",
+      "                                     .52it/s]\u001b[A\n",
+      "                                     .40it/s]\u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  9.19it/s]\u001b[A\n",
+      " 31%|███       | 4/13 [00:01<00:03,  2.35it/s][A\n",
+      "                                     \u001b[A\n",
+      "                                     .36it/s]\u001b[A\n",
+      "                                     .26it/s]\u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  9.02it/s]\u001b[A\n",
+      " 38%|███▊      | 5/13 [00:02<00:03,  2.38it/s][A\n",
+      "                                     \u001b[A\n",
+      "                                     .22it/s]\u001b[A\n",
+      " 46%|████▌     | 6/13 [00:02<00:02,  2.58it/s][A\n",
+      "                                     \u001b[A\n",
+      "                                     .92it/s]\u001b[A\n",
+      " 54%|█████▍    | 7/13 [00:02<00:02,  2.67it/s][A\n",
+      "                                     \u001b[A\n",
+      "                                     .26it/s]\u001b[A\n",
+      " 62%|██████▏   | 8/13 [00:03<00:01,  2.81it/s][A\n",
+      "                                     \u001b[A\n",
+      "                                     .30it/s]\u001b[A\n",
+      " 69%|██████▉   | 9/13 [00:03<00:01,  2.92it/s][A\n",
+      "                                     \u001b[A\n",
+      "                                     .95it/s]\u001b[A\n",
+      " 77%|███████▋  | 10/13 [00:03<00:01,  2.91it/s]A\n",
+      "                                     \u001b[A\n",
+      "                                     .36it/s]\u001b[A\n",
+      " 85%|████████▍ | 11/13 [00:04<00:00,  2.83it/s]A\n",
+      "                                     \u001b[A\n",
+      "                                     .55it/s]\u001b[A\n",
+      " 92%|█████████▏| 12/13 [00:04<00:00,  2.81it/s]A\n",
+      "                                     \u001b[A\n",
+      "                                     .19it/s]\u001b[A\n",
+      "100%|██████████| 13/13 [00:04<00:00,  2.69it/s]A\n"
+     ]
+    }
+   ],
+   "source": [
+    "snp_association = association.SNPAssociation()\n",
+    "snp_association.fit_transform(\n",
+    "    encoded_snp=APOE_value, \n",
+    "    other_exogs=other_exogs_no_APOE ,\n",
+    "    target_dataset=phenotypes,\n",
+    "    target_strategy=association.target_strategy(),\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    extra_iterate_on=[\"ethnicity\"],\n",
+    "    snps_preprocessing_strategy=association.filter_c,\n",
+    "    snp_alias=\"APOE4\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "id": "fcfd5d44-9d50-40ac-bb0f-279ed0575dbf",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "0b7d7507b63544d38f53c76f7e2c6cda",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/78 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "e98c6700d05f4eaf8b570d6b151a1c6c",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/39 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_trait_vs_APOE\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "5c6c36d876ce46bbb4ed0e2997e915cb",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/13 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "29558cd0806a4598b70f8affac82985b",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/13 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "metal_pipeline_APOE = metal_toolkit.METALToolkit(\n",
+    "    ethnicity = [\"EU\", \"AF\", \"HISP\"], \n",
+    "    verbose = 1, \n",
+    "    metal_path = \"/mnt/mfs/cluster/bin/METAL/metal\",\n",
+    "    snp_alias = \"APOE4\")\n",
+    "aggregate_results = metal_pipeline_APOE.run_metal(\n",
+    "    path_association=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    path_meta=f\"{project_path}/data_analysis_result/meta_analysis/{output_name}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 55,
+   "id": "8f9c6e53-a26a-44ca-b0d0-3772aa0aa59e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "post_processor_APOE = post_processing.PostProcessor(\n",
+    "    locus_table = locus_table,\n",
+    "    snp_alias = \"APOE4\"\n",
+    ")\n",
+    "complete_output = post_processor_APOE.post_process_meta_analysis(aggregate_results, mode = \"APOE4\")\n",
+    "complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output.xlsx\")\n",
+    "tidied_complete_output = post_processor_APOE.clean_output(complete_output)\n",
+    "tidied_complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8aa86bcd-741c-4599-a1a8-8b9d74b1ba9d",
+   "metadata": {},
+   "source": [
+    "# About existing serum level"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a94b0969-b7b0-4b65-af4b-d25ba77fd452",
+   "metadata": {},
+   "source": [
+    "## lpa/wIS ~ SNP + adjustments (association, N = 27)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 112,
+   "id": "11ca3463-f89b-439c-bfbb-f9e6032d94b9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_serum_vs_SNP\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 113,
+   "id": "0964f712-9e3b-4cec-abfe-299cfbb2de1f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "personal_info_serum_old = pd.read_csv(\n",
+    "    f\"{project_path}/dataset/serum_data/serum_data_personal_info.csv\")\n",
+    "personal_info_serum = pd.merge(\n",
+    "    left=personal_info.reset_index(),\n",
+    "    right=personal_info_serum_old[[\"WHICAP_ID\"]], \n",
+    "    left_on = \"WHICAP_ID\", \n",
+    "    right_on = \"WHICAP_ID\"\n",
+    ").set_index(\"WES_ID\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 114,
+   "id": "e8e02661-b5ed-4cbc-9c52-6a433824a4a2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "other_exogs_serum = pd.concat(\n",
+    "    [personal_info_serum[[\"DEM03\", \"AGE\", \"APOE4+\"]], \n",
+    "     eigen_aligned], \n",
+    "    axis = 1,\n",
+    "    join = \"inner\"\n",
+    "   ).rename(columns = {\"DEM03\": \"GENDER\"})\n",
+    "other_exogs_serum[\"intercept\"] = 1\n",
+    "other_exogs_serum = other_exogs_serum.drop(columns = \"ethnicity\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 115,
+   "id": "c052234f-8e66-446c-8c8f-100479ce8bc3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "serum_result = pd.read_csv(\n",
+    "    f\"{project_path}/dataset/serum_data/serum_data_serum.csv\",\n",
+    "    index_col = 0\n",
+    ").rename(\n",
+    "    columns = {\"LP(a) (nmol/L)\": \"lpa\",\n",
+    "               \"Isoform 1          (expression)\": \"isoform\",\n",
+    "               \"wAS\": \"wIS\"})\n",
+    "serum_result = pd.merge(\n",
+    "    left = personal_info_serum.reset_index()[[\"WES_ID\",\"WHICAP_ID\"]], \n",
+    "    right = serum_result, \n",
+    "    left_on = \"WHICAP_ID\", \n",
+    "    right_index = True\n",
+    ").set_index(\"WES_ID\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 116,
+   "id": "cc87b958-88ee-445b-8762-90d0af8a56e4",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "encoding_serum = encoding_aligned.loc[other_exogs_serum.index]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 117,
+   "id": "4f352bf6-09d7-4e12-9688-6f203c97e98c",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>GENDER</th>\n",
+       "      <th>AGE</th>\n",
+       "      <th>APOE4+</th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>intercept</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>74.00</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0435</td>\n",
+       "      <td>0.0076</td>\n",
+       "      <td>0.0145</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1</td>\n",
+       "      <td>93.00</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0508</td>\n",
+       "      <td>-0.0558</td>\n",
+       "      <td>-0.0104</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1</td>\n",
+       "      <td>90.00</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0390</td>\n",
+       "      <td>0.0314</td>\n",
+       "      <td>-0.0165</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1</td>\n",
+       "      <td>82.93</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0043</td>\n",
+       "      <td>0.0004</td>\n",
+       "      <td>0.0135</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0</td>\n",
+       "      <td>93.72</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>0.0310</td>\n",
+       "      <td>-0.0025</td>\n",
+       "      <td>0.0136</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   GENDER    AGE APOE4+     PC1     PC2     PC3  intercept\n",
+       "0       1  74.00    0.0 -0.0435  0.0076  0.0145          1\n",
+       "1       1  93.00    0.0  0.0508 -0.0558 -0.0104          1\n",
+       "2       1  90.00    1.0  0.0390  0.0314 -0.0165          1\n",
+       "3       1  82.93    0.0  0.0043  0.0004  0.0135          1\n",
+       "4       0  93.72    0.0  0.0310 -0.0025  0.0136          1"
+      ]
+     },
+     "execution_count": 117,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "other_exogs_serum.head().reset_index(drop = True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 118,
+   "id": "3ce900f3-47e4-4cf3-bd5e-2694f7a03394",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>WHICAP_ID</th>\n",
+       "      <th>lpa</th>\n",
+       "      <th>Isoform 1 (KIV Motifs)</th>\n",
+       "      <th>Isoform 2 (KIV Motifs)</th>\n",
+       "      <th>Isoform 1          (% expression)</th>\n",
+       "      <th>Isoform 2          (% expression)</th>\n",
+       "      <th>isoform</th>\n",
+       "      <th>Isoform 2          (expression)</th>\n",
+       "      <th>wIS</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>W05307</td>\n",
+       "      <td>223.78</td>\n",
+       "      <td>17</td>\n",
+       "      <td>27</td>\n",
+       "      <td>0.86</td>\n",
+       "      <td>0.14</td>\n",
+       "      <td>0.86</td>\n",
+       "      <td>0.14</td>\n",
+       "      <td>18.40</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>W06744</td>\n",
+       "      <td>66.82</td>\n",
+       "      <td>28</td>\n",
+       "      <td>33</td>\n",
+       "      <td>0.93</td>\n",
+       "      <td>0.07</td>\n",
+       "      <td>0.93</td>\n",
+       "      <td>0.07</td>\n",
+       "      <td>28.35</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>W06939</td>\n",
+       "      <td>103.15</td>\n",
+       "      <td>18</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.00</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.00</td>\n",
+       "      <td>-</td>\n",
+       "      <td>18.00</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>W06984</td>\n",
+       "      <td>12.31</td>\n",
+       "      <td>23</td>\n",
+       "      <td>19</td>\n",
+       "      <td>0.82</td>\n",
+       "      <td>0.18</td>\n",
+       "      <td>0.82</td>\n",
+       "      <td>0.18</td>\n",
+       "      <td>22.28</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>W07059</td>\n",
+       "      <td>10.85</td>\n",
+       "      <td>17</td>\n",
+       "      <td>27</td>\n",
+       "      <td>0.72</td>\n",
+       "      <td>0.28</td>\n",
+       "      <td>0.72</td>\n",
+       "      <td>0.28</td>\n",
+       "      <td>19.80</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  WHICAP_ID     lpa  Isoform 1 (KIV Motifs) Isoform 2 (KIV Motifs)  \\\n",
+       "0    W05307  223.78                      17                     27   \n",
+       "1    W06744   66.82                      28                     33   \n",
+       "2    W06939  103.15                      18                      -   \n",
+       "3    W06984   12.31                      23                     19   \n",
+       "4    W07059   10.85                      17                     27   \n",
+       "\n",
+       "   Isoform 1          (% expression) Isoform 2          (% expression)  \\\n",
+       "0                               0.86                              0.14   \n",
+       "1                               0.93                              0.07   \n",
+       "2                               1.00                                 -   \n",
+       "3                               0.82                              0.18   \n",
+       "4                               0.72                              0.28   \n",
+       "\n",
+       "   isoform Isoform 2          (expression)    wIS  \n",
+       "0     0.86                            0.14  18.40  \n",
+       "1     0.93                            0.07  28.35  \n",
+       "2     1.00                               -  18.00  \n",
+       "3     0.82                            0.18  22.28  \n",
+       "4     0.72                            0.28  19.80  "
+      ]
+     },
+     "execution_count": 118,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "serum_result.head().reset_index(drop = True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 120,
+   "id": "fa2cebe0-412c-41b6-a91f-4ac9865c2ebd",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|██████████| 3/3 [00:50<00:00, 16.72s/it]       \n"
+     ]
+    }
+   ],
+   "source": [
+    "serum_association = association.SNPAssociation()\n",
+    "serum_association.fit_transform(\n",
+    "    encoded_snp=encoding_serum, \n",
+    "    other_exogs=other_exogs_serum,\n",
+    "    target_dataset=serum_result,\n",
+    "    target_strategy=association.target_strategy_serum(),\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    #extra_iterate_on = [\"ethnicity\"], we dont have enough sample to support regression by race\n",
+    "    snps_preprocessing_strategy=association.filter_c,\n",
+    "    snp_alias=\"variant\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 121,
+   "id": "98c4cffd-1e37-4a94-a934-5b8fbcbb280f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "wIS = pd.read_csv(\n",
+    "    f\"{project_path}/data_analysis_result/association/{output_name}/wIS_OLS_N_snp=107.csv\",\n",
+    "    index_col = 0)\n",
+    "complete_output = post_processor_variant.post_process_association(wIS)\n",
+    "complete_output.to_excel(f\"{project_path}/data_analysis_result/association/{project_name}/wIS_complete_output.xlsx\")\n",
+    "complete_output[[\n",
+    "    'index', 'variant Beta','FDR_adjusted_p-value', 'significant_FDR','r_squared',\n",
+    "    'mylocus', 'wt','mut', 'coding', 'novel']\n",
+    "].to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/wIS_complete_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 122,
+   "id": "0caffee1-8891-43b6-ba31-f43febc3456b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "lpa = pd.read_csv(\n",
+    "    f\"{project_path}/data_analysis_result/association/{output_name}/lpa_OLS_N_snp=107.csv\", \n",
+    "    index_col = 0)\n",
+    "complete_output = post_processor_variant.post_process_association(lpa)\n",
+    "complete_output.to_excel(f\"{project_path}/data_analysis_result/association/{project_name}/lpa_complete_output.xlsx\")\n",
+    "complete_output[[\n",
+    "    'index', 'variant Beta','FDR_adjusted_p-value', 'significant_FDR','r_squared',\n",
+    "    'mylocus', 'wt','mut', 'coding', 'novel']\n",
+    "].to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/lpa_complete_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2078f562-8e93-4c21-9cb9-c508884c1f97",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "## lpa/wIS ~ SNPS + VNTR (association, N = 27)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 125,
+   "id": "db0892b4-bca8-48d2-a658-8f838cffd97a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_serum_vs_SNP_adjusted_by_VNTR\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 126,
+   "id": "d1f1eb2f-4bc9-4256-ae22-7e40e694dabc",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# same to the one above, you can skip this\n",
+    "personal_info_serum_old = pd.read_csv(\n",
+    "    f\"{project_path}/dataset/serum_data/serum_data_personal_info.csv\")\n",
+    "personal_info_serum = pd.merge(\n",
+    "    personal_info.reset_index(),        \n",
+    "    personal_info_serum_old[[\"WHICAP_ID\"]], \n",
+    "    left_on = \"WHICAP_ID\", right_on = \"WHICAP_ID\").set_index(\"WES_ID\")\n",
+    "other_exogs_serum = pd.concat(\n",
+    "    [personal_info_serum[[\"DEM03\", \"AGE\", \"APOE4+\"]], \n",
+    "     eigen_aligned], \n",
+    "    axis = 1,\n",
+    "    join = \"inner\"\n",
+    "   ).rename(columns = {\"DEM03\": \"GENDER\"})\n",
+    "serum_result = pd.read_csv(\n",
+    "    f\"{project_path}/dataset/serum_data/serum_data_serum.csv\",\n",
+    "    index_col = 0).rename(\n",
+    "    columns = {\"LP(a) (nmol/L)\": \"lpa\",\n",
+    "               \"Isoform 1          (expression)\": \"isoform\",\n",
+    "               \"wAS\": \"wIS\"})\n",
+    "serum_result = pd.merge(personal_info_serum.reset_index()[[\"WES_ID\",\"WHICAP_ID\"]], \n",
+    "                        serum_result, \n",
+    "                        left_on = \"WHICAP_ID\", \n",
+    "                        right_index = True\n",
+    "                       ).set_index(\"WES_ID\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 127,
+   "id": "1da0e1d7-2a1b-4b47-b8bf-0215a39485a5",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "HISP    14\n",
+       "AF       8\n",
+       "EU       5\n",
+       "Name: ethnicity, dtype: int64"
+      ]
+     },
+     "execution_count": 127,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "other_exogs_serum[\"ethnicity\"].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 128,
+   "id": "ce15e9a7-7015-4bd5-a95a-00eef4d0dc85",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "other_exogs_serum = pd.concat(\n",
+    "    [VNTR_prediction[[\"estimate\"]], \n",
+    "     other_exogs_serum], \n",
+    "    axis = 1, join = \"inner\")\n",
+    "other_exogs_serum[\"intercept\"] = 1\n",
+    "other_exogs_serum = other_exogs_serum.drop(columns = \"ethnicity\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 129,
+   "id": "7d995ebf-71ec-4614-bd96-0174cf9eec8e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "encoding_serum = encoding_aligned.loc[other_exogs_serum.index]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 130,
+   "id": "bcac525b-c2a8-47b2-a917-3a73730e66db",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>estimate</th>\n",
+       "      <th>GENDER</th>\n",
+       "      <th>AGE</th>\n",
+       "      <th>APOE4+</th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>intercept</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>washei64289</th>\n",
+       "      <td>20.135733</td>\n",
+       "      <td>1</td>\n",
+       "      <td>90.00</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0390</td>\n",
+       "      <td>0.0314</td>\n",
+       "      <td>-0.0165</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei41440</th>\n",
+       "      <td>18.623412</td>\n",
+       "      <td>1</td>\n",
+       "      <td>74.00</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0435</td>\n",
+       "      <td>0.0076</td>\n",
+       "      <td>0.0145</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei40407</th>\n",
+       "      <td>22.622735</td>\n",
+       "      <td>1</td>\n",
+       "      <td>85.89</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>-0.0153</td>\n",
+       "      <td>-0.0746</td>\n",
+       "      <td>-0.0053</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei39055</th>\n",
+       "      <td>16.639620</td>\n",
+       "      <td>1</td>\n",
+       "      <td>86.00</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0186</td>\n",
+       "      <td>-0.0413</td>\n",
+       "      <td>0.0168</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei37339</th>\n",
+       "      <td>17.739429</td>\n",
+       "      <td>1</td>\n",
+       "      <td>78.00</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>-0.0435</td>\n",
+       "      <td>0.0052</td>\n",
+       "      <td>-0.0327</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "              estimate  GENDER    AGE APOE4+     PC1     PC2     PC3  \\\n",
+       "washei64289  20.135733       1  90.00    1.0  0.0390  0.0314 -0.0165   \n",
+       "washei41440  18.623412       1  74.00    0.0 -0.0435  0.0076  0.0145   \n",
+       "washei40407  22.622735       1  85.89    1.0 -0.0153 -0.0746 -0.0053   \n",
+       "washei39055  16.639620       1  86.00    1.0  0.0186 -0.0413  0.0168   \n",
+       "washei37339  17.739429       1  78.00    1.0 -0.0435  0.0052 -0.0327   \n",
+       "\n",
+       "             intercept  \n",
+       "washei64289          1  \n",
+       "washei41440          1  \n",
+       "washei40407          1  \n",
+       "washei39055          1  \n",
+       "washei37339          1  "
+      ]
+     },
+     "execution_count": 130,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "other_exogs_serum.head(5)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 131,
+   "id": "d40d048b-247d-4e90-a033-6b4aa829b36c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|██████████| 3/3 [00:54<00:00, 18.22s/it]       \n"
+     ]
+    }
+   ],
+   "source": [
+    "asso = association.SNPAssociation()\n",
+    "asso.fit_transform(\n",
+    "    encoded_snp = encoding_serum, \n",
+    "    other_exogs = other_exogs_serum,\n",
+    "    target_dataset = serum_result,\n",
+    "    target_strategy = association.target_strategy_serum(),\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    #extra_iterate_on = [\"ethnicity\"],\n",
+    "    snps_preprocessing_strategy = association.filter_c,\n",
+    "    snp_alias=\"variant\",\n",
+    "    verbose = 0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 132,
+   "id": "0d9a1858-d982-404e-a29b-de9d97866967",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/association/removed_subtype_serum_vs_SNP_adjusted_by_VNTR'"
+      ]
+     },
+     "execution_count": 132,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "f\"{project_path}/data_analysis_result/association/{output_name}\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 134,
+   "id": "7b58b42e-1c05-46a2-890b-f11f676c0991",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "wIS = pd.read_csv(\n",
+    "    f\"{project_path}/data_analysis_result/association/{output_name}/wIS_OLS_N_snp=107.csv\",\n",
+    "    index_col = 0)\n",
+    "complete_output = post_processor_variant.post_process_association(wIS)\n",
+    "complete_output.to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/wIS_complete_output.xlsx\")\n",
+    "complete_output[[\n",
+    "    'index', 'variant Beta','FDR_adjusted_p-value', 'significant_FDR','r_squared',\n",
+    "    'mylocus', 'wt','mut', 'coding', 'novel']\n",
+    "].to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/wIS_complete_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 135,
+   "id": "2b2226c9-24fb-4acc-994e-69cca791fb7b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "lpa = pd.read_csv(\n",
+    "    f\"{project_path}/data_analysis_result/association/{output_name}/lpa_OLS_N_snp=107.csv\", \n",
+    "    index_col = 0)\n",
+    "complete_output = post_processor_variant.post_process_association(lpa)\n",
+    "complete_output.to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/lpa_complete_output.xlsx\")\n",
+    "complete_output[[\n",
+    "    'index', 'variant Beta','FDR_adjusted_p-value', 'significant_FDR','r_squared',\n",
+    "    'mylocus', 'wt','mut', 'coding', 'novel']\n",
+    "].to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/lpa_complete_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a79c0c9f-e2e3-40f2-95fa-ebc7c60e3abc",
+   "metadata": {},
+   "source": [
+    "# About VNTR"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "15e9477b-875b-4550-9bb4-181dbd641a58",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "## VNTR ~ SNP + Adjustment (meta-analysis, N = 3774)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 149,
+   "id": "3a99eca6-2535-4188-867c-66e1d187bf2a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_VNTR_vs_SNP\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 150,
+   "id": "d5670e59-70df-40a3-8979-454ff4ea5c8f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "VNTR_prediction = pd.read_csv(\n",
+    "    f\"{project_path}/VNTR_pipeline/analysis_results/estimate_KIV2_length_PSV/predicted_result_20240102_new_mask_simple.csv\",\n",
+    "    index_col = 0\n",
+    ")\n",
+    "VNTR_prediction = VNTR_prediction.loc[\n",
+    "    phenotypes.index,[\"estimate\"]\n",
+    "].rename(\n",
+    "    columns = {\"estimate\": \"VNTR_estimate\"}\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 151,
+   "id": "d06ed41d-ff67-4e2a-85b0-7515f54aa8ac",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>VNTR_estimate</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>washei70623</th>\n",
+       "      <td>17.322922</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70345</th>\n",
+       "      <td>18.421054</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70493</th>\n",
+       "      <td>19.154933</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei71229</th>\n",
+       "      <td>14.107403</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70625</th>\n",
+       "      <td>22.170373</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             VNTR_estimate\n",
+       "washei70623      17.322922\n",
+       "washei70345      18.421054\n",
+       "washei70493      19.154933\n",
+       "washei71229      14.107403\n",
+       "washei70625      22.170373"
+      ]
+     },
+     "execution_count": 151,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "VNTR_prediction.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 152,
+   "id": "b6901a8a-c20c-4aa7-8ca4-bd1b4c28d915",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>GENDER</th>\n",
+       "      <th>AGE</th>\n",
+       "      <th>APOE4+</th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>ethnicity</th>\n",
+       "      <th>intercept</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>washei70623</th>\n",
+       "      <td>0</td>\n",
+       "      <td>81.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0113</td>\n",
+       "      <td>0.0170</td>\n",
+       "      <td>-0.0402</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70345</th>\n",
+       "      <td>1</td>\n",
+       "      <td>77.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0414</td>\n",
+       "      <td>0.0200</td>\n",
+       "      <td>-0.0290</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70493</th>\n",
+       "      <td>1</td>\n",
+       "      <td>71.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0344</td>\n",
+       "      <td>-0.0184</td>\n",
+       "      <td>0.0465</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei71229</th>\n",
+       "      <td>1</td>\n",
+       "      <td>74.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0221</td>\n",
+       "      <td>0.0004</td>\n",
+       "      <td>-0.0222</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70625</th>\n",
+       "      <td>1</td>\n",
+       "      <td>68.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0367</td>\n",
+       "      <td>0.0121</td>\n",
+       "      <td>0.0452</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             GENDER   AGE APOE4+     PC1     PC2     PC3 ethnicity  intercept\n",
+       "washei70623       0  81.0    0.0 -0.0113  0.0170 -0.0402        AF          1\n",
+       "washei70345       1  77.0    0.0 -0.0414  0.0200 -0.0290        EU          1\n",
+       "washei70493       1  71.0    1.0  0.0344 -0.0184  0.0465        AF          1\n",
+       "washei71229       1  74.0    1.0  0.0221  0.0004 -0.0222        EU          1\n",
+       "washei70625       1  68.0    0.0 -0.0367  0.0121  0.0452        EU          1"
+      ]
+     },
+     "execution_count": 152,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "other_exogs.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 153,
+   "id": "3417dbfa-ed78-4b6b-8f12-dcbd6e7a0e84",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "VNTR_strategy = {\"VNTR_estimate\": {\"engine\": sm.OLS,\n",
+    "                                   \"preprocessing\": association.dropna}}"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 154,
+   "id": "6de8e128-0f6e-43de-8e3c-4e7679b34713",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "  0%|          | 0/1 [00:00<?, ?it/s]\n",
+      "                                                   \n",
+      "                                                   \n",
+      "                                                   \n",
+      "100%|██████████| 3/3 [02:49<00:00, 56.94s/it]\u001b[A\n",
+      "100%|██████████| 1/1 [02:49<00:00, 169.36s/it][A\n"
+     ]
+    }
+   ],
+   "source": [
+    "asso = association.SNPAssociation()\n",
+    "asso.fit_transform(\n",
+    "    encoded_snp=encoding_aligned, \n",
+    "    other_exogs=other_exogs,\n",
+    "    target_dataset=VNTR_prediction,\n",
+    "    target_strategy=VNTR_strategy,\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    extra_iterate_on=[\"ethnicity\"],\n",
+    "    snps_preprocessing_strategy=association.filter_c,\n",
+    "    snp_alias=\"variant\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 156,
+   "id": "8bd00b57-f54f-4092-a287-a7e4956b6c19",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "505e7435d36746d79745fc1e761a41a0",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/6 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "b6fd2449e6a345819255e17a0c07409b",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/3 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_VNTR_vs_SNP\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "5e25ef7879134c3487f5674d9134c51e",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/1 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "7174195b86a34522b7549c040ca70399",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/1 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "aggregate_results = metal_pipeline_variant.run_metal(\n",
+    "    path_association=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    path_meta=f\"{project_path}/data_analysis_result/meta_analysis/{output_name}\")\n",
+    "complete_output = post_processor_variant.post_process_meta_analysis(aggregate_results)\n",
+    "complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output.xlsx\")\n",
+    "tidied_complete_output = post_processor_variant.clean_output(complete_output)\n",
+    "tidied_complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e3f47297-92f8-4d76-b8fd-b7d8230ee5aa",
+   "metadata": {
+    "tags": []
+   },
+   "source": [
+    "## Phenotypes ~ VNTR + Adjustment (meta-analysis N = 3774)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 157,
+   "id": "a8387567-8feb-448f-8335-8f85fa8c6c5a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_trait_vs_VNTR\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 158,
+   "id": "445de701-cf8d-4193-8b21-f2f8a8a6682e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "vntr_as_exog = VNTR_prediction.rename(columns = {\"VNTR_estimate\": \"1-A/T\"})"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 159,
+   "id": "dfdb4bf6-b480-48be-8081-ab7a8a54499d",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>1-A/T</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>washei70623</th>\n",
+       "      <td>17.322922</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70345</th>\n",
+       "      <td>18.421054</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70493</th>\n",
+       "      <td>19.154933</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei71229</th>\n",
+       "      <td>14.107403</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70625</th>\n",
+       "      <td>22.170373</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                 1-A/T\n",
+       "washei70623  17.322922\n",
+       "washei70345  18.421054\n",
+       "washei70493  19.154933\n",
+       "washei71229  14.107403\n",
+       "washei70625  22.170373"
+      ]
+     },
+     "execution_count": 159,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vntr_as_exog.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 160,
+   "id": "91292792-1c81-4c32-8d2b-bda14f78dae1",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>GENDER</th>\n",
+       "      <th>AGE</th>\n",
+       "      <th>APOE4+</th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>ethnicity</th>\n",
+       "      <th>intercept</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>washei70623</th>\n",
+       "      <td>0</td>\n",
+       "      <td>81.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0113</td>\n",
+       "      <td>0.0170</td>\n",
+       "      <td>-0.0402</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70345</th>\n",
+       "      <td>1</td>\n",
+       "      <td>77.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0414</td>\n",
+       "      <td>0.0200</td>\n",
+       "      <td>-0.0290</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70493</th>\n",
+       "      <td>1</td>\n",
+       "      <td>71.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0344</td>\n",
+       "      <td>-0.0184</td>\n",
+       "      <td>0.0465</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei71229</th>\n",
+       "      <td>1</td>\n",
+       "      <td>74.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>0.0221</td>\n",
+       "      <td>0.0004</td>\n",
+       "      <td>-0.0222</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei70625</th>\n",
+       "      <td>1</td>\n",
+       "      <td>68.0</td>\n",
+       "      <td>0.0</td>\n",
+       "      <td>-0.0367</td>\n",
+       "      <td>0.0121</td>\n",
+       "      <td>0.0452</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             GENDER   AGE APOE4+     PC1     PC2     PC3 ethnicity  intercept\n",
+       "washei70623       0  81.0    0.0 -0.0113  0.0170 -0.0402        AF          1\n",
+       "washei70345       1  77.0    0.0 -0.0414  0.0200 -0.0290        EU          1\n",
+       "washei70493       1  71.0    1.0  0.0344 -0.0184  0.0465        AF          1\n",
+       "washei71229       1  74.0    1.0  0.0221  0.0004 -0.0222        EU          1\n",
+       "washei70625       1  68.0    0.0 -0.0367  0.0121  0.0452        EU          1"
+      ]
+     },
+     "execution_count": 160,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "other_exogs.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 161,
+   "id": "c01080e8-c822-48e7-83dc-b6c6df61a948",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "  0%|          | 0/13 [00:00<?, ?it/s]\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  7.65it/s]\u001b[A\n",
+      "  8%|▊         | 1/13 [00:00<00:05,  2.05it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  6.27it/s]\u001b[A\n",
+      " 15%|█▌        | 2/13 [00:01<00:05,  1.91it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  5.25it/s]\u001b[A\n",
+      " 23%|██▎       | 3/13 [00:01<00:06,  1.63it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  5.43it/s]\u001b[A\n",
+      " 31%|███       | 4/13 [00:02<00:05,  1.55it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  5.49it/s]\u001b[A\n",
+      " 38%|███▊      | 5/13 [00:03<00:05,  1.52it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  6.28it/s]\u001b[A\n",
+      " 46%|████▌     | 6/13 [00:03<00:04,  1.56it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  7.02it/s]\u001b[A\n",
+      " 54%|█████▍    | 7/13 [00:04<00:03,  1.63it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  7.13it/s]\u001b[A\n",
+      " 62%|██████▏   | 8/13 [00:04<00:02,  1.72it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  7.81it/s]\u001b[A\n",
+      " 69%|██████▉   | 9/13 [00:05<00:02,  1.81it/s][A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  7.81it/s]\u001b[A\n",
+      " 77%|███████▋  | 10/13 [00:05<00:01,  1.87it/s]A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  7.81it/s]\u001b[A\n",
+      " 85%|████████▍ | 11/13 [00:06<00:01,  1.92it/s]A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  7.84it/s]\u001b[A\n",
+      " 92%|█████████▏| 12/13 [00:06<00:00,  1.95it/s]A\n",
+      "                                             \n",
+      "                                             \u001b[A\n",
+      "                                             \u001b[A\n",
+      "100%|██████████| 3/3 [00:00<00:00,  7.79it/s]\u001b[A\n",
+      "100%|██████████| 13/13 [00:07<00:00,  1.79it/s]A\n"
+     ]
+    }
+   ],
+   "source": [
+    "asso = association.SNPAssociation()\n",
+    "asso.fit_transform(\n",
+    "    encoded_snp=vntr_as_exog, \n",
+    "    other_exogs=other_exogs,\n",
+    "    target_dataset=phenotypes,\n",
+    "    target_strategy=association.target_strategy(),\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    extra_iterate_on=[\"ethnicity\"],\n",
+    "    snp_alias=\"VNTR_estimate\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 162,
+   "id": "d79b1d65-07bb-4b77-a75b-cb33fd5206f7",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "metal_pipeline_vntr = metal_toolkit.METALToolkit(\n",
+    "    ethnicity = [\"EU\", \"AF\", \"HISP\"], \n",
+    "    verbose = 1, \n",
+    "    metal_path = \"/mnt/mfs/cluster/bin/METAL/metal\",\n",
+    "    snp_alias = \"VNTR_estimate\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 163,
+   "id": "1dfad92c-a160-4b72-b1cb-8eb710ea6536",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "a12843a2f0bd4ae9aae8555ab9bf59f9",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/78 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "6d356ee495da4eba974ce0f0191d4a1e",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/39 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_trait_vs_VNTR\n"
+     ]
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "31b2296ac33c4aadbe99a2e9210869cd",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/13 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "0c59bd424cd644d6b6222518ea31f470",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "  0%|          | 0/13 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "aggregate_results = metal_pipeline_vntr.run_metal(\n",
+    "    path_association=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    path_meta=f\"{project_path}/data_analysis_result/meta_analysis/{output_name}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 165,
+   "id": "daef3070-c8dc-4630-8f76-0e6769ce117f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "post_processor_VNTR = post_processing.PostProcessor(\n",
+    "    locus_table = locus_table,\n",
+    "    snp_alias = \"VNTR_estimate\")\n",
+    "complete_output = post_processor_VNTR.post_process_meta_analysis(aggregate_results, mode = \"VNTR\")\n",
+    "complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output.xlsx\")\n",
+    "tidied_complete_output = post_processor_VNTR.clean_output(complete_output)\n",
+    "tidied_complete_output.to_excel(\n",
+    "    f\"{project_path}/data_analysis_result/meta_analysis/{output_name}/complete_output_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "96e9d2a1-5d58-4b2e-927f-3c866b3a7041",
+   "metadata": {},
+   "source": [
+    "## LPA/WIS ~ VNTR + adjustment (Association N = 27)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 173,
+   "id": "a63de18c-924b-467e-ba9b-fe60b7a6cb88",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_serum_vs_VNTR\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 174,
+   "id": "976dd945-5d54-4118-ac7c-fd0584259b7c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "vntr_as_exog_serum = vntr_as_exog.loc[encoding_serum.index]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 175,
+   "id": "06bcea29-be97-4d26-baa8-ef06b64a7773",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>1-A/T</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>washei64289</th>\n",
+       "      <td>20.135733</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei41440</th>\n",
+       "      <td>18.623412</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei40407</th>\n",
+       "      <td>22.622735</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei39055</th>\n",
+       "      <td>16.639620</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei37339</th>\n",
+       "      <td>17.739429</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                 1-A/T\n",
+       "washei64289  20.135733\n",
+       "washei41440  18.623412\n",
+       "washei40407  22.622735\n",
+       "washei39055  16.639620\n",
+       "washei37339  17.739429"
+      ]
+     },
+     "execution_count": 175,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "vntr_as_exog_serum.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3e0c31df-e729-48bf-a3c4-6eb9a807d187",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "other_exogs_serum = other_exogs_serum.drop(columns = \"estimate\")\n",
+    "other_exogs_serum.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 177,
+   "id": "08c33df0-c421-4836-9a7e-5dd8db7c20c7",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|██████████| 3/3 [00:00<00:00,  4.04it/s]\n"
+     ]
+    }
+   ],
+   "source": [
+    "asso.fit_transform(\n",
+    "    encoded_snp=vntr_as_exog_serum, \n",
+    "    other_exogs=other_exogs_serum,\n",
+    "    target_dataset=serum_result,\n",
+    "    target_strategy=association.target_strategy_serum(),\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    snp_alias=\"VNTR_estimate\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 179,
+   "id": "c2a62bbf-b518-4920-a3c0-3fab3feeb441",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "wIS = pd.read_csv(\n",
+    "    f\"{project_path}/data_analysis_result/association/{output_name}/wIS_OLS_N_snp=1.csv\",\n",
+    "    index_col = 0)\n",
+    "complete_output = post_processor_VNTR.post_process_association(wIS)\n",
+    "complete_output.to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/wIS_complete_output.xlsx\")\n",
+    "complete_output[[\n",
+    "    'index', 'VNTR_estimate Beta','FDR_adjusted_p-value', 'significant_FDR','r_squared',\n",
+    "    'mylocus', 'wt','mut', 'coding', 'novel']\n",
+    "].to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/wIS_complete_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 180,
+   "id": "b8cd0e21-d0f4-479b-9fa6-1b045c1158cb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "lpa = pd.read_csv(\n",
+    "    f\"{project_path}/data_analysis_result/association/{output_name}/lpa_OLS_N_snp=1.csv\",\n",
+    "    index_col = 0)\n",
+    "complete_output = post_processor_VNTR.post_process_association(lpa)\n",
+    "complete_output.to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/lpa_complete_output.xlsx\")\n",
+    "complete_output[[\n",
+    "    'index', 'VNTR_estimate Beta','FDR_adjusted_p-value', 'significant_FDR','r_squared',\n",
+    "    'mylocus', 'wt','mut', 'coding', 'novel']\n",
+    "].to_excel(f\"{project_path}/data_analysis_result/association/{output_name}/lpa_complete_tidied.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 213,
+   "id": "f822e03f-cdb3-4e68-a6de-7bae3f6aa84f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_serum_vs_APOE_stratified_by_VNTR\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 214,
+   "id": "b4be6f24-c7e9-41b7-9d5e-a36452bd32f3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "vntr_binary = (vntr_as_exog.loc[encoding_serum.index] >= 23.0).replace(\n",
+    "    [True, False], [\"High\", \"Low\"]\n",
+    ").rename(columns={\"1-A/T\": \"VNTR_binary\"})"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 222,
+   "id": "a9d0f9ce-f3bb-46c8-aa06-3a71906286c1",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>VNTR_binary</th>\n",
+       "      <th>GENDER</th>\n",
+       "      <th>AGE</th>\n",
+       "      <th>PC1</th>\n",
+       "      <th>PC2</th>\n",
+       "      <th>PC3</th>\n",
+       "      <th>ethnicity</th>\n",
+       "      <th>intercept</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>washei64289</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>90.00</td>\n",
+       "      <td>0.0390</td>\n",
+       "      <td>0.0314</td>\n",
+       "      <td>-0.0165</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei41440</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>74.00</td>\n",
+       "      <td>-0.0435</td>\n",
+       "      <td>0.0076</td>\n",
+       "      <td>0.0145</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei40407</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>85.89</td>\n",
+       "      <td>-0.0153</td>\n",
+       "      <td>-0.0746</td>\n",
+       "      <td>-0.0053</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei39055</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>86.00</td>\n",
+       "      <td>0.0186</td>\n",
+       "      <td>-0.0413</td>\n",
+       "      <td>0.0168</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei37339</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>78.00</td>\n",
+       "      <td>-0.0435</td>\n",
+       "      <td>0.0052</td>\n",
+       "      <td>-0.0327</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei36243</th>\n",
+       "      <td>High</td>\n",
+       "      <td>1</td>\n",
+       "      <td>81.00</td>\n",
+       "      <td>-0.0205</td>\n",
+       "      <td>-0.0111</td>\n",
+       "      <td>0.0285</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei35857</th>\n",
+       "      <td>High</td>\n",
+       "      <td>1</td>\n",
+       "      <td>72.44</td>\n",
+       "      <td>-0.0285</td>\n",
+       "      <td>-0.0587</td>\n",
+       "      <td>-0.0113</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei35820</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>80.18</td>\n",
+       "      <td>-0.0075</td>\n",
+       "      <td>-0.1631</td>\n",
+       "      <td>-0.0054</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei35683</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>93.00</td>\n",
+       "      <td>0.0508</td>\n",
+       "      <td>-0.0558</td>\n",
+       "      <td>-0.0104</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei35474</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>93.32</td>\n",
+       "      <td>-0.0231</td>\n",
+       "      <td>0.0342</td>\n",
+       "      <td>0.0118</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei34421</th>\n",
+       "      <td>High</td>\n",
+       "      <td>1</td>\n",
+       "      <td>88.76</td>\n",
+       "      <td>0.0329</td>\n",
+       "      <td>0.0095</td>\n",
+       "      <td>-0.0074</td>\n",
+       "      <td>EU</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei30180</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>0</td>\n",
+       "      <td>83.39</td>\n",
+       "      <td>-0.0007</td>\n",
+       "      <td>0.0402</td>\n",
+       "      <td>-0.0264</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei29952</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>76.00</td>\n",
+       "      <td>-0.0218</td>\n",
+       "      <td>0.0159</td>\n",
+       "      <td>0.0115</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei51879</th>\n",
+       "      <td>High</td>\n",
+       "      <td>1</td>\n",
+       "      <td>78.02</td>\n",
+       "      <td>0.0209</td>\n",
+       "      <td>-0.0192</td>\n",
+       "      <td>0.0088</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei50504</th>\n",
+       "      <td>High</td>\n",
+       "      <td>1</td>\n",
+       "      <td>84.00</td>\n",
+       "      <td>-0.0386</td>\n",
+       "      <td>-0.0360</td>\n",
+       "      <td>-0.0220</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei50466</th>\n",
+       "      <td>High</td>\n",
+       "      <td>1</td>\n",
+       "      <td>80.00</td>\n",
+       "      <td>0.0036</td>\n",
+       "      <td>0.0067</td>\n",
+       "      <td>-0.0079</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei49313</th>\n",
+       "      <td>High</td>\n",
+       "      <td>0</td>\n",
+       "      <td>90.00</td>\n",
+       "      <td>-0.0450</td>\n",
+       "      <td>-0.0942</td>\n",
+       "      <td>-0.0060</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei45269</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>78.00</td>\n",
+       "      <td>-0.0245</td>\n",
+       "      <td>0.0101</td>\n",
+       "      <td>0.0100</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei45178</th>\n",
+       "      <td>High</td>\n",
+       "      <td>0</td>\n",
+       "      <td>78.00</td>\n",
+       "      <td>-0.0468</td>\n",
+       "      <td>-0.1165</td>\n",
+       "      <td>-0.0069</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei39274</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>0</td>\n",
+       "      <td>81.00</td>\n",
+       "      <td>-0.0498</td>\n",
+       "      <td>-0.1118</td>\n",
+       "      <td>-0.0081</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei37561</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>85.00</td>\n",
+       "      <td>0.0260</td>\n",
+       "      <td>-0.0043</td>\n",
+       "      <td>0.0161</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei37093</th>\n",
+       "      <td>High</td>\n",
+       "      <td>1</td>\n",
+       "      <td>76.00</td>\n",
+       "      <td>-0.0275</td>\n",
+       "      <td>0.0000</td>\n",
+       "      <td>0.0311</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei35828</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>82.00</td>\n",
+       "      <td>0.0236</td>\n",
+       "      <td>-0.0034</td>\n",
+       "      <td>0.0005</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei35718</th>\n",
+       "      <td>High</td>\n",
+       "      <td>1</td>\n",
+       "      <td>84.00</td>\n",
+       "      <td>-0.0359</td>\n",
+       "      <td>-0.0858</td>\n",
+       "      <td>-0.0082</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei35479</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>0</td>\n",
+       "      <td>93.72</td>\n",
+       "      <td>0.0310</td>\n",
+       "      <td>-0.0025</td>\n",
+       "      <td>0.0136</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei30811</th>\n",
+       "      <td>High</td>\n",
+       "      <td>1</td>\n",
+       "      <td>87.00</td>\n",
+       "      <td>-0.0461</td>\n",
+       "      <td>-0.0672</td>\n",
+       "      <td>-0.0009</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>washei30169</th>\n",
+       "      <td>Low</td>\n",
+       "      <td>1</td>\n",
+       "      <td>82.93</td>\n",
+       "      <td>0.0043</td>\n",
+       "      <td>0.0004</td>\n",
+       "      <td>0.0135</td>\n",
+       "      <td>HISP</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "            VNTR_binary  GENDER    AGE     PC1     PC2     PC3 ethnicity  \\\n",
+       "washei64289         Low       1  90.00  0.0390  0.0314 -0.0165        AF   \n",
+       "washei41440         Low       1  74.00 -0.0435  0.0076  0.0145        EU   \n",
+       "washei40407         Low       1  85.89 -0.0153 -0.0746 -0.0053        EU   \n",
+       "washei39055         Low       1  86.00  0.0186 -0.0413  0.0168        AF   \n",
+       "washei37339         Low       1  78.00 -0.0435  0.0052 -0.0327        EU   \n",
+       "washei36243        High       1  81.00 -0.0205 -0.0111  0.0285        AF   \n",
+       "washei35857        High       1  72.44 -0.0285 -0.0587 -0.0113        AF   \n",
+       "washei35820         Low       1  80.18 -0.0075 -0.1631 -0.0054        EU   \n",
+       "washei35683         Low       1  93.00  0.0508 -0.0558 -0.0104        AF   \n",
+       "washei35474         Low       1  93.32 -0.0231  0.0342  0.0118        AF   \n",
+       "washei34421        High       1  88.76  0.0329  0.0095 -0.0074        EU   \n",
+       "washei30180         Low       0  83.39 -0.0007  0.0402 -0.0264        AF   \n",
+       "washei29952         Low       1  76.00 -0.0218  0.0159  0.0115        AF   \n",
+       "washei51879        High       1  78.02  0.0209 -0.0192  0.0088      HISP   \n",
+       "washei50504        High       1  84.00 -0.0386 -0.0360 -0.0220      HISP   \n",
+       "washei50466        High       1  80.00  0.0036  0.0067 -0.0079      HISP   \n",
+       "washei49313        High       0  90.00 -0.0450 -0.0942 -0.0060      HISP   \n",
+       "washei45269         Low       1  78.00 -0.0245  0.0101  0.0100      HISP   \n",
+       "washei45178        High       0  78.00 -0.0468 -0.1165 -0.0069      HISP   \n",
+       "washei39274         Low       0  81.00 -0.0498 -0.1118 -0.0081      HISP   \n",
+       "washei37561         Low       1  85.00  0.0260 -0.0043  0.0161      HISP   \n",
+       "washei37093        High       1  76.00 -0.0275  0.0000  0.0311      HISP   \n",
+       "washei35828         Low       1  82.00  0.0236 -0.0034  0.0005      HISP   \n",
+       "washei35718        High       1  84.00 -0.0359 -0.0858 -0.0082      HISP   \n",
+       "washei35479         Low       0  93.72  0.0310 -0.0025  0.0136      HISP   \n",
+       "washei30811        High       1  87.00 -0.0461 -0.0672 -0.0009      HISP   \n",
+       "washei30169         Low       1  82.93  0.0043  0.0004  0.0135      HISP   \n",
+       "\n",
+       "             intercept  \n",
+       "washei64289          1  \n",
+       "washei41440          1  \n",
+       "washei40407          1  \n",
+       "washei39055          1  \n",
+       "washei37339          1  \n",
+       "washei36243          1  \n",
+       "washei35857          1  \n",
+       "washei35820          1  \n",
+       "washei35683          1  \n",
+       "washei35474          1  \n",
+       "washei34421          1  \n",
+       "washei30180          1  \n",
+       "washei29952          1  \n",
+       "washei51879          1  \n",
+       "washei50504          1  \n",
+       "washei50466          1  \n",
+       "washei49313          1  \n",
+       "washei45269          1  \n",
+       "washei45178          1  \n",
+       "washei39274          1  \n",
+       "washei37561          1  \n",
+       "washei37093          1  \n",
+       "washei35828          1  \n",
+       "washei35718          1  \n",
+       "washei35479          1  \n",
+       "washei30811          1  \n",
+       "washei30169          1  "
+      ]
+     },
+     "execution_count": 222,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "other_exogs_serum_binary_vntr.drop(columns = [\"APOE4+\"])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 217,
+   "id": "4b67836c-9455-4bbd-8c13-63ab4cae1272",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "other_exogs_serum_binary_vntr = pd.concat([vntr_binary, other_exogs], axis = 1, join = \"inner\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 223,
+   "id": "11517be2-72ce-4b88-bf16-5f64c3b2bbfa",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "  0%|          | 0/3 [00:00<?, ?it/s]\n",
+      "  0%|          | 0/1 [00:00<?, ?it/s]\u001b[A/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n>=20 ... continuing anyway, n=11\n",
+      "  warnings.warn(\"kurtosistest only valid for n>=20 ... continuing \"\n",
+      "                                             \n",
+      "  0%|          | 0/1 [00:00<?, ?it/s].88it/s]\u001b[A/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n>=20 ... continuing anyway, n=16\n",
+      "  warnings.warn(\"kurtosistest only valid for n>=20 ... continuing \"\n",
+      "                                             \n",
+      "100%|██████████| 2/2 [00:00<00:00,  5.54it/s]\u001b[A\n",
+      " 33%|███▎      | 1/3 [00:00<00:00,  2.14it/s]\u001b[A\n",
+      "  0%|          | 0/1 [00:00<?, ?it/s]\u001b[A/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n>=20 ... continuing anyway, n=11\n",
+      "  warnings.warn(\"kurtosistest only valid for n>=20 ... continuing \"\n",
+      "                                             \n",
+      "  0%|          | 0/1 [00:00<?, ?it/s].23it/s]\u001b[A/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n>=20 ... continuing anyway, n=16\n",
+      "  warnings.warn(\"kurtosistest only valid for n>=20 ... continuing \"\n",
+      "                                             \n",
+      "100%|██████████| 2/2 [00:00<00:00,  4.42it/s]\u001b[A\n",
+      " 67%|██████▋   | 2/3 [00:01<00:00,  1.96it/s]\u001b[A\n",
+      "  0%|          | 0/1 [00:00<?, ?it/s]\u001b[A/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n>=20 ... continuing anyway, n=11\n",
+      "  warnings.warn(\"kurtosistest only valid for n>=20 ... continuing \"\n",
+      "                                             \n",
+      "  0%|          | 0/1 [00:00<?, ?it/s].81it/s]\u001b[A/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n>=20 ... continuing anyway, n=16\n",
+      "  warnings.warn(\"kurtosistest only valid for n>=20 ... continuing \"\n",
+      "                                             \n",
+      "100%|██████████| 2/2 [00:00<00:00,  5.32it/s]\u001b[A\n",
+      "100%|██████████| 3/3 [00:01<00:00,  1.95it/s]\u001b[A\n"
+     ]
+    }
+   ],
+   "source": [
+    "asso.fit_transform(\n",
+    "    encoded_snp=other_exogs_serum_binary_vntr[[\"APOE4+\"]], \n",
+    "    other_exogs=other_exogs_serum_binary_vntr.drop(columns = [\"APOE4+\", \"ethnicity\"]),\n",
+    "    target_dataset=serum_result,\n",
+    "    target_strategy=association.target_strategy_serum(),\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    extra_iterate_on = [\"VNTR_binary\"],\n",
+    "    snp_alias=\"APOE\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 224,
+   "id": "5995e3d0-b3f0-4e44-a4c6-cdea85d84d99",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "output_name = f\"{version_name}_serum_vs_APOE\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 228,
+   "id": "81a97997-f41a-48c6-bdd8-43f6acdd8a08",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|██████████| 3/3 [00:00<00:00,  4.31it/s]\n"
+     ]
+    }
+   ],
+   "source": [
+    "asso.fit_transform(\n",
+    "    encoded_snp=other_exogs_serum_binary_vntr[[\"APOE4+\"]], \n",
+    "    other_exogs=other_exogs_serum_binary_vntr.drop(columns = [\"APOE4+\", \"ethnicity\", \"VNTR_binary\"]),\n",
+    "    target_dataset=serum_result,\n",
+    "    target_strategy=association.target_strategy_serum(),\n",
+    "    output_path=f\"{project_path}/data_analysis_result/association/{output_name}\",\n",
+    "    snp_alias=\"APOE\",\n",
+    "    verbose=0\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "11da95e9-788e-4381-8a79-2a405343f8ff",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

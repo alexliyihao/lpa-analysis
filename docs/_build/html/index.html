@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lpa-analysis &mdash; lpa-analysis  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Encode the output from Coassin pipeline" href="example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            lpa-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Encode the output from Coassin pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#intersect-with-eigenstrat-result">Intersect with eigenstrat result</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#filter-the-encoded-variants">Filter the encoded variants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#locus-table-illustration">Locus table illustration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#new-exon-variant-compared-with-coassin-table-s9">New Exon variant compared with Coassin table S9</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#freq-and-appearance">Freq and appearance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#data-loading-for-associations-and-meta-analysis">Data Loading for Associations and meta-analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#phenotypes-vs-snp">Phenotypes vs SNP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#about-apoe">About APOE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#about-existing-serum-level">About existing serum level</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html#about-vntr">About VNTR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/index.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">lpa-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">lpa-analysis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="lpa-analysis">
+<h1>lpa-analysis<a class="headerlink" href="#lpa-analysis" title="Permalink to this heading"></a></h1>
+<p>Code repo for research project with Dr. Gissette Soffer and Dr. Badri Vardarajan at Columbia Medical Center</p>
+<section id="environment">
+<h2>Environment<a class="headerlink" href="#environment" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Coassin_pipeline’s dependency is packaged in Coassin_pipeline/app_tar, for details, see the Readme file in Coassin_pipeline.</p></li>
+<li><p>The project’s dependencies and releases are managed by <a class="reference external" href="https://python-poetry.org/">Poetry</a>. If you only works on codes, related information can be found at pyproject.toml under section tool.poetry.dependencies, For running details, see the Readme file in src/lpa_pipeline.</p></li>
+</ul>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Coassin_pipeline</strong> included shell script and all the related example file used running pipeline from Dr. Coassin et.al’s paper <a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6314250/"><strong>A comprehensive map of single base polymorphisms in the hypervariable LPA Kringle-IV-2 copy number variation region</strong></a>, the <a class="reference external" href="https://github.com/genepi/lpa-pipeline">pipeline</a> is running on <a class="reference external" href="http://www.cloudgene.io/">Cloudgene</a> on a SGE-managed cluster</p></li>
+<li><p><strong>src/pipeline</strong> is the data analysis pipeline used in Python.</p></li>
+<li><p><strong>METAL</strong> included the backup shell script running <a class="reference external" href="https://github.com/statgen/METAL">METAL</a> 11.3.25 for meta analysis. These scripts are not required ion running</p></li>
+</ul>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h2>
+<p>The repository was created by Yihao Li. It is licensed under the terms of the MIT license.</p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="example.html" class="btn btn-neutral float-right" title="Encode the output from Coassin pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yihao Li, Badri Vardarajan, Soffer Gissette.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

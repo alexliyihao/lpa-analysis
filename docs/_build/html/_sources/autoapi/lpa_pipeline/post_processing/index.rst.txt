@@ -1,0 +1,148 @@
+:py:mod:`lpa_pipeline.post_processing`
+======================================
+
+.. py:module:: lpa_pipeline.post_processing
+
+.. autoapi-nested-parse::
+
+   Append necessary data/correction for association/meta-analysis outputs
+
+   For each association/meta-analysis output, the module does the following:
+
+   * Compute the FDR-adjusted p-value from ``statsmodels.stats.multitest.multipletests``,
+   * Correct the ``METAL``'s direction discrepancy,
+     ``METAL`` is not computing for the direction of alternative but the first allele it met
+   * the ``post_processing`` module also appended the locus information necessary for analysis
+
+   Example::
+
+       pp = PostProcessor(locus_table = locus_table,snp_alias = "variant")
+       pp.post_process_association(df = some_association_result)
+       pp.post_process_meta_analysis(df = aggregate_result)
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   lpa_pipeline.post_processing.CorrectMetalDirection
+   lpa_pipeline.post_processing.FdrAdjustment
+   lpa_pipeline.post_processing.PostProcessor
+
+
+
+
+.. py:class:: CorrectMetalDirection(locus_table: pandas.DataFrame)
+
+
+   correct the beta and direction discrepancy caused by metal
+
+   .. py:method:: correct_effect(x: pandas.DataFrame) -> pandas.DataFrame
+      :staticmethod:
+
+      correct the effect direction, running for pd.DataFrame.apply()
+
+
+   .. py:method:: correct_direction(x: pandas.DataFrame) -> pandas.DataFrame
+      :staticmethod:
+
+      correct the direction label, running for pd.DataFrame.apply()
+
+
+   .. py:method:: correct_metal_direction(df: pandas.DataFrame) -> pandas.DataFrame
+
+      check each row for the metal direction and give corrected result
+
+
+   .. py:method:: append_locus(df: pandas.DataFrame) -> pandas.DataFrame
+
+      append locus table to the output
+
+      :param df: pd.DataFrame, the result from either association or meta-analysis
+
+      :returns: df merged with the locus table
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: correct_metal_complete(df: pandas.DataFrame) -> pandas.DataFrame
+
+      complete pipeline correct the direction
+
+      :param df: pd.DataFrame, the result from meta-analysis (metal_toolkit module)
+
+      Result:
+          pd.DataFrame, the result with corrected effect and corrected direction column
+
+
+
+.. py:class:: FdrAdjustment(p_value_threshold: float = 0.05, method: str = 'fdr_bh', snp_alias: str = 'variant')
+
+
+   computing FDR adjustment for the output of association or metal_toolkit
+
+   .. py:method:: appending_corrections_meta(df: pandas.DataFrame) -> pandas.DataFrame
+
+      compute the FDR corrected p-value for each trait in meta-analysis result
+
+      :param df: pd.DataFrame, the output table from meta-analysis
+                 module
+
+      :returns: pd.DataFrame, df with FDR, Sidak and Bonferonni info
+
+
+   .. py:method:: appending_corrections_association(df: pandas.DataFrame) -> pandas.DataFrame
+
+      compute the FDR corrected p-value for association result
+
+      :param df: pd.DataFrame, the output table from association module
+
+      :returns: pd.DataFrame, df with FDR, Sidak and Bonferonni info
+
+
+   .. py:method:: appending_meta_analysis(path: str) -> None
+
+      wrapper for appending_corrections_meta
+
+
+   .. py:method:: appending_association(path: str) -> None
+
+      appending_corrections_association
+
+
+
+.. py:class:: PostProcessor(locus_table: pandas.DataFrame, p_value_threshold: float = 0.05, method: str = 'fdr_bh', snp_alias: str = 'variant')
+
+
+   wrapper for all the postprocessing
+
+   .. py:method:: post_process_association(df: pandas.DataFrame) -> pandas.DataFrame
+
+      The wrapper of all post process steps for an association module result
+
+      It computes FDR-adjusted p-value and append locus information for the result
+
+      :param df: pd.DataFrame, the output of association module
+
+      :returns: the module with FDR adjusted p-value and locus info
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: post_process_meta_analysis(df: pandas.DataFrame) -> pandas.DataFrame
+
+      The wrapper of all post process steps for a metal_toolkit module result
+
+      It computes FDR-adjusted p-value, correct the direction discrepancy from METAL,
+      and append locus information for the result
+
+      :param df: pd.DataFrame, the output of association module
+
+      :returns: the module with FDR adjusted p-value, correct direction and locus info
+      :rtype: pd.DataFrame
+
+
+

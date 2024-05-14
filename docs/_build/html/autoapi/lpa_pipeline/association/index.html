@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lpa_pipeline.association &mdash; lpa-analysis  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="lpa_pipeline.encodings" href="../encodings/index.html" />
+    <link rel="prev" title="lpa_pipeline.appearance_table_generator" href="../appearance_table_generator/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            lpa-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html">Encode the output from Coassin pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#intersect-with-eigenstrat-result">Intersect with eigenstrat result</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#filter-the-encoded-variants">Filter the encoded variants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#locus-table-illustration">Locus table illustration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#new-exon-variant-compared-with-coassin-table-s9">New Exon variant compared with Coassin table S9</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#freq-and-appearance">Freq and appearance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#data-loading-for-associations-and-meta-analysis">Data Loading for Associations and meta-analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#phenotypes-vs-snp">Phenotypes vs SNP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-apoe">About APOE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-existing-serum-level">About existing serum level</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-vntr">About VNTR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline</span></code></a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../appearance_table_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.appearance_table_generator</span></code></a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.association</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../encodings/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.encodings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../freq_table_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.freq_table_generator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../kiv_subtypes/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../locus_collector/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.locus_collector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../metal_toolkit/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.metal_toolkit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../post_processing/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.post_processing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../snps_filter/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.snps_filter</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">lpa-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.association</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/lpa_pipeline/association/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-lpa_pipeline.association">
+<span id="lpa-pipeline-association"></span><h1><a class="reference internal" href="#module-lpa_pipeline.association" title="lpa_pipeline.association"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.association</span></code></a><a class="headerlink" href="#module-lpa_pipeline.association" title="Permalink to this heading"></a></h1>
+<p>This pipeline running an iterative association test for each snps.</p>
+<p>The iterative strategy is as follows:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>for each the target variable in <code class="docutils literal notranslate"><span class="pre">target_strategy</span></code></dt><dd><ol class="arabic simple">
+<li><p>Extract the column from <code class="docutils literal notranslate"><span class="pre">target_dataset</span></code>:</p></li>
+<li><p>run preprocessing, if the value of key <code class="docutils literal notranslate"><span class="pre">preprocessing</span></code> is given in <code class="docutils literal notranslate"><span class="pre">target_strategy</span></code></p></li>
+<li><p>group the dataset by columns defined by <code class="docutils literal notranslate"><span class="pre">extra_iterate_on</span></code> if provided</p></li>
+<li><dl class="simple">
+<dt>for each group, iterate over columns of <code class="docutils literal notranslate"><span class="pre">encoded_snp</span></code> (each SNP):</dt><dd><ol class="arabic simple">
+<li><p>concatenate it with <code class="docutils literal notranslate"><span class="pre">other_exogs</span></code>, generate the exogenous dataset</p></li>
+<li><p>if <code class="docutils literal notranslate"><span class="pre">one_to_one_exogs</span></code> is provided, use <code class="docutils literal notranslate"><span class="pre">one_to_one_strategy</span></code>
+finding other columns and concatenate them as well</p></li>
+<li><p>run regressions specified by <code class="docutils literal notranslate"><span class="pre">target_strategy</span></code>.engine</p></li>
+<li><p>combine the results from each SNP</p></li>
+<li><p>save the regression output</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</li>
+</ul>
+<dl>
+<dt>Two APIs provided</dt><dd><ul>
+<li><p>sklearn style:</p>
+<blockquote>
+<div><ul>
+<li><p>3-line style:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">snp_asso</span> <span class="o">=</span> <span class="n">SNPAssociation</span><span class="p">()</span>
+<span class="n">snp_asso</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="n">snp_asso</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p>2-line style:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">snp_asso</span> <span class="o">=</span> <span class="n">SNPAssociation</span><span class="p">()</span>
+<span class="n">snp_asso</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>function style:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">snp_asso</span> <span class="o">=</span> <span class="n">SNPAssociation</span><span class="p">()</span>
+<span class="n">snp_asso</span><span class="o">.</span><span class="n">association_test</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs_1</span><span class="p">)</span> <span class="c1">#kwargs_1 can be new kwargs</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</dd>
+</dl>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.association.SNPAssociation" title="lpa_pipeline.association.SNPAssociation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SNPAssociation</span></code></a></p></td>
+<td><p>a class for running SNP association pipeline</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.association.encode_dementia" title="lpa_pipeline.association.encode_dementia"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_dementia</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p>An example preprocessing strategy used in target_strategy,</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lpa_pipeline.association.dropna" title="lpa_pipeline.association.dropna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dropna</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p>A simpler preprocessing strategy used in target_strategy</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.association.filter_c" title="lpa_pipeline.association.filter_c"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_c</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p>The filter C on existing frequency,</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#lpa_pipeline.association.target_strategy" title="lpa_pipeline.association.target_strategy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target_strategy</span></code></a>(→ Dict[str, Dict[str, ...)</p></td>
+<td><p>An example target_strategy used in the association analysis</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.association.target_strategy_serum" title="lpa_pipeline.association.target_strategy_serum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target_strategy_serum</span></code></a>(→ Dict[str, Dict[str, ...)</p></td>
+<td><p>An example target_strategy used in the serum analysis</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="lpa_pipeline.association.encode_dementia">
+<span class="sig-prename descclassname"><span class="pre">lpa_pipeline.association.</span></span><span class="sig-name descname"><span class="pre">encode_dementia</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.association.encode_dementia" title="Permalink to this definition"></a></dt>
+<dd><p>An example preprocessing strategy used in target_strategy,</p>
+<p>It should be a callable takes in a pd.DataFrame and returns another one</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="lpa_pipeline.association.dropna">
+<span class="sig-prename descclassname"><span class="pre">lpa_pipeline.association.</span></span><span class="sig-name descname"><span class="pre">dropna</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.association.dropna" title="Permalink to this definition"></a></dt>
+<dd><p>A simpler preprocessing strategy used in target_strategy</p>
+<p>It should be a callable takes in a pd.DataFrame and returns another one</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="lpa_pipeline.association.filter_c">
+<span class="sig-prename descclassname"><span class="pre">lpa_pipeline.association.</span></span><span class="sig-name descname"><span class="pre">filter_c</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.association.filter_c" title="Permalink to this definition"></a></dt>
+<dd><p>The filter C on existing frequency,</p>
+<p>both 0 and 1 should appear for more than &lt;threshold&gt; times</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – pandas DataFrame, the index should be the Sample ID, and the columns are the snps</p></li>
+<li><p><strong>threshold</strong> – int, the number threshold that both 0 and 1 should appear more than this number</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="lpa_pipeline.association.target_strategy">
+<span class="sig-prename descclassname"><span class="pre">lpa_pipeline.association.</span></span><span class="sig-name descname"><span class="pre">target_strategy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">statsmodels.api.Logit</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">statsmodels.api.OLS</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#lpa_pipeline.association.target_strategy" title="Permalink to this definition"></a></dt>
+<dd><p>An example target_strategy used in the association analysis</p>
+<p>The key for main dict is the variable name
+The value is a dict with the following keys:</p>
+<blockquote>
+<div><p>“engine”, whose value is a statsmodels model</p>
+<p>“preprocessing”, whose value is a callable takes in a pd.DataFrame and returns another one</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="lpa_pipeline.association.target_strategy_serum">
+<span class="sig-prename descclassname"><span class="pre">lpa_pipeline.association.</span></span><span class="sig-name descname"><span class="pre">target_strategy_serum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">statsmodels.api.Logit</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">statsmodels.api.OLS</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#lpa_pipeline.association.target_strategy_serum" title="Permalink to this definition"></a></dt>
+<dd><p>An example target_strategy used in the serum analysis</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.association.</span></span><span class="sig-name descname"><span class="pre">SNPAssociation</span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation" title="Permalink to this definition"></a></dt>
+<dd><p>a class for running SNP association pipeline</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation.debug_log">
+<span class="sig-name descname"><span class="pre">debug_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation.debug_log" title="Permalink to this definition"></a></dt>
+<dd><p>only print the result when it’s in verbose mode == 2</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoded_snp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_exogs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">statsmodels.api.Logit</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">statsmodels.api.OLS</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snp_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_to_one_exogs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_to_one_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_to_one_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">na_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'drop'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_na_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'snp_wise'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_iterate_on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snps_preprocessing_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation.fit" title="Permalink to this definition"></a></dt>
+<dd><p>API setting up the regression (not running)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>encoded_snp</strong> – pd.DataFrame, the dataframe to be looped on columns</p></li>
+<li><p><strong>other_exogs</strong> – pd.DataFrame, the dataframe taking all the other variables</p></li>
+<li><p><strong>target_dataset</strong> – pd.DataFrame, the dataframe taking all the target variables</p></li>
+<li><p><strong>target_strategy</strong> – <p>dict[str, dict[str, funcs or models]],
+The dictionary provide pre-processing to specific column,
+Only column mentioned in keys will be included in the running.
+The inner dictionary should have two keys:</p>
+<dl class="simple">
+<dt>”engine”: statsmodels.api models</dt><dd><p>designed for statsmodels.discrete.discrete_model.Logit or
+statsmodels.regression.linear_model.OLS,
+but any model’s .fit results provide .params .bse .pvalues will work</p>
+</dd>
+<dt>”preprocessing”: funcs</dt><dd><p>the function should take a pd.DataFrame/pd.Series as input
+and a pd.DataFrame/pd.Series as output,
+If this strategy is None, the column will be used as
+exogenous variables as-is</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>output_path</strong> – str, the output root path,
+the saving name will be printed for reference</p></li>
+<li><p><strong>snp_alias</strong> – Optional[str], the name used for snp column in output DataFrame</p></li>
+<li><p><strong>one_to_one_exogs</strong> – Optional[pd.DataFrame], the dataframe providing
+specific exog variable based on encoded_snp</p></li>
+<li><p><strong>one_to_one_strategy</strong> – Optional[funcs], when given a snp name, this
+function should output the corresponding
+one_to_one_exogs column name</p></li>
+<li><p><strong>one_to_one_alias</strong> – Optional[str]: the name used for one-to-one variables
+in output DataFrame</p></li>
+<li><p><strong>na_strategy</strong> – <p>Optional[str], the strategy statsmodels dealing with NAs,
+Available options are ‘none’, ‘drop’, and ‘raise’.</p>
+<p>If ‘none’, no nan checking is done.</p>
+<p>If ‘drop’, any observations with nans are dropped.</p>
+<p>If ‘raise’, an error is raised.</p>
+</p></li>
+<li><p><strong>group_na_strategy</strong> – Optional[str], how na_strategy apply when have
+extra_iterate_on, can be “snp-wise” or “group-wise”,
+it’s working for status when na_strategy == “drop”</p></li>
+<li><p><strong>extra_iterate_on</strong> – Optional[list], the list of extra iterate variable in other_exog
+please be noticed that it may cause severe explosions in running time</p></li>
+<li><p><strong>snps_preprocessing_strategy</strong> – Optional[funcs], the preprocessing applied to snps
+before the regression analysis
+this function should take a pd.DataFrame as input and output</p></li>
+<li><p><strong>verbose</strong> – <p>Optional[int] in {0,1,2} default 0</p>
+<p>if verbose == 0, no output will be printed except the progress bar</p>
+<p>if verbose == 1, the regression will give the saving path</p>
+<p>if verbose == 2, the regression will output all the related
+values during the computation, only for debugging purpose,
+use with care for it will create massive I/O</p>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation.transform" title="Permalink to this definition"></a></dt>
+<dd><p>API Run the actual association test</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_path</strong> – Optional[str]: if provided, only in this run, it will cover
+the output_path previously provided</p></li>
+<li><p><strong>verbose</strong> – Optional[int]: if provided, only in this run, it will cover
+the verbose previously provided</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation.fit_transform">
+<span class="sig-name descname"><span class="pre">fit_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation.fit_transform" title="Permalink to this definition"></a></dt>
+<dd><p>API run fit and transform in one method</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation._get_column_name">
+<span class="sig-name descname"><span class="pre">_get_column_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation._get_column_name" title="Permalink to this definition"></a></dt>
+<dd><p>for a list of given column, generate suffix necessary as header</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation._generate_filename">
+<span class="sig-name descname"><span class="pre">_generate_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_snp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endog_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation._generate_filename" title="Permalink to this definition"></a></dt>
+<dd><p>generate a file name</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation._generate_info">
+<span class="sig-name descname"><span class="pre">_generate_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processed_snp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation._generate_info" title="Permalink to this definition"></a></dt>
+<dd><p>generate an info dictionary for a regression task</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation._save_association_result">
+<span class="sig-name descname"><span class="pre">_save_association_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation._save_association_result" title="Permalink to this definition"></a></dt>
+<dd><p>save result and info to output path as the name specified in info</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation._calculate_freq">
+<span class="sig-name descname"><span class="pre">_calculate_freq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation._calculate_freq" title="Permalink to this definition"></a></dt>
+<dd><p>given a pandas.dataFrame &lt;df&gt; and specific column name &lt;cols&gt;,
+compute the frequency</p>
+<p>Please note that this is only designed for 0/1 or boolean column
+When using quantitative value the freq it’s not making realistic sense,
+So the computing is awkward… just want to keep the code running even
+with quantitative columns. Feel free to override it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – pd.DataFrame, a data table</p></li>
+<li><p><strong>cols</strong> – str, column name in df</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>tuple containing</p>
+<ul class="simple">
+<li><p>float: the relative frequency of 1s in this column.</p></li>
+<li><p>float: the number of 1s in the column.</p></li>
+<li><p>float: the number of rows in the column.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation._association_snp">
+<span class="sig-name descname"><span class="pre">_association_snp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">snp_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_exogs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.Series</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_to_one_exogs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_to_one_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_to_one_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snps_preprocessing_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">na_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'drop'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_na_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'snp_wise'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snp_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation._association_snp" title="Permalink to this definition"></a></dt>
+<dd><p>association test designed for snp variants analysis</p>
+<p>For each column in snp_table, run an individual &lt;endog&gt;~column+&lt;other&gt; on &lt;engine&gt;
+return the beta/weight/effect size, standard error and p-values</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>snp_table</strong> – pd.DataFrame, the table encoding snps,
+the columns is snp name, rows are individuals, values are numerics</p></li>
+<li><p><strong>other_exogs</strong> – pd.DataFrame, the table encoding other traits,
+the columns is traits, rows are individuals, values are numerics</p></li>
+<li><p><strong>endog</strong> – pd.DataFrame or pd.Series, the target/endogenous variable</p></li>
+<li><p><strong>engine</strong> – statsmodels models, most of the time it’s
+statsmodels.discrete.discrete_model.Logit or
+statsmodels.regression.linear_model.OLS,
+but any model’s .fit results provide .params .bse .pvalues will work</p></li>
+<li><p><strong>one_to_one_exogs</strong> – pd.DataFrame, the dataframe providing
+specific exog variable based on encoded_snp</p></li>
+<li><p><strong>one_to_one_strategy</strong> – funcs, when given a snp name, this function should output
+the corresponding one_to_one_exogs column name</p></li>
+<li><p><strong>one_to_one_alias</strong> – list[str], the name used to take the one-to-one column</p></li>
+<li><p><strong>snps_preprocessing_strategy</strong> – Optional[funcs] the preprocessing applied to snps
+before the regression analysis
+this function should take a pd.DataFrame as input and output</p></li>
+<li><p><strong>snp_alias</strong> – str, the name used for snp column</p></li>
+<li><p><strong>na_strategy</strong> – Optional[str], stands for the strategy dealing with NAs,
+Available options are ‘none’, ‘drop’, and ‘raise’.
+If ‘none’, no nan checking is done.
+If ‘drop’, any observations with nans are dropped.
+If ‘raise’, an error is raised. Default is ‘none’.</p></li>
+<li><p><strong>group_na_strategy</strong> – Optional[str], how na_strategy apply when have
+extra_iterate_on, can be “snp-wise” or “group-wise”,
+it’s working for status when na_strategy == “drop”</p></li>
+<li><p><strong>extra_label</strong> – Optional[tuple[tuple[str], tuple[str]]]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>tuple containing</p>
+<ul class="simple">
+<li><p>pd.DataFrame: the effect size, se and p-values for each &lt;endog&gt;~column+&lt;other&gt; on &lt;engine&gt;.</p></li>
+<li><p>dict: additional information that is included.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.association.SNPAssociation.association_test">
+<span class="sig-name descname"><span class="pre">association_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoded_snp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_exogs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.Series</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">statsmodels.api.Logit</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">statsmodels.api.OLS</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_to_one_exogs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_to_one_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_to_one_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">na_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'drop'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_iterate_on</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_na_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'snp_wise'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snps_preprocessing_strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snp_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="headerlink" href="#lpa_pipeline.association.SNPAssociation.association_test" title="Permalink to this definition"></a></dt>
+<dd><p>API running regression test</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>encoded_snp</strong> – pd.DataFrame, the dataframe to be looped on columns</p></li>
+<li><p><strong>other_exogs</strong> – pd.DataFrame, the dataframe taking all the other variables</p></li>
+<li><p><strong>target_dataset</strong> – pd.DataFrame, the dataframe taking all the target variables</p></li>
+<li><p><strong>target_strategy</strong> – <p>dict[str, dict[str, funcs or models]], the dictionary
+provide pre-processing to specific column. Only column mentioned in
+keys will be included in the running. The inner dictionary should
+have two keys:</p>
+<blockquote>
+<div><ul>
+<li><dl class="simple">
+<dt>”engine”: statsmodels.api models,</dt><dd><p>designed for statsmodels.discrete.discrete_model.Logit or
+statsmodels.regression.linear_model.OLS,
+but any model’s .fit results provide .params .bse .pvalues will work</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>”preprocessing”: funcs</dt><dd><p>the function should take a pd.DataFrame/pd.Series as input
+and a pd.DataFrame/pd.Series as output,
+This strategy is None, the column will be used as
+exogenous variables as-is</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</p></li>
+<li><p><strong>output_path</strong> – str, the output root path, the saving name will be printed for reference</p></li>
+<li><p><strong>one_to_one_exogs</strong> – pd.DataFrame, the dataframe providing
+specific exog variable based on encoded_snp</p></li>
+<li><p><strong>one_to_one_strategy</strong> – funcs, when given a snp name, this function should output
+the corresponding one_to_one_exogs column name</p></li>
+<li><p><strong>one_to_one_alias</strong> – str, the name for one_to_one settings</p></li>
+<li><p><strong>snps_preprocessing_strategy</strong> – Optional[funcs] the preprocessing applied to snps
+before the regression analysis
+this function should take a pd.DataFrame as input and output</p></li>
+<li><p><strong>na_strategy</strong> – Optional[str], stands for the strategy dealing with NAs,
+Available options are ‘none’, ‘drop’, and ‘raise’.
+If ‘none’, no nan checking is done.
+If ‘drop’, any observations with nans are dropped.
+If ‘raise’, an error is raised. Default is ‘none’.</p></li>
+<li><p><strong>extra_iterate_on</strong> – Optional[list], the list of extra iterate variable in other_exog
+please be noticed that it may cause severe explosions in running time</p></li>
+<li><p><strong>group_na_strategy</strong> – Optional[str], how na_strategy apply when have
+extra_iterate_on, can be “snp-wise” or “group-wise”,
+it’s working for status when na_strategy == “drop”</p></li>
+<li><p><strong>snp_alias</strong> – Optional[str], the name used for snp column</p></li>
+<li><p><strong>verbose</strong> – Optional[int] in {0,1,2} default 0
+if verbose = 1, the regression will give the saving path
+if verbose = 2, the regression will output all the related
+values during the computation, only for debugging purpose,
+use with care for it will create massive I/O</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a dict recording output brief information</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../appearance_table_generator/index.html" class="btn btn-neutral float-left" title="lpa_pipeline.appearance_table_generator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../encodings/index.html" class="btn btn-neutral float-right" title="lpa_pipeline.encodings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yihao Li, Badri Vardarajan, Soffer Gissette.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

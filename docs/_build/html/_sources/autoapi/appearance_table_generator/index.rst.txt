@@ -1,0 +1,35 @@
+:py:mod:`appearance_table_generator`
+====================================
+
+.. py:module:: appearance_table_generator
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   appearance_table_generator.AppearanceTableGenerator
+
+
+
+
+.. py:class:: AppearanceTableGenerator(freq_table_generator, ethnicity_list: List = ['AF', 'HISP', 'EU'], rarity_list: List = ['Common', 'Rare'])
+
+
+   .. py:method:: generate_appearance_table(df: pandas.DataFrame) -> pandas.DataFrame
+
+
+   .. py:method:: generate_appearance_table_ethnicity_gender(df: pandas.DataFrame) -> pandas.DataFrame
+
+
+   .. py:method:: generate_ethnicity_rarity_info(df: pandas.DataFrame) -> pandas.DataFrame
+
+
+   .. py:method:: _subclass_appearance_check_ethnicity_gender(class_string: str, rarity: str, freq_table: pandas.DataFrame) -> Tuple[str, str, int, int, int, int]
+
+
+

@@ -1,0 +1,23 @@
+:py:mod:`lpa_pipeline`
+======================
+
+.. py:module:: lpa_pipeline
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   appearance_table_generator/index.rst
+   association/index.rst
+   encodings/index.rst
+   freq_table_generator/index.rst
+   kiv_subtypes/index.rst
+   locus_collector/index.rst
+   metal_toolkit/index.rst
+   post_processing/index.rst
+   snps_filter/index.rst
+
+

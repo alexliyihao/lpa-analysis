@@ -1,0 +1,298 @@
+:py:mod:`lpa_pipeline.encodings`
+================================
+
+.. py:module:: lpa_pipeline.encodings
+
+.. autoapi-nested-parse::
+
+   The pipeline encodes outputs from coassin_pipeline
+
+   Encoding Rule:
+
+   * If raw/raw.txt file total coverage < ``raw_total_coverage_threshold``,
+     encode that position NA for that person
+   * If total coverage >= ``raw_total_coverage_threshold``, in annotated file
+
+       * If position is missing in annotated file, the variant is coded 0
+
+       * If position is present in the annotated, if both:
+
+           1. variant_level value > ``variant_level_threshold``
+
+           2. the total reads supporting (variant_level*total_coverage)
+              value >= ``read_supporting_threshold``
+
+         are met, the variant is coded 1, otherwise 0
+
+   .. rubric:: Example
+
+   The class should be initiated as follows::
+
+       eco = encodings.EncodingCoassinOutput(
+           input_path = "/some/parent/path/of/bam/output" # or next line
+           bam_list = "/paths/to/a/file/recording/bam/path/line/by/line.txt"
+           output_path = "output_path"# required
+           )
+
+   The encoding process include an individual encoding step::
+
+       eco.encode_individual(saving_step: int)
+
+   this step will be very time-consuming. For it is originally running on SGE,
+   no parallel is provided in Python, it's recommended to split your BAM output
+   via bam_list. Saving_step default to 1, i.e. each individual's result is
+   saved separately. A larger saving_step can reduce the saving overhead.
+
+   After individual encoding, the following method can generate the output::
+
+       eco.generate_coverage_total()
+       eco.generate_encoded_results()
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   lpa_pipeline.encodings.EncodingCoassinOutput
+
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   lpa_pipeline.encodings.parser
+
+
+.. py:class:: EncodingCoassinOutput(output_path: str, input_path: Optional[str] = None, bam_list: Optional[str] = None, raw_total_coverage_threshold: int = 50, variant_level_threshold: float = 0.01, read_supporting_threshold: int = 10, verbosity: int = 1)
+
+
+   Algorithm:
+
+   1. Read and encode each folder individually,
+      if a snp position didn't give mutation result, save them as pos, else pos-ref/alt,
+   2. When we get all the encodings, concat them together and deal with all the pos conflict
+
+   Hardware Requirement:
+
+   The algorithm is preventing the growth of the number of cross-table accesses
+   and queries, especially minimizing the time read in dataframe from the file
+   system(= 2*n_samples) and its memory cost (a raw.txt and a variantsAnnotate.txt
+   at any specific time) during 1st step encoding. Which is at the cost of
+   HUGE memory requirement dealing with concatenation (which is more customizable
+   on our cluster).
+
+   For reproducing with ~4000 subjects, generate_encoded_results() method need at least 10GB memories.
+   For a smooth running, 20GB to 30GB memories for the kernel is suggested.
+
+   .. py:method:: _verify_coassin_output(path: str) -> bool
+      :staticmethod:
+
+      assert <path> is a complete Coassin path output
+
+      check the existence of
+      1. <path>/raw/raw.txt
+      2. <path>/variantsAnnotate/variantsAnnotate.txt
+
+      :param path: str, the path to a Coassin pipeline output
+
+      :returns: if the output is valid, return True, otherwise False
+      :rtype: bool
+
+
+   .. py:method:: _encode_individual(bam_path: str) -> Tuple[pandas.DataFrame, pandas.DataFrame]
+
+      The procedure reading in, encoding, then tidy up the output for an individual
+
+
+   .. py:method:: _encode_position(pos: int, coverage_total: int, annotated_files: pandas.DataFrame) -> pandas.DataFrame
+
+      actual encoding logic, apply to each specific row(allele) in variantsAnnotate file
+
+      both pos and coverage_total is obtained from pd.DataFrameGroupBy object's apply method
+
+      :param pos: int, the position of this SNP
+      :param coverage_total: int, the coverage_total read from the raw.txt
+      :param annotated_files: pd.DataFrame, reading from
+                              variantsAnnotate/variantsAnnotate.txt
+
+      :returns: the encoded result for pd.DataFrame.apply()
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: _tidy_encoded_results(df: pandas.DataFrame) -> pandas.DataFrame
+      :staticmethod:
+
+      read in a 1st step encoded_result from path, then tidy the format up
+
+      inplace=True is applied to minimize the memory cost
+
+      :param df: pd.DataFrame, the output to be checked
+
+      :returns: the encoded_result
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: encode_individual(saving_step: int = 1)
+
+      API for the first step individual-wise encoding procedure,
+
+      It will take very long time, so for loop and huge amount of intermediate
+      results will be saved in self._output_path, to customize the saving step,
+      a saving_step (default 1) is provided
+
+      :param saving_step: int, after every <save_step> sample, the program will save the result
+
+      Saves:
+          self._output_path/coverage_totals/<sample_name>.csv
+          self._output_path/encoded_results/<sample_name>.csv
+
+
+   .. py:method:: generate_coverage_total(save: bool = False) -> pandas.DataFrame
+
+      API generate final coverage_total table
+
+      :param save: bool, default False, if True, it will save the final result at
+                   self._output_path/coverage_total_final.csv
+
+      :returns: the final coverage_total table
+      :rtype: pd.DataFrame
+
+      Saves:
+          if save == True, self._output_path/coverage_total_final.csv, same as above
+
+
+   .. py:method:: generate_encoded_results(save: bool = False, tidy_when_load: bool = False) -> pandas.DataFrame
+
+      The procedure generate final encoded_results table
+
+      :param save: bool, default False, if True, it will save the final result at
+                   self._output_path/encoded_result_final.csv
+      :param tidy_when_load: bool, default False, if True, when load each separate encoded_result
+                             will apply self._tidy_encoded_results, just for running different version code
+                             please use False in your application.
+
+      :returns: the final encoded_result table
+      :rtype: pd.DataFrame
+
+      Saves:
+          if save == True, self._output_path/encoded_result_final.csv, same as above
+
+
+   .. py:method:: _combine_position_wrapper(x: pandas.DataFrame) -> pandas.DataFrame
+
+      wrapper function apply self._combine_encoded_on_position() to a DataFrame
+
+
+   .. py:method:: _combine_encoded_on_position(col, base: Hashable)
+      :staticmethod:
+
+      the actual logic combine the result of a column
+
+      Run the following logic:
+
+      if "position" appears
+
+      case 1:
+          if "position" is "missing", total coverage < 50, the final encoding should be NA
+      case 2:
+          if both "position" and all "position-ref/alt" is NA:
+          raw.txt doesn't provide this position, the final encoding should be all NA
+      case 3:
+          if "position" is encoded, and "position-ref/alt" is NA
+          raw.txt provided this value, total coverage > 50,
+          but this "position-ref/alt" is not provided in annotatedVariant.txt
+          The final encoding should be the value in "position" = 0
+          only "position-ref/alt" can be encoded as 1
+      case 4:
+          if "position" is NA, and "position-ref/alt" is encoded
+          raw.txt provided this value
+          and this "position-ref/alt" is provided in annotatedVariant.txt
+          The final encoding should be the value in "position-ref/alt",
+          if "position-ref/alt" is NA but with other Non-NA "position-ref/alt",
+          it's 0 for any NA for the total coverage is proven enough
+      case 5:
+          Both "position" and "position-ref/alt" are encoded:
+          It's technically not possible
+
+      if "position" is not there, only "position-ref/alt" appears
+
+      case 6:
+          If any of these "position-ref/alt" is encoded:
+          Encoded position-ref/alt keeps the value in "position-ref/alt"
+          All the rest position-ref/alt will be 0, they are not provided in annotatedVariant.txt,
+          but the coverage total is proven > 50
+      case 7:
+          If all "position-ref/alt" is NA: The final encoding should be 0,
+          the coverage total is proven > 50
+
+
+   .. py:method:: _extract_id(sample_id: str) -> str
+      :staticmethod:
+
+      Helper function clean Sample ID to pure digits
+
+      :param sample_id: String, in "washei*****.BQSR.recalled.bam" format
+
+      :returns: the WES ID (the part before ".BQSR...")
+      :rtype: str
+
+
+   .. py:method:: _get_file_annotated(bam_path: str) -> pandas.DataFrame
+      :staticmethod:
+
+      given a bam name, read the variantsAnnotate.txt inside the output of Coassin pipeline
+      :param input_path:
+      :param the input path with all the bam output inside:
+      :param bam_path: str, the name of the original bam file
+
+      :returns: the variantsAnnotate.txt file read
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: _data_cleaning_annotated(df: pandas.DataFrame) -> pandas.DataFrame
+
+      existing variantsAnnotate.txt data cleaning procedure
+      :param df: pd.DataFrame, the dataframe
+
+      :returns: the dataframe with cleaned ID
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: _get_file_raw(bam_path: str) -> pandas.DataFrame
+      :staticmethod:
+
+      given a bam name, read the <bam_path>/raw/raw.txt inside the output of Coassin pipeline
+      :param bam_path: str, the name of the original bam file
+
+      :returns: the variantsAnnotate.txt file read
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: _data_cleaning_raw(df: pandas.DataFrame) -> pandas.DataFrame
+
+      existing raw.txt data cleaning procedure
+      :param df: pd.DataFrame, the dataframe
+
+      :returns: the dataframe with cleaned ID
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: _get_coverage_total(raw: pandas.DataFrame) -> Tuple[pandas.DataFrame, str]
+      :staticmethod:
+
+      get the coverage_total info from dataFrame read from raw/raw.txt
+
+
+
+.. py:data:: parser
+
+   
+

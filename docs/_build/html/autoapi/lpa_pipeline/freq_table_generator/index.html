@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lpa_pipeline.freq_table_generator &mdash; lpa-analysis  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="lpa_pipeline.kiv_subtypes" href="../kiv_subtypes/index.html" />
+    <link rel="prev" title="lpa_pipeline.encodings" href="../encodings/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            lpa-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html">Encode the output from Coassin pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#intersect-with-eigenstrat-result">Intersect with eigenstrat result</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#filter-the-encoded-variants">Filter the encoded variants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#locus-table-illustration">Locus table illustration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#new-exon-variant-compared-with-coassin-table-s9">New Exon variant compared with Coassin table S9</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#freq-and-appearance">Freq and appearance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#data-loading-for-associations-and-meta-analysis">Data Loading for Associations and meta-analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#phenotypes-vs-snp">Phenotypes vs SNP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-apoe">About APOE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-existing-serum-level">About existing serum level</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-vntr">About VNTR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline</span></code></a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../appearance_table_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.appearance_table_generator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../association/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.association</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../encodings/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.encodings</span></code></a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.freq_table_generator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../kiv_subtypes/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../locus_collector/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.locus_collector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../metal_toolkit/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.metal_toolkit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../post_processing/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.post_processing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../snps_filter/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.snps_filter</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">lpa-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.freq_table_generator</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/lpa_pipeline/freq_table_generator/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-lpa_pipeline.freq_table_generator">
+<span id="lpa-pipeline-freq-table-generator"></span><h1><a class="reference internal" href="#module-lpa_pipeline.freq_table_generator" title="lpa_pipeline.freq_table_generator"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.freq_table_generator</span></code></a><a class="headerlink" href="#module-lpa_pipeline.freq_table_generator" title="Permalink to this heading"></a></h1>
+<p>A generator computing relative frequency of SNP carrier by group</p>
+<p>Common usage:</p>
+<p>Given two pandas.DataFrame</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">class_info_table</span></code> has one have columns <code class="docutils literal notranslate"><span class="pre">class_variable</span></code> indicate the group</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">one_hot_table</span></code> has all one-hot-variables(SNPs encoding),</p></li>
+</ul>
+<p>Compute the SNPs frequency in each class defined in &lt;class_variable&gt;:</p>
+<blockquote>
+<div><p>Initialize:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ftg</span> <span class="o">=</span> <span class="n">freq_table_generator</span><span class="o">.</span><span class="n">FreqTableGenerator</span><span class="p">(</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="mf">0.01</span>
+    <span class="n">encoding</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;Not Detected&quot;</span><span class="p">,</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;Rare&quot;</span><span class="p">,</span>
+                <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;Common&quot;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>Generate the table:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">freq_table</span> <span class="o">=</span> <span class="n">ftg</span><span class="o">.</span><span class="n">generate_freq_table</span><span class="p">(</span>
+    <span class="n">class_info_table</span> <span class="o">=</span> <span class="n">class_info_table</span><span class="p">,</span>
+    <span class="n">one_hot_table</span> <span class="o">=</span> <span class="n">one_hot_table</span><span class="p">,</span>
+    <span class="n">class_variable</span> <span class="o">=</span> <span class="s2">&quot;&lt;class_variable&gt;&quot;</span>
+    <span class="n">class_variable_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&lt;class_name_1&gt;&quot;</span><span class="p">,</span><span class="s2">&quot;&lt;class_name_2&gt;&quot;</span><span class="p">,</span><span class="o">...</span><span class="p">]</span>
+    <span class="c1">#if only need a part of &lt;class_variable&gt; column</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>If you need a rarity classification as columns as well:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">freq_table_with_rarity</span> <span class="o">=</span> <span class="n">ftg</span><span class="o">.</span><span class="n">generate_freq_table_with_rarity</span><span class="p">(</span>
+    <span class="n">class_info_table</span> <span class="o">=</span> <span class="n">class_info_table</span><span class="p">,</span>
+    <span class="n">one_hot_table</span> <span class="o">=</span> <span class="n">one_hot_table</span><span class="p">,</span>
+    <span class="n">class_variable</span> <span class="o">=</span> <span class="s2">&quot;&lt;class_variable&gt;&quot;</span>
+    <span class="n">class_variable_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&lt;class_name_1&gt;&quot;</span><span class="p">,</span><span class="s2">&quot;&lt;class_name_2&gt;&quot;</span><span class="p">,</span><span class="o">...</span><span class="p">]</span>
+    <span class="c1">#if only need a part of &lt;class_variable&gt; column</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Where threshold and encoding are for generating rarity:</p>
+<ul class="simple">
+<li><p>if the threshold &lt; freq &lt; 1- threshold, it will be encoded as 2</p></li>
+<li><p>if the 0 &lt; freq &lt; threshold or 1 - threshold &lt; freq &lt; 1, it will be encoded as 1</p></li>
+<li><p>if freq = 0 or freq = 1, it will be 0.</p></li>
+</ul>
+<p>Thus, for encoding, please only modify the value, not the key.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.freq_table_generator.FreqTableGenerator" title="lpa_pipeline.freq_table_generator.FreqTableGenerator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreqTableGenerator</span></code></a></p></td>
+<td><p>a generator class with API generate frequency table on all-one-hot variables,</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="attributes">
+<h3>Attributes<a class="headerlink" href="#attributes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.freq_table_generator.parser" title="lpa_pipeline.freq_table_generator.parser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parser</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="lpa_pipeline.freq_table_generator.FreqTableGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.freq_table_generator.</span></span><span class="sig-name descname"><span class="pre">FreqTableGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_lower_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{0:</span> <span class="pre">'Not</span> <span class="pre">Detected',</span> <span class="pre">1:</span> <span class="pre">'Rare',</span> <span class="pre">2:</span> <span class="pre">'Common'}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.freq_table_generator.FreqTableGenerator" title="Permalink to this definition"></a></dt>
+<dd><p>a generator class with API generate frequency table on all-one-hot variables,
+along with rarity check, originally designed for genome analysis</p>
+<p>Initialization:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>ftg = FreqTableGenerator(threshold: float,</dt><dd><p>class_lower_case: bool,
+encoding: dict)</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>threshold</strong> – float, the threshold for rare vs. common for SNPs, default 0.01</p></li>
+<li><p><strong>class_lower_case</strong> – bool, if True, all the class name will be in lower case
+for formatting</p></li>
+<li><p><strong>encoding</strong> – dict{int: “str”}, the encoding for rarity, the keys should be
+kept as 0,1,2. 0 stands for there’s no founding, 2 stands for the
+frequency is between threshold to 1-threshold</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.freq_table_generator.FreqTableGenerator.generate_freq_table">
+<span class="sig-name descname"><span class="pre">generate_freq_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_info_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_hot_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_variable_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_class_variable_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#lpa_pipeline.freq_table_generator.FreqTableGenerator.generate_freq_table" title="Permalink to this definition"></a></dt>
+<dd><p>Generate the whole freq table for all class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_info_table</strong> – pd.DataFrame, the table with class_variable</p></li>
+<li><p><strong>one_hot_table</strong> – pd.DataFrame, the table with all the one-hot-encoded data</p></li>
+<li><p><strong>class_variable</strong> – str, the name of column indicating the group setting</p></li>
+<li><p><strong>class_variable_list</strong> – Optional[list[str]], if provided, only mentioned
+groups in class_variable will be listed</p></li>
+<li><p><strong>return_class_variable_list</strong> – bool, if True, will return the
+class_variable_list use, even if not provided as variable</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the frequency table generated
+list[str]: the list of group name included if return_class_variable_list == True</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.freq_table_generator.FreqTableGenerator.get_freq">
+<span class="sig-name descname"><span class="pre">get_freq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_wise_group</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.core.groupby.DataFrameGroupBy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_hot_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.freq_table_generator.FreqTableGenerator.get_freq" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the freq for each class</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.freq_table_generator.FreqTableGenerator.common_check">
+<span class="sig-name descname"><span class="pre">common_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_variable_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_lower_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.freq_table_generator.FreqTableGenerator.common_check" title="Permalink to this definition"></a></dt>
+<dd><p>Append the commonness check to a frequency table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freq_table</strong> – pd.DataFrame, the frequency table provided</p></li>
+<li><p><strong>class_variable_list</strong> – list[str], the list of group name included</p></li>
+<li><p><strong>threshold</strong> – float, will cover the class setting if provided</p></li>
+<li><p><strong>class_lower_case</strong> – bool, will cover the class setting if provided</p></li>
+<li><p><strong>encoding</strong> – dict{int: “str”}, will cover the class setting if provided</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame, the freq_table with rarity columns</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.freq_table_generator.FreqTableGenerator.generate_freq_table_with_rarity">
+<span class="sig-name descname"><span class="pre">generate_freq_table_with_rarity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_info_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_hot_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_variable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_variable_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_lower_case</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.freq_table_generator.FreqTableGenerator.generate_freq_table_with_rarity" title="Permalink to this definition"></a></dt>
+<dd><p>Generate the whole freq table for all class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>class_info_table</strong> – pd.DataFrame, the table with class_variable</p></li>
+<li><p><strong>one_hot_table</strong> – pd.DataFrame, the table with all the one-hot-encoded data</p></li>
+<li><p><strong>class_variable</strong> – str, the name of column indicating the group setting</p></li>
+<li><p><strong>class_variable_list</strong> – Optional[list[str]], if provided, only mentioned
+groups in class_variable will be listed</p></li>
+<li><p><strong>threshold</strong> – float, will cover the class setting if provided</p></li>
+<li><p><strong>class_lower_case</strong> – bool, will cover the class setting if provided</p></li>
+<li><p><strong>encoding</strong> – dict{int: “str”}, will cover the class setting if provided</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the frequency table with rarity indicators</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="lpa_pipeline.freq_table_generator.parser">
+<span class="sig-prename descclassname"><span class="pre">lpa_pipeline.freq_table_generator.</span></span><span class="sig-name descname"><span class="pre">parser</span></span><a class="headerlink" href="#lpa_pipeline.freq_table_generator.parser" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../encodings/index.html" class="btn btn-neutral float-left" title="lpa_pipeline.encodings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../kiv_subtypes/index.html" class="btn btn-neutral float-right" title="lpa_pipeline.kiv_subtypes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yihao Li, Badri Vardarajan, Soffer Gissette.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

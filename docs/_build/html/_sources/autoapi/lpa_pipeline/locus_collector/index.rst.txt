@@ -1,0 +1,76 @@
+:py:mod:`lpa_pipeline.locus_collector`
+======================================
+
+.. py:module:: lpa_pipeline.locus_collector
+
+.. autoapi-nested-parse::
+
+   Collecting the locus information of Coassin's output
+
+   Example::
+
+       lc = locus_collector.LocusCollector(
+           input_path = "/some/parent/path/of/bam/output" #choose this or next line
+           bam_list = "/paths/to/a/file/recording/bam/path/line/by/line.txt")
+
+       locus_table = lc.generate_locus_table()
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   lpa_pipeline.locus_collector.LocusCollector
+
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   lpa_pipeline.locus_collector.parser
+
+
+.. py:class:: LocusCollector(input_path: Optional[str] = None, bam_list: Optional[str] = None)
+
+
+   Collecting the locus information of Coassin's output
+
+   Initialize:
+
+       lc = LocusCollector(input_path = "input/path")
+
+       or
+
+       lc = LocusCollector(bam_list = "bam/list/path")
+
+   Generate Table:
+
+       locus_table = lc.generate_locus_table()
+
+   .. py:method:: read_locus(path: str) -> pandas.DataFrame
+      :staticmethod:
+
+      read a coassin output, tidy the output
+
+
+   .. py:method:: generate_locus_table() -> pandas.DataFrame
+
+      Generate the locus table in one line
+
+      :returns: all the locus result
+      :rtype: pd.DataFrame
+
+
+
+.. py:data:: parser
+
+   
+

@@ -1,0 +1,66 @@
+:py:mod:`lpa_pipeline.kiv_subtypes`
+===================================
+
+.. py:module:: lpa_pipeline.kiv_subtypes
+
+.. autoapi-nested-parse::
+
+   The KIV-2 types A, B and C are defined by three synonymous SNPs
+   at positions 14, 41 and 86 of the first KIV-2 exon which can be seen via
+   https://www.atherosclerosis-journal.com/cms/10.1016/j.atherosclerosis.2022.04.003/attachment/32899cc9-f3a8-4354-86a8-5ebcec782688/mmc1.pdf
+
+   The file from pipeline: https://github.com/genepi/lpa-pipeline/blob/master/files/maplocus_v3.txt
+   suggested that Exon 421 should be bp 581-740 from his pipeline. Which can be confirmed by his next sentence
+   "A T/C SNP 119 bp downstream of exon 1 (position 859 in [1])" Thus pos 14(A or G), 41(T or C), 86(A or T)
+   should be pos 594, 621 and 666 in our pipeline, respectively.
+
+   Example::
+
+       krs = KIVRepeatSubtype()
+       krs.predict_subtype(encoding_result = encoding_result)
+
+   where encoding result is a pd.DataFrame with all value binary(or equivalent)
+   each row should stand for an individual(id as index) and each column stand for a variant,
+   using "pos-ref/alt" format. all of ["594-A/G", "621-T/C", "666-A/T"] have to be in the columns
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   lpa_pipeline.kiv_subtypes.KIVRepeatSubtype
+
+
+
+
+.. py:class:: KIVRepeatSubtype
+
+
+   .. py:method:: predict_subtype(encoding_result: pandas.DataFrame) -> pandas.DataFrame
+
+      predict the KIV‐2 types A, B and C, wrappers for _predict_subtype
+
+      :param encoding_result: pd.DataFrame with all value binary or equivalent
+      :param each row should stand for an individual:
+      :param where id is used as index:
+      :param and each column stand for a variant:
+      :param using "pos-ref/alt" format:
+
+      :returns: have the same index as encoding_result and subtype prediction
+                using column name "KIV-2_subtypes" as the only column
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: _predict_subtype(x: pandas.DataFrame) -> str
+
+      predict the KIV‐2 types A, B and C described by:
+
+      https://doi.org/10.1016/j.atherosclerosis.2022.04.003
+
+
+

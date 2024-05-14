@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lpa_pipeline.kiv_subtypes &mdash; lpa-analysis  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="lpa_pipeline.locus_collector" href="../locus_collector/index.html" />
+    <link rel="prev" title="lpa_pipeline.freq_table_generator" href="../freq_table_generator/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            lpa-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html">Encode the output from Coassin pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#intersect-with-eigenstrat-result">Intersect with eigenstrat result</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#filter-the-encoded-variants">Filter the encoded variants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#locus-table-illustration">Locus table illustration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#new-exon-variant-compared-with-coassin-table-s9">New Exon variant compared with Coassin table S9</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#freq-and-appearance">Freq and appearance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#data-loading-for-associations-and-meta-analysis">Data Loading for Associations and meta-analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#phenotypes-vs-snp">Phenotypes vs SNP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-apoe">About APOE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-existing-serum-level">About existing serum level</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-vntr">About VNTR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline</span></code></a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../appearance_table_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.appearance_table_generator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../association/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.association</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../encodings/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.encodings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../freq_table_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.freq_table_generator</span></code></a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../locus_collector/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.locus_collector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../metal_toolkit/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.metal_toolkit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../post_processing/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.post_processing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../snps_filter/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.snps_filter</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">lpa-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/lpa_pipeline/kiv_subtypes/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-lpa_pipeline.kiv_subtypes">
+<span id="lpa-pipeline-kiv-subtypes"></span><h1><a class="reference internal" href="#module-lpa_pipeline.kiv_subtypes" title="lpa_pipeline.kiv_subtypes"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></a><a class="headerlink" href="#module-lpa_pipeline.kiv_subtypes" title="Permalink to this heading"></a></h1>
+<p>The KIV-2 types A, B and C are defined by three synonymous SNPs
+at positions 14, 41 and 86 of the first KIV-2 exon which can be seen via
+<a class="reference external" href="https://www.atherosclerosis-journal.com/cms/10.1016/j.atherosclerosis.2022.04.003/attachment/32899cc9-f3a8-4354-86a8-5ebcec782688/mmc1.pdf">https://www.atherosclerosis-journal.com/cms/10.1016/j.atherosclerosis.2022.04.003/attachment/32899cc9-f3a8-4354-86a8-5ebcec782688/mmc1.pdf</a></p>
+<p>The file from pipeline: <a class="reference external" href="https://github.com/genepi/lpa-pipeline/blob/master/files/maplocus_v3.txt">https://github.com/genepi/lpa-pipeline/blob/master/files/maplocus_v3.txt</a>
+suggested that Exon 421 should be bp 581-740 from his pipeline. Which can be confirmed by his next sentence
+“A T/C SNP 119 bp downstream of exon 1 (position 859 in [1])” Thus pos 14(A or G), 41(T or C), 86(A or T)
+should be pos 594, 621 and 666 in our pipeline, respectively.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">krs</span> <span class="o">=</span> <span class="n">KIVRepeatSubtype</span><span class="p">()</span>
+<span class="n">krs</span><span class="o">.</span><span class="n">predict_subtype</span><span class="p">(</span><span class="n">encoding_result</span> <span class="o">=</span> <span class="n">encoding_result</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where encoding result is a pd.DataFrame with all value binary(or equivalent)
+each row should stand for an individual(id as index) and each column stand for a variant,
+using “pos-ref/alt” format. all of [“594-A/G”, “621-T/C”, “666-A/T”] have to be in the columns</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.kiv_subtypes.KIVRepeatSubtype" title="lpa_pipeline.kiv_subtypes.KIVRepeatSubtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KIVRepeatSubtype</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="lpa_pipeline.kiv_subtypes.KIVRepeatSubtype">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.kiv_subtypes.</span></span><span class="sig-name descname"><span class="pre">KIVRepeatSubtype</span></span><a class="headerlink" href="#lpa_pipeline.kiv_subtypes.KIVRepeatSubtype" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.kiv_subtypes.KIVRepeatSubtype.predict_subtype">
+<span class="sig-name descname"><span class="pre">predict_subtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoding_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.kiv_subtypes.KIVRepeatSubtype.predict_subtype" title="Permalink to this definition"></a></dt>
+<dd><p>predict the KIV‐2 types A, B and C, wrappers for _predict_subtype</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>encoding_result</strong> – pd.DataFrame with all value binary or equivalent</p></li>
+<li><p><strong>individual</strong> (<em>each row should stand for an</em>) – </p></li>
+<li><p><strong>index</strong> (<em>where id is used as</em>) – </p></li>
+<li><p><strong>variant</strong> (<em>and each column stand for a</em>) – </p></li>
+<li><p><strong>format</strong> (<em>using &quot;pos-ref/alt&quot;</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>have the same index as encoding_result and subtype prediction
+using column name “KIV-2_subtypes” as the only column</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.kiv_subtypes.KIVRepeatSubtype._predict_subtype">
+<span class="sig-name descname"><span class="pre">_predict_subtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#lpa_pipeline.kiv_subtypes.KIVRepeatSubtype._predict_subtype" title="Permalink to this definition"></a></dt>
+<dd><p>predict the KIV‐2 types A, B and C described by:</p>
+<p><a class="reference external" href="https://doi.org/10.1016/j.atherosclerosis.2022.04.003">https://doi.org/10.1016/j.atherosclerosis.2022.04.003</a></p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../freq_table_generator/index.html" class="btn btn-neutral float-left" title="lpa_pipeline.freq_table_generator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../locus_collector/index.html" class="btn btn-neutral float-right" title="lpa_pipeline.locus_collector" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yihao Li, Badri Vardarajan, Soffer Gissette.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

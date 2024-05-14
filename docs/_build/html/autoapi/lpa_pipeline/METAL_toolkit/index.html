@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lpa_pipeline.metal_toolkit &mdash; lpa-analysis  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="lpa_pipeline.post_processing" href="../post_processing/index.html" />
+    <link rel="prev" title="lpa_pipeline.locus_collector" href="../locus_collector/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            lpa-analysis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html">Encode the output from Coassin pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#intersect-with-eigenstrat-result">Intersect with eigenstrat result</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#filter-the-encoded-variants">Filter the encoded variants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#locus-table-illustration">Locus table illustration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#new-exon-variant-compared-with-coassin-table-s9">New Exon variant compared with Coassin table S9</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#freq-and-appearance">Freq and appearance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#data-loading-for-associations-and-meta-analysis">Data Loading for Associations and meta-analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#phenotypes-vs-snp">Phenotypes vs SNP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-apoe">About APOE</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-existing-serum-level">About existing serum level</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../example.html#about-vntr">About VNTR</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline</span></code></a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../appearance_table_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.appearance_table_generator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../association/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.association</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../encodings/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.encodings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../freq_table_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.freq_table_generator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../kiv_subtypes/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../locus_collector/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.locus_collector</span></code></a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.metal_toolkit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../post_processing/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.post_processing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../snps_filter/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.snps_filter</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">lpa-analysis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">API Reference</a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.metal_toolkit</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/lpa_pipeline/metal_toolkit/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-lpa_pipeline.metal_toolkit">
+<span id="lpa-pipeline-metal-toolkit"></span><h1><a class="reference internal" href="#module-lpa_pipeline.metal_toolkit" title="lpa_pipeline.metal_toolkit"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.metal_toolkit</span></code></a><a class="headerlink" href="#module-lpa_pipeline.metal_toolkit" title="Permalink to this heading"></a></h1>
+<p>The toolkit running METAL-related pipeline internally</p>
+<p class="rubric">Example</p>
+<p>The class should be initiated as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mtk</span> <span class="o">=</span> <span class="n">metal_toolkit</span><span class="o">.</span><span class="n">METALToolkit</span><span class="p">(</span>
+    <span class="n">ethnicity</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;EU&quot;</span><span class="p">,</span> <span class="s2">&quot;AF&quot;</span><span class="p">,</span> <span class="s2">&quot;HISP&quot;</span><span class="p">],</span>
+    <span class="n">engine_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Logit&quot;</span><span class="p">,</span> <span class="s2">&quot;OLS&quot;</span><span class="p">],</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">metal_path</span> <span class="o">=</span> <span class="s2">&quot;/mnt/mfs/cluster/bin/METAL/metal&quot;</span><span class="p">,</span>
+    <span class="n">snp_alias</span> <span class="o">=</span> <span class="s2">&quot;variant&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>One-line Pipeline:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mtk</span><span class="o">.</span><span class="n">run_metal</span><span class="p">(</span>
+    <span class="n">path_association</span> <span class="o">=</span> <span class="s2">&quot;/path/of/association/module/output&quot;</span><span class="p">,</span>
+    <span class="n">path_meta</span> <span class="o">=</span> <span class="s2">&quot;/path/of/meta_analysis/output&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It internally does everything below:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>mtk.copy_tree(path_association = path_association, path_meta = path_meta)</dt><dd><p>move all the file in path_association to path_meta,
+and properly arrange them by traits</p>
+</dd>
+<dt>mtk.csv_to_metal(path)</dt><dd><p>Prepare a METAL format CSV file from existing CSV file at &lt;path&gt;</p>
+</dd>
+<dt>mtk.generate_metal_script(path)</dt><dd><p>Prepare  metal.sh and metal_script.txt with specified ethnicity.</p>
+</dd>
+<dt>subprocess(“chmod +x metal.sh” &amp; “metal source metal_script.txt”)</dt><dd><p>run METAL from the script generated</p>
+</dd>
+<dt>mtk.aggregate_result(path):</dt><dd><p>After running the METAL analysis, this API will generate an
+aggregate table for this folder for next step analysis</p>
+</dd>
+<dt>pd.concat([path/aggregate.csv for path in sub_folders], axis = 0)</dt><dd><p>concatenate all the aggregate.csv</p>
+</dd>
+<dt>mtk.formatting_final_result(df, multi_line_header = False)</dt><dd><p>format the aggregate.csv
+multi_line_header is a historical problem, use False is fine.
+Set to True will generate another header row.</p>
+</dd>
+<dt>mtk.save_final_output(df,path = “path”, multi_line_header = False)</dt><dd><p>deals with a bug in pandas when using multi-line headers</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The <code class="docutils literal notranslate"><span class="pre">multi_line_header</span></code> only makes difference at the output header,
+it will create another header row, just for the visualization pipeline</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.metal_toolkit.METALToolkit" title="lpa_pipeline.metal_toolkit.METALToolkit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">METALToolkit</span></code></a></p></td>
+<td><p>Pipeline for python preparing/processing METAL's meta analysis</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="attributes">
+<h3>Attributes<a class="headerlink" href="#attributes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.metal_toolkit.parser" title="lpa_pipeline.metal_toolkit.parser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parser</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.metal_toolkit.</span></span><span class="sig-name descname"><span class="pre">METALToolkit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ethnicity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['EU',</span> <span class="pre">'AF',</span> <span class="pre">'HISP']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engine_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['OLS',</span> <span class="pre">'Logit']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metal_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'/mnt/mfs/cluster/bin/METAL/metal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snp_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variant'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit" title="Permalink to this definition"></a></dt>
+<dd><p>Pipeline for python preparing/processing METAL’s meta analysis</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit.run_metal">
+<span class="sig-name descname"><span class="pre">run_metal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_association</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_line_header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit.run_metal" title="Permalink to this definition"></a></dt>
+<dd><p>API processing all the tables at once in a folder</p>
+<p>It will copy the path from &lt;path_association&gt; (keep an unaffected
+version) to &lt;path_meta&gt; (must not already exist!) and process
+everything in new path to</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path_association</strong> – str, the path of association outputs</p></li>
+<li><p><strong>path_meta</strong> – str, the path to meta-analysis, it must not already exist.</p></li>
+<li><p><strong>rename</strong> – boolean, using False is fine, just for formatting</p></li>
+<li><p><strong>multi_line_header</strong> – boolean, using False is fine.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>an aggregate result for meta-analysis</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Saves:</dt><dd><p>in path_meta:
+- csv files with an additional “_for_metal” at the end of file name
+- metal.sh and metal_script.txt for metal running
+- aggregate.csv in each trait folder
+- aggregate_all_traits.xlsx in path_meta for better exploration.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit.dataframe_to_metal">
+<span class="sig-name descname"><span class="pre">dataframe_to_metal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit.dataframe_to_metal" title="Permalink to this definition"></a></dt>
+<dd><p>for a given association DataFrame, prepare a METAL accepted version</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – pd.DataFrame, an association table generated by</p></li>
+<li><p><strong>instance</strong> (<a class="reference internal" href="../association/index.html#lpa_pipeline.association.SNPAssociation" title="lpa_pipeline.association.SNPAssociation"><em>association.SNPAssociation</em></a>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a tidied version of association table
+ready for METAL’s meta analysis</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit.csv_to_metal">
+<span class="sig-name descname"><span class="pre">csv_to_metal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit.csv_to_metal" title="Permalink to this definition"></a></dt>
+<dd><p>API including the csv file reading and writing</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – string, the path of an association table generated by</p></li>
+<li><p><strong>instance</strong> (<em>...</em><em>pipeline.association.SNPAssociation</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Saves:</dt><dd><p>csv file with an additional “_for_metal” at the end of the file name</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit.generate_metal_script">
+<span class="sig-name descname"><span class="pre">generate_metal_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit.generate_metal_script" title="Permalink to this definition"></a></dt>
+<dd><p>API generate the metal script for the meta analysis,</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – Optional[string], if given, it will save the script generated</p></li>
+<li><p><strong>well</strong> (<em>to the path given as</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the script for running the meta analysis</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit._metal_script_header">
+<span class="sig-name descname"><span class="pre">_metal_script_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit._metal_script_header" title="Permalink to this definition"></a></dt>
+<dd><p>prepare a header for the metal script</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit._metal_script_description">
+<span class="sig-name descname"><span class="pre">_metal_script_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit._metal_script_description" title="Permalink to this definition"></a></dt>
+<dd><p>prepare the description part of METAL script</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit._metal_script_analyze">
+<span class="sig-name descname"><span class="pre">_metal_script_analyze</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit._metal_script_analyze" title="Permalink to this definition"></a></dt>
+<dd><p>prepare the analysis part of METAL script</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit.generate_metal_running_script">
+<span class="sig-name descname"><span class="pre">generate_metal_running_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metal_path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit.generate_metal_running_script" title="Permalink to this definition"></a></dt>
+<dd><p>prepare the running script of METAL</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit._get_snp_data">
+<span class="sig-name descname"><span class="pre">_get_snp_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit._get_snp_data" title="Permalink to this definition"></a></dt>
+<dd><p>for a folder, and a specific key, get the requested info, add suffix</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit._get_pos">
+<span class="sig-name descname"><span class="pre">_get_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit._get_pos" title="Permalink to this definition"></a></dt>
+<dd><p>extract pos in integer from a string format pos-ref/alt</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit.aggregate_result">
+<span class="sig-name descname"><span class="pre">aggregate_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit.aggregate_result" title="Permalink to this definition"></a></dt>
+<dd><p>give a folder with METAL result, combine all the results</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit.formatting_final_result">
+<span class="sig-name descname"><span class="pre">formatting_final_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_line_header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit.formatting_final_result" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit.copy_tree">
+<span class="sig-name descname"><span class="pre">copy_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_association</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit.copy_tree" title="Permalink to this definition"></a></dt>
+<dd><p>move file from path_association to path_meta, arrange by traits</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit.save_final_output">
+<span class="sig-name descname"><span class="pre">save_final_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_line_header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit.save_final_output" title="Permalink to this definition"></a></dt>
+<dd><p>wrapper saving the output file, which is for solving a bug saving
+pd.DataFrame with multiIndex to excel,
+see <a class="reference external" href="https://stackoverflow.com/a/71305025">https://stackoverflow.com/a/71305025</a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit._logging">
+<span class="sig-name descname"><span class="pre">_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit._logging" title="Permalink to this definition"></a></dt>
+<dd><p>just for code cleaning…</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.METALToolkit._save_double_column_df">
+<span class="sig-name descname"><span class="pre">_save_double_column_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl_writer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.ExcelWriter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.METALToolkit._save_double_column_df" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Function saving two-level column DataFrame to xlwriter</dt><dd><p>credit to <a class="reference external" href="https://stackoverflow.com/a/71305025">https://stackoverflow.com/a/71305025</a></p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – pd.DataFrame, the table to save</p></li>
+<li><p><strong>xl_writer</strong> – pd.ExcelWriter, book for saving</p></li>
+<li><p><strong>start_row</strong> – int, row from which dataframe will begin</p></li>
+<li><p><strong>**kwargs</strong> – Any, arguments of <cite>to_excel</cite> function of DataFrame`</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="lpa_pipeline.metal_toolkit.parser">
+<span class="sig-prename descclassname"><span class="pre">lpa_pipeline.metal_toolkit.</span></span><span class="sig-name descname"><span class="pre">parser</span></span><a class="headerlink" href="#lpa_pipeline.metal_toolkit.parser" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../locus_collector/index.html" class="btn btn-neutral float-left" title="lpa_pipeline.locus_collector" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../post_processing/index.html" class="btn btn-neutral float-right" title="lpa_pipeline.post_processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yihao Li, Badri Vardarajan, Soffer Gissette.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
