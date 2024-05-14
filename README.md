@@ -16,6 +16,11 @@ Code repo for research project with Dr. Gissette Soffer and Dr. Badri Vardarajan
 
 - **METAL** included the backup shell script running [METAL](https://github.com/statgen/METAL) 11.3.25 for meta analysis. These scripts are not required ion running
 
+## Documentation
+
+- A Sphinx-based api copy can be found in docs/_build/html/index.html
+- TODO: host a documentation online(readthedocs.com, maybe?)
+
 ## License
 
 The repository was created by Yihao Li. It is licensed under the terms of the MIT license.
