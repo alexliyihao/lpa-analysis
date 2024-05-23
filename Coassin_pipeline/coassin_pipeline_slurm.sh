@@ -14,9 +14,6 @@
 # Change directory to the current
 #SBATCH --chdir=./
 
-# Specify that bash shell should be used to process this script
-#SBATCH #!/bin/bash
-
 # Specify the outerr file
 #SBATCH --output=/mnt/mfs/hgrcgrid/shared/LPA_analysis/coassin_pipeline/logs/%x/%j.out
 #SBATCH --error=/mnt/mfs/hgrcgrid/shared/LPA_analysis/coassin_pipeline/logs/%x/%j.err
