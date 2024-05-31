@@ -14,6 +14,7 @@ Submodules
    association/index.rst
    encodings/index.rst
    freq_table_generator/index.rst
+   haploview_generator/index.rst
    kiv_subtypes/index.rst
    locus_collector/index.rst
    metal_toolkit/index.rst

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>lpa_pipeline.kiv_subtypes &mdash; lpa-analysis  documentation</title>
+  <title>lpa_pipeline.haploview_generator &mdash; lpa-analysis  documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
@@ -22,8 +22,8 @@
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="lpa_pipeline.locus_collector" href="../locus_collector/index.html" />
-    <link rel="prev" title="lpa_pipeline.haploview_generator" href="../haploview_generator/index.html" /> 
+    <link rel="next" title="lpa_pipeline.kiv_subtypes" href="../kiv_subtypes/index.html" />
+    <link rel="prev" title="lpa_pipeline.freq_table_generator" href="../freq_table_generator/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -66,8 +66,8 @@
 <li class="toctree-l4"><a class="reference internal" href="../association/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.association</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../encodings/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.encodings</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../freq_table_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.freq_table_generator</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../haploview_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.haploview_generator</span></code></a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.haploview_generator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../kiv_subtypes/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../locus_collector/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.locus_collector</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../metal_toolkit/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.metal_toolkit</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../post_processing/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.post_processing</span></code></a></li>
@@ -96,9 +96,9 @@
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">API Reference</a></li>
           <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline</span></code></a></li>
-      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.haploview_generator</span></code></li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../../_sources/autoapi/lpa_pipeline/kiv_subtypes/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../../_sources/autoapi/lpa_pipeline/haploview_generator/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -106,66 +106,72 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-lpa_pipeline.kiv_subtypes">
-<span id="lpa-pipeline-kiv-subtypes"></span><h1><a class="reference internal" href="#module-lpa_pipeline.kiv_subtypes" title="lpa_pipeline.kiv_subtypes"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.kiv_subtypes</span></code></a><a class="headerlink" href="#module-lpa_pipeline.kiv_subtypes" title="Permalink to this heading"></a></h1>
-<p>The KIV-2 types A, B and C are defined by three synonymous SNPs
-at positions 14, 41 and 86 of the first KIV-2 exon which can be seen via
-<a class="reference external" href="https://www.atherosclerosis-journal.com/cms/10.1016/j.atherosclerosis.2022.04.003/attachment/32899cc9-f3a8-4354-86a8-5ebcec782688/mmc1.pdf">https://www.atherosclerosis-journal.com/cms/10.1016/j.atherosclerosis.2022.04.003/attachment/32899cc9-f3a8-4354-86a8-5ebcec782688/mmc1.pdf</a></p>
-<p>The file from pipeline: <a class="reference external" href="https://github.com/genepi/lpa-pipeline/blob/master/files/maplocus_v3.txt">https://github.com/genepi/lpa-pipeline/blob/master/files/maplocus_v3.txt</a>
-suggested that Exon 421 should be bp 581-740 from his pipeline. Which can be confirmed by his next sentence
-“A T/C SNP 119 bp downstream of exon 1 (position 859 in [1])” Thus pos 14(A or G), 41(T or C), 86(A or T)
-should be pos 594, 621 and 666 in our pipeline, respectively.</p>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">krs</span> <span class="o">=</span> <span class="n">KIVRepeatSubtype</span><span class="p">()</span>
-<span class="n">krs</span><span class="o">.</span><span class="n">predict_subtype</span><span class="p">(</span><span class="n">encoding_result</span> <span class="o">=</span> <span class="n">encoding_result</span><span class="p">)</span>
+  <section id="module-lpa_pipeline.haploview_generator">
+<span id="lpa-pipeline-haploview-generator"></span><h1><a class="reference internal" href="#module-lpa_pipeline.haploview_generator" title="lpa_pipeline.haploview_generator"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lpa_pipeline.haploview_generator</span></code></a><a class="headerlink" href="#module-lpa_pipeline.haploview_generator" title="Permalink to this heading"></a></h1>
+<p>A class generating output for Haploview4.2 linkage format</p>
+<p>Common usage:</p>
+<p>Given two pandas.DataFrame</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">encoded_result</span></code> as the output of <code class="docutils literal notranslate"><span class="pre">snps_filter</span></code> module</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">locus_table</span></code> as the output of <code class="docutils literal notranslate"><span class="pre">locus_collector</span></code> module</p>
+<blockquote>
+<div><p>Initialize:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hg</span> <span class="o">=</span> <span class="n">HaploviewGenerator</span><span class="p">(</span>
+    <span class="n">encoded_result</span> <span class="o">=</span> <span class="n">encoded_result</span><span class="p">,</span>
+    <span class="n">locus_table</span> <span class="o">=</span> <span class="n">locus_table</span><span class="p">,</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="s2">&quot;/the/output/folder&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>where encoding result is a pd.DataFrame with all value binary(or equivalent)
-each row should stand for an individual(id as index) and each column stand for a variant,
-using “pos-ref/alt” format. all of [“594-A/G”, “621-T/C”, “666-A/T”] have to be in the columns</p>
+<p>Generate the table:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hg</span><span class="o">.</span><span class="n">haplotype_output</span><span class="p">(</span>
+    <span class="n">variant_list</span> <span class="o">=</span> <span class="n">HTN_variant_list</span><span class="p">,</span>
+    <span class="n">output_label</span> <span class="o">=</span> <span class="s2">&quot;HTN_1&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Where variant list should be in <code class="docutils literal notranslate"><span class="pre">encoded_result.columns</span></code>.</p>
+<p>Two files will be saved under <code class="docutils literal notranslate"><span class="pre">output_path</span></code>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>linkage_{output_label}.txt</p></li>
+<li><p>map_{output_label}.map</p></li>
+</ul>
+</div></blockquote>
+<p>which can be used as the linkage format input for Haploview4.2</p>
+</div></blockquote>
+</li>
+</ul>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
 <section id="classes">
 <h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading"></a></h3>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.kiv_subtypes.KIVRepeatSubtype" title="lpa_pipeline.kiv_subtypes.KIVRepeatSubtype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KIVRepeatSubtype</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#lpa_pipeline.haploview_generator.HaploviewGenerator" title="lpa_pipeline.haploview_generator.HaploviewGenerator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HaploviewGenerator</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py class">
-<dt class="sig sig-object py" id="lpa_pipeline.kiv_subtypes.KIVRepeatSubtype">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.kiv_subtypes.</span></span><span class="sig-name descname"><span class="pre">KIVRepeatSubtype</span></span><a class="headerlink" href="#lpa_pipeline.kiv_subtypes.KIVRepeatSubtype" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="lpa_pipeline.haploview_generator.HaploviewGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.haploview_generator.</span></span><span class="sig-name descname"><span class="pre">HaploviewGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoded_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">locus_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/paper_1_output'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.haploview_generator.HaploviewGenerator" title="Permalink to this definition"></a></dt>
 <dd><dl class="py method">
-<dt class="sig sig-object py" id="lpa_pipeline.kiv_subtypes.KIVRepeatSubtype.predict_subtype">
-<span class="sig-name descname"><span class="pre">predict_subtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoding_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.kiv_subtypes.KIVRepeatSubtype.predict_subtype" title="Permalink to this definition"></a></dt>
-<dd><p>predict the KIV‐2 types A, B and C, wrappers for _predict_subtype</p>
+<dt class="sig sig-object py" id="lpa_pipeline.haploview_generator.HaploviewGenerator.encode">
+<span class="sig-name descname"><span class="pre">encode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.haploview_generator.HaploviewGenerator.encode" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.haploview_generator.HaploviewGenerator.haplotype_output">
+<span class="sig-name descname"><span class="pre">haplotype_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#lpa_pipeline.haploview_generator.HaploviewGenerator.haplotype_output" title="Permalink to this definition"></a></dt>
+<dd><p>The API for generating output</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>encoding_result</strong> – pd.DataFrame with all value binary or equivalent</p></li>
-<li><p><strong>individual</strong> (<em>each row should stand for an</em>) – </p></li>
-<li><p><strong>index</strong> (<em>where id is used as</em>) – </p></li>
-<li><p><strong>variant</strong> (<em>and each column stand for a</em>) – </p></li>
-<li><p><strong>format</strong> (<em>using &quot;pos-ref/alt&quot;</em>) – </p></li>
+<li><p><strong>variant_list</strong> – list[str], the list of variants to be used</p></li>
+<li><p><strong>output_label</strong> – str, the name label for output under output_path</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>have the same index as encoding_result and subtype prediction
-using column name “KIV-2_subtypes” as the only column</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="lpa_pipeline.kiv_subtypes.KIVRepeatSubtype._predict_subtype">
-<span class="sig-name descname"><span class="pre">_predict_subtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#lpa_pipeline.kiv_subtypes.KIVRepeatSubtype._predict_subtype" title="Permalink to this definition"></a></dt>
-<dd><p>predict the KIV‐2 types A, B and C described by:</p>
-<p><a class="reference external" href="https://doi.org/10.1016/j.atherosclerosis.2022.04.003">https://doi.org/10.1016/j.atherosclerosis.2022.04.003</a></p>
 </dd></dl>
 
 </dd></dl>
@@ -178,8 +184,8 @@ using column name “KIV-2_subtypes” as the only column</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../haploview_generator/index.html" class="btn btn-neutral float-left" title="lpa_pipeline.haploview_generator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../locus_collector/index.html" class="btn btn-neutral float-right" title="lpa_pipeline.locus_collector" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../freq_table_generator/index.html" class="btn btn-neutral float-left" title="lpa_pipeline.freq_table_generator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../kiv_subtypes/index.html" class="btn btn-neutral float-right" title="lpa_pipeline.kiv_subtypes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

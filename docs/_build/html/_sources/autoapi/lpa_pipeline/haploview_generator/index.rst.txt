@@ -1,0 +1,69 @@
+:py:mod:`lpa_pipeline.haploview_generator`
+==========================================
+
+.. py:module:: lpa_pipeline.haploview_generator
+
+.. autoapi-nested-parse::
+
+   A class generating output for Haploview4.2 linkage format
+
+   Common usage:
+
+   Given two pandas.DataFrame
+
+   * ``encoded_result`` as the output of ``snps_filter`` module
+   * ``locus_table`` as the output of ``locus_collector`` module
+
+       Initialize::
+
+           hg = HaploviewGenerator(
+               encoded_result = encoded_result,
+               locus_table = locus_table,
+               output_path = "/the/output/folder")
+
+       Generate the table::
+
+           hg.haplotype_output(
+               variant_list = HTN_variant_list,
+               output_label = "HTN_1"
+           )
+
+       Where variant list should be in ``encoded_result.columns``.
+
+       Two files will be saved under ``output_path``:
+
+        - linkage_{output_label}.txt
+        - map_{output_label}.map
+
+       which can be used as the linkage format input for Haploview4.2
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   lpa_pipeline.haploview_generator.HaploviewGenerator
+
+
+
+
+.. py:class:: HaploviewGenerator(encoded_result: pandas.DataFrame, locus_table: pandas.DataFrame, output_path: str = '/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/paper_1_output')
+
+
+   .. py:method:: encode(x: pandas.Series) -> pandas.DataFrame
+
+
+   .. py:method:: haplotype_output(variant_list: List[str], output_label: str) -> None
+
+      The API for generating output
+
+      :param variant_list: list[str], the list of variants to be used
+      :param output_label: str, the name label for output under output_path
+
+
+
