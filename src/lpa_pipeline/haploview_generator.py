@@ -6,12 +6,14 @@ Given two pandas.DataFrame
 
 * ``encoded_result`` as the output of ``snps_filter`` module
 * ``locus_table`` as the output of ``locus_collector`` module
+* ``ethnicity_info`` as a pd.DataFrame with a column ``ethnicity`` including the ethnicity info for each individual
 
     Initialize::
 
         hg = HaploviewGenerator(
             encoded_result = encoded_result,
             locus_table = locus_table,
+            ethnicity_info = eigen_result,
             output_path = "/the/output/folder")
 
     Generate the table::
@@ -31,7 +33,7 @@ Given two pandas.DataFrame
     which can be used as the linkage format input for Haploview4.2
 """
 import pandas as pd
-from typing import List
+from typing import List, Optional
 
 
 class HaploviewGenerator():
@@ -39,10 +41,15 @@ class HaploviewGenerator():
         self,
         encoded_result: pd.DataFrame,
         locus_table: pd.DataFrame,
-        output_path: str = "/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/paper_1_output"
+        ethnicity_info: Optional[pd.DataFrame] = None,
+        output_path: str = "/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/paper_1_output/linkage"
     ) -> None:
         self.encoded_result = encoded_result
         self.locus_table = locus_table
+        if ethnicity_info is not None:
+            self.ethnicity_info = ethnicity_info["ethnicity"]
+        else:
+            self.ethnicity_info = None
         self.output_path = output_path
 
     def encode(self, x: pd.Series) -> pd.DataFrame:
@@ -54,14 +61,29 @@ class HaploviewGenerator():
         output.columns = [f"{x.name}Allele1", f"{x.name}Allele2"]
         return output
 
-    def haplotype_output(self, variant_list: List[str], output_label: str) -> None:
+    def haplotype_output(
+        self,
+        variant_list: List[str],
+        output_label: str,
+        ethnicity: Optional[str] = None
+    ) -> None:
         """The API for generating output
 
         Args:
             variant_list: list[str], the list of variants to be used
             output_label: str, the name label for output under output_path
+            ethnicity: Optional[str], the label used in ethnicity_info["ethnicity"],
+                when specified, output will only include sample in this ethnicity
         """
-        encoded_result_output = pd.DataFrame(data = self.encoded_result.index)
+        if (self.ethnicity_info is None) & (ethnicity is not None):
+            raise ValueError("no ethnicity_info provided when initialize")
+        elif (ethnicity is None):
+            related_encoded_result = self.encoded_result
+        else:
+            related_encoded_result = self.encoded_result.loc[
+                self.encoded_result.index.isin(
+                    self.ethnicity_info.loc[self.ethnicity_info == ethnicity].index)]
+        encoded_result_output = pd.DataFrame(data = related_encoded_result.index)
         encoded_result_output.columns = ["IndividualID"]
         encoded_result_output["PedID"] = 0
         encoded_result_output["FatherID"] = 0
@@ -72,7 +94,7 @@ class HaploviewGenerator():
         for variant in variant_list:
             encoded_result_output = pd.merge(
                 left = encoded_result_output,
-                right = self.encode(self.encoded_result[variant]),
+                right = self.encode(related_encoded_result[variant]),
                 how = "inner",
                 left_on = "IndividualID",
                 right_index = True)

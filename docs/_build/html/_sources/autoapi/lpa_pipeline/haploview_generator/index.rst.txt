@@ -13,12 +13,14 @@
 
    * ``encoded_result`` as the output of ``snps_filter`` module
    * ``locus_table`` as the output of ``locus_collector`` module
+   * ``ethnicity_info`` as a pd.DataFrame with a column ``ethnicity`` including the ethnicity info for each individual
 
        Initialize::
 
            hg = HaploviewGenerator(
                encoded_result = encoded_result,
                locus_table = locus_table,
+               ethnicity_info = eigen_result,
                output_path = "/the/output/folder")
 
        Generate the table::
@@ -52,18 +54,20 @@ Classes
 
 
 
-.. py:class:: HaploviewGenerator(encoded_result: pandas.DataFrame, locus_table: pandas.DataFrame, output_path: str = '/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/paper_1_output')
+.. py:class:: HaploviewGenerator(encoded_result: pandas.DataFrame, locus_table: pandas.DataFrame, ethnicity_info: Optional[pandas.DataFrame] = None, output_path: str = '/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/paper_1_output/linkage')
 
 
    .. py:method:: encode(x: pandas.Series) -> pandas.DataFrame
 
 
-   .. py:method:: haplotype_output(variant_list: List[str], output_label: str) -> None
+   .. py:method:: haplotype_output(variant_list: List[str], output_label: str, ethnicity: Optional[str] = None) -> None
 
       The API for generating output
 
       :param variant_list: list[str], the list of variants to be used
       :param output_label: str, the name label for output under output_path
+      :param ethnicity: Optional[str], the label used in ethnicity_info["ethnicity"],
+                        when specified, output will only include sample in this ethnicity
 
 
 
