@@ -178,16 +178,16 @@ class PostProcessor:
             snp_alias: Optional[str] = "variant",
             ethnicity: Optional[list] = ["EU", "AF", "HISP"]
     ) -> None:
-    """initializer of post-processing procedure
+        """initializer of post-processing procedure
 
-    Args:
-        locus_table: Optional[pd.DataFrame], the locus table generate by locus_collector module
-        p_value_threshold: Optional[float], used for the FDR-adjusted p-value, default 0.05
-        method: Optional[str], the method argument used for statsmodels.stats.multitest.multipletests
-        snp_alias: Optional[str], the alias of the variable of interest, usually unified with the
-            snp_alias setting in association and metal_toolkit modules,
-        ethnicity: Optional[list], the ethnicity label
-    """
+        Args:
+            locus_table: Optional[pd.DataFrame], the locus table generate by locus_collector module
+            p_value_threshold: Optional[float], used for the FDR-adjusted p-value, default 0.05
+            method: Optional[str], the method argument used for statsmodels.stats.multitest.multipletests
+            snp_alias: Optional[str], the alias of the variable of interest, usually unified with the
+                snp_alias setting in association and metal_toolkit modules,
+            ethnicity: Optional[list], the ethnicity label
+        """
         self.cmd = CorrectMetalDirection(locus_table=locus_table)
         self.fa = FdrAdjustment(
             p_value_threshold=p_value_threshold,
