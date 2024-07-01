@@ -15,13 +15,15 @@ Example::
 
 """
 import pandas as pd
+from typing import Optional
 import statsmodels
+import statsmodels.stats.multitest
 
 
 class CorrectMetalDirection:
     """correct the beta and direction discrepancy caused by metal"""
 
-    def __init__(self, locus_table: pd.DataFrame) -> None:
+    def __init__(self, locus_table: pd.DataFrame = None) -> None:
         self.locus_table = locus_table
 
     @staticmethod
@@ -40,12 +42,12 @@ class CorrectMetalDirection:
         else:
             return x["Direction"].replace("+", "*").replace("-", "+").replace("*", "-")
 
-    def correct_metal_direction(self, df: pd.DataFrame) -> pd.DataFrame:
+    def correct_metal_direction(self, df: pd.DataFrame, mode: str = "variant") -> pd.DataFrame:
         """check each row for the metal direction and give corrected result"""
-        assert (df["Variant"].equals(
-            df["index"].str.extract("[0-9]+-[A|C|G|T]/([A/C/G/T])")[0])
-        ), "Variant record incorrect"
-        df["metal_direction_correct"] = (df["Variant"].str.lower() == df["Allele1"])
+        if mode == "variant":
+            assert ((df["Alt"] == df["index"].str.extract("[0-9]+-[A|C|G|T]/([A/C/G/T])")[
+                0]).all()), "Variant record incorrect"
+        df["metal_direction_correct"] = (df["Alt"].str.lower() == df["Allele1"])
         df["Effect_corrected"] = df.apply(lambda x: self.correct_effect(x), axis=1)
         df["Direction_corrected"] = df.apply(lambda x: self.correct_direction(x), axis=1)
         return df
@@ -59,8 +61,9 @@ class CorrectMetalDirection:
         Returns:
             pd.DataFrame: df merged with the locus table
         """
-        # 666-A/T has been used as subtype adjustment
-        df = df.loc[(df["index"] != "666-A/T")]
+        if self.locus_table is None:
+            raise ValueError("locus table is not given")
+        #df = df.loc[(df["index"] != "666-A/T") & (df["index"] != "594-A/G") & (df["index"] != "621-T/C")]
         df = pd.merge(
             left=df,
             right=self.locus_table,
@@ -70,16 +73,17 @@ class CorrectMetalDirection:
         ).sort_values("FDR_adjusted_p-value")
         return df
 
-    def correct_metal_complete(self, df: pd.DataFrame) -> pd.DataFrame:
+    def correct_metal_complete(self, df: pd.DataFrame, mode: Optional[str] = "variant") -> pd.DataFrame:
         """complete pipeline correct the direction
 
         Args:
             df: pd.DataFrame, the result from meta-analysis (metal_toolkit module)
+            mode: Optional[str], if using "variant", will check the consistency between results
         Result:
             pd.DataFrame, the result with corrected effect and corrected direction column
         """
         df = self.append_locus(df)
-        df = self.correct_metal_direction(df)
+        df = self.correct_metal_direction(df, mode=mode)
         return df
 
 
@@ -168,25 +172,35 @@ class PostProcessor:
 
     def __init__(
             self,
-            locus_table: pd.DataFrame,
-            p_value_threshold: float = 0.05,
-            method: str = "fdr_bh",
-            snp_alias: str = "variant"
+            locus_table: Optional[str] = None,
+            p_value_threshold: Optional[float] = 0.05,
+            method: Optional[str] = "fdr_bh",
+            snp_alias: Optional[str] = "variant",
+            ethnicity: Optional[list] = ["EU", "AF", "HISP"]
     ) -> None:
-        """initializer of post-processing procedure
+    """initializer of post-processing procedure
 
-        Args:
-            locus_table: pd.DataFrame, the locus table generate by locus_collector module
-            p_value_threshold: float, used for the FDR-adjusted p-value, default 0.05
-            method: str, the method argument used for statsmodels.stats.multitest.multipletests
-            snp_alias: str, the alias of the variable of interest, usually unified with the
-                snp_alias setting in association and metal_toolkit modules
-        """
+    Args:
+        locus_table: Optional[pd.DataFrame], the locus table generate by locus_collector module
+        p_value_threshold: Optional[float], used for the FDR-adjusted p-value, default 0.05
+        method: Optional[str], the method argument used for statsmodels.stats.multitest.multipletests
+        snp_alias: Optional[str], the alias of the variable of interest, usually unified with the
+            snp_alias setting in association and metal_toolkit modules,
+        ethnicity: Optional[list], the ethnicity label
+    """
         self.cmd = CorrectMetalDirection(locus_table=locus_table)
         self.fa = FdrAdjustment(
             p_value_threshold=p_value_threshold,
             method=method,
             snp_alias=snp_alias)
+        self.ethnicity = ethnicity
+        self.snp_alias = snp_alias
+        self.tidy_output = [
+            'index',
+            'trait', 'Effect_corrected', 'Direction_corrected',
+            'FDR_adjusted_p-value', 'significant_FDR',
+            'mylocus', 'coding', 'wt', 'mut', 'novel',
+            'total_count', 'total_population']
 
     def post_process_association(self, df: pd.DataFrame) -> pd.DataFrame:
         """The wrapper of all post process steps for an association module result
@@ -204,7 +218,7 @@ class PostProcessor:
         df_output = self.cmd.append_locus(df_output)
         return df_output.reset_index(drop=True)
 
-    def post_process_meta_analysis(self, df: pd.DataFrame) -> pd.DataFrame:
+    def post_process_meta_analysis(self, df: pd.DataFrame, mode: str = "variant") -> pd.DataFrame:
         """The wrapper of all post process steps for a metal_toolkit module result
 
         It computes FDR-adjusted p-value, correct the direction discrepancy from METAL,
@@ -217,5 +231,25 @@ class PostProcessor:
             pd.DataFrame: the module with FDR adjusted p-value, correct direction and locus info
         """
         df_output = self.fa.appending_corrections_meta(df=df)
-        df_output = self.cmd.correct_metal_complete(df=df_output)
+        df_output = self.cmd.correct_metal_complete(df=df_output, mode=mode)
         return df_output.reset_index(drop=True)
+
+    def clean_output(self, df: pd.DataFrame) -> pd.DataFrame:
+        """An API to reorder the output to better readability
+
+        Args:
+            df: pd.DataFrame, the output need to be cleaned
+
+        Returns:
+            pd.DataFrame: the format-cleaned output
+        """
+        ethnicity_columns: list = [
+            [f'{self.snp_alias} Beta_{i}',
+             f'{self.snp_alias} P-value_{i}',
+             f'rel_freqs_{i}',
+             f'abs_freqs_{i}',
+             f'n_sample_{i}']
+            for i in self.ethnicity]
+        tidied_columns: list = self.tidy_output + [
+                column for columns in ethnicity_columns for column in columns]
+        return df.loc[:, tidied_columns]

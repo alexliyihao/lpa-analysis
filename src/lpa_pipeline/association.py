@@ -48,8 +48,6 @@ from statsmodels.discrete.discrete_model import BinaryResultsWrapper
 from statsmodels.regression.linear_model import RegressionResultsWrapper
 from tqdm import tqdm
 
-
-
 # ----------------------------------Encoding Strategy Example--------------------------------------
 
 def encode_dementia(df: pd.DataFrame) -> pd.DataFrame:
@@ -89,9 +87,7 @@ def target_strategy() -> Dict[str, Dict[str, Union[sm.Logit, sm.OLS, Callable]]]
 
     The key for main dict is the variable name
     The value is a dict with the following keys:
-
         "engine", whose value is a statsmodels model
-
         "preprocessing", whose value is a callable takes in a pd.DataFrame and returns another one
     """
     return {'STROKE': {"engine": sm.Logit,
@@ -130,9 +126,7 @@ def target_strategy_serum() -> Dict[str, Dict[str, Union[sm.Logit, sm.OLS, Calla
     return {'lpa': {"engine": sm.OLS,
                     "preprocessing": None},
             'wIS': {"engine": sm.OLS,
-                    "preprocessing": None},
-            'isoform': {"engine": sm.OLS,
-                        "preprocessing": None}
+                    "preprocessing": None}
             }
 
 
@@ -224,11 +218,8 @@ class SNPAssociation:
 
             na_strategy: Optional[str], the strategy statsmodels dealing with NAs,
                          Available options are ‘none’, ‘drop’, and ‘raise’.
-
                          If ‘none’, no nan checking is done.
-
                          If ‘drop’, any observations with nans are dropped.
-
                          If ‘raise’, an error is raised.
 
             group_na_strategy: Optional[str], how na_strategy apply when have
@@ -243,14 +234,10 @@ class SNPAssociation:
                            this function should take a pd.DataFrame as input and output
 
             verbose: Optional[int] in {0,1,2} default 0
-
-                    if verbose == 0, no output will be printed except the progress bar
-
-                    if verbose == 1, the regression will give the saving path
-
-                    if verbose == 2, the regression will output all the related
-                    values during the computation, only for debugging purpose,
-                    use with care for it will create massive I/O
+                     if verbose = 1, the regression will give the saving path
+                     if verbose = 2, the regression will output all the related
+                     values during the computation, only for debugging purpose,
+                     use with care for it will create massive I/O
         """
         self._encoded_snp = encoded_snp
         self._other_exogs = other_exogs
@@ -267,7 +254,7 @@ class SNPAssociation:
         self._snps_preprocessing_strategy = snps_preprocessing_strategy
         self._verbose = verbose
 
-    def transform(self, output_path: str = None, verbose: int = None) -> Dict:
+    def transform(self, output_path: str = None, verbose: int = None) -> None:
         """API Run the actual association test
 
         Args:
@@ -394,7 +381,7 @@ class SNPAssociation:
             - float: the number of rows in the column.
         """
         col: pd.Series = df[cols]
-        return (col.sum() / len(col.shape)), col.sum(), len(col.shape)
+        return (col.sum() / len(col)), col.sum(), len(col)
 
     def _association_snp(
             self,
@@ -417,6 +404,7 @@ class SNPAssociation:
         return the beta/weight/effect size, standard error and p-values
 
         Args:
+
             snp_table: pd.DataFrame, the table encoding snps,
                        the columns is snp name, rows are individuals, values are numerics
             other_exogs: pd.DataFrame, the table encoding other traits,
@@ -623,17 +611,17 @@ class SNPAssociation:
             snps_preprocessing_strategy: Optional[Callable] = None,
             snp_alias: str = "variant",
             verbose: int = 0
-    ) -> Dict:
+    ):
         """API running regression test
 
         Args:
+
             encoded_snp: pd.DataFrame, the dataframe to be looped on columns
             other_exogs: pd.DataFrame, the dataframe taking all the other variables
             target_dataset: pd.DataFrame, the dataframe taking all the target variables
             target_strategy: dict[str, dict[str, funcs or models]], the dictionary
-                provide pre-processing to specific column. Only column mentioned in
-                keys will be included in the running. The inner dictionary should
-                have two keys:
+                provide pre-processing to specific column. Only column mentioned in keys
+                will be included in the running. The inner dictionary should have two keys:
 
                  - "engine": statsmodels.api models,
                      designed for statsmodels.discrete.discrete_model.Logit or
@@ -672,7 +660,7 @@ class SNPAssociation:
                      values during the computation, only for debugging purpose,
                      use with care for it will create massive I/O
         Returns:
-            dict: a dict recording output brief information
+            dict, a dict recording output brief information
         """
         os.makedirs(output_path, exist_ok=True)
         output_info = {}
