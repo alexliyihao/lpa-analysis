@@ -110,12 +110,12 @@
   <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">statsmodels.api</span> <span class="k">as</span> <span class="nn">sm</span>
 <span class="kn">import</span> <span class="nn">statsmodels</span>
-
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="n">project_path</span> <span class="o">=</span> <span class="s2">&quot;/mnt/vast/hpc/bvardarajan_lab/LPA_analysis&quot;</span>
-<span class="n">version_name</span> <span class="o">=</span> <span class="s2">&quot;removed_subtype&quot;</span>
+<span class="n">version_name</span> <span class="o">=</span> <span class="s2">&quot;standardized_output&quot;</span>
 
 <span class="n">pd</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">chained_assignment</span> <span class="o">=</span> <span class="kc">None</span> 
 </pre></div>
@@ -132,6 +132,47 @@
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>The pipeline encodes outputs from coassin_pipeline
+
+Encoding Rule:
+
+* If raw/raw.txt file total coverage &lt; ``raw_total_coverage_threshold``,
+  encode that position &quot;missing&quot; for that person
+* If total coverage &gt;= ``raw_total_coverage_threshold``, in annotated file
+    * If position is missing in annotated file, the variant is coded 0
+    * If position is present in the annotated, if both:
+        1. variant_level value &gt; ``variant_level_threshold``
+        2. the total reads supporting (variant_level*total_coverage)
+           value &gt;= ``read_supporting_threshold``,
+      are met, the variant is coded 1, otherwise 0
+
+Example:
+
+    The class should be initiated as follows::
+
+        eco = encodings.EncodingCoassinOutput(
+            input_path = &quot;/some/parent/path/of/bam/output&quot; # or next line
+            bam_list = &quot;/paths/to/a/file/recording/bam/path/line/by/line.txt&quot;
+            output_path = &quot;output_path&quot;# required
+            )
+
+    The encoding process include an individual encoding step::
+
+        eco.encode_individual(saving_step: int)
+
+    this step will be very time-consuming. For it is originally running on SGE,
+    no parallel is provided in Python, it&#39;s recommended to split your BAM output
+    via bam_list. Saving_step default to 1, i.e. each individual&#39;s result is
+    saved separately. A larger saving_step can reduce the saving overhead.
+
+    After individual encoding, the following method can generate the output::
+
+        eco.generate_coverage_total()
+        eco.generate_encoded_results()
+</pre></div>
+</div>
+</div>
 </div>
 <p>Using parent path:</p>
 <div class="cell docutils container">
@@ -144,6 +185,8 @@
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "293086f7e39f4e8d806c78c64887356b", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <p>For txt file, the txt file should have each path in a row</p>
 <div class="cell docutils container">
@@ -411,7 +454,27 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lpa_pipeline</span> <span class="kn">import</span> <span class="n">locus_collector</span>
-<span class="n">lc</span> <span class="o">=</span> <span class="n">locus_collector</span><span class="o">.</span><span class="n">LocusCollector</span><span class="p">(</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">locus_collector</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Collecting the locus information of Coassin&#39;s output
+
+Example::
+
+    lc = locus_collector.LocusCollector(
+        input_path = &quot;/some/parent/path/of/bam/output&quot; #choose this or next line
+        bam_list = &quot;/paths/to/a/file/recording/bam/path/line/by/line.txt&quot;)
+
+    locus_table = lc.generate_locus_table()
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lc</span> <span class="o">=</span> <span class="n">locus_collector</span><span class="o">.</span><span class="n">LocusCollector</span><span class="p">(</span>
     <span class="n">input_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/coassin_pipeline/pipeline_output&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -431,11 +494,28 @@
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>large-I        1280
+short-I         495
+Exon421         165
+Exon422         162
+near_splice      91
+3splice421        1
+Name: mylocus, dtype: int64
+</pre></div>
+</div>
+</div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">locus_table_filtered</span> <span class="o">=</span> <span class="n">locus_table</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">locus_table</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">filtered_result</span><span class="o">.</span><span class="n">columns</span><span class="p">)]</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">locus_table_filtered</span> <span class="o">=</span> <span class="n">locus_table</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+    <span class="n">locus_table</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">filtered_result</span><span class="o">.</span><span class="n">columns</span><span class="p">)]</span>
 <span class="n">locus_table_filtered</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(1421, 7)
 </pre></div>
 </div>
 </div>
@@ -443,7 +523,7 @@
 </section>
 <section id="new-exon-variant-compared-with-coassin-table-s9">
 <h1>New Exon variant compared with Coassin table S9<a class="headerlink" href="#new-exon-variant-compared-with-coassin-table-s9" title="Permalink to this heading"></a></h1>
-<p>This is just for novelty check, coassin_paper_exon is a pd.DataFrame with one column recording the previously discovered SNPs</p>
+<p>This is just for novelty check, coassin_paper_exon is a pd.DataFrame with one column recording the previously discovered SNPs from Coassin et al.’s <em>A comprehensive map of single-base polymorphisms in the hypervariable LPA kringle IV type 2 copy number variation region</em> Supplemental table S9</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">coassin_paper_exon</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
@@ -455,15 +535,56 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">coassin_paper_exon</span><span class="o">.</span><span class="n">shape</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">coassin_paper_exon</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(208, 1)
-</pre></div>
-</div>
-</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>pos-ref/var</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>579-A/C</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>583-C/A</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>584-C/T</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>585-G/A</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>585-G/T</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -501,36 +622,63 @@
 </div>
 </div>
 </div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">locus_table_filtered</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/dataset/locus_table_novelty_and_missense.xlsx&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">locus_table_filtered</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span>
-    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/dataset/locus_table_novelty_and_missense.xlsx&quot;</span><span class="p">,</span>
-    <span class="n">index_col</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">locus_table</span> <span class="o">=</span> <span class="n">locus_table_filtered</span>
-</pre></div>
-</div>
-</div>
-</div>
 </section>
 <section id="freq-and-appearance">
 <h1>Freq and appearance<a class="headerlink" href="#freq-and-appearance" title="Permalink to this heading"></a></h1>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lpa_pipeline</span> <span class="kn">import</span> <span class="n">freq_table_generator</span>
-<span class="n">ftg</span> <span class="o">=</span> <span class="n">freq_table_generator</span><span class="o">.</span><span class="n">FreqTableGenerator</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">freq_table_generator</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>A generator computing relative frequency of SNP carrier by group
+
+Common usage:
+
+Given two pandas.DataFrame
+
+* ``class_info_table`` has one have columns ``class_variable`` indicate the group
+* ``one_hot_table`` has all one-hot-variables(SNPs encoding),
+
+Compute the SNPs frequency in each class defined in &lt;class_variable&gt;:
+
+    Initialize::
+
+        ftg = freq_table_generator.FreqTableGenerator(
+            threshold = 0.01
+            encoding = {0: &quot;Not Detected&quot;,
+                        1: &quot;Rare&quot;,
+                        2: &quot;Common&quot;})
+
+    Generate the table::
+
+        freq_table = ftg.generate_freq_table(
+            class_info_table = class_info_table,
+            one_hot_table = one_hot_table,
+            class_variable = &quot;&lt;class_variable&gt;&quot;
+            class_variable_list = [&quot;&lt;class_name_1&gt;&quot;,&quot;&lt;class_name_2&gt;&quot;,...]
+            #if only need a part of &lt;class_variable&gt; column
+            )
+
+    If you need a rarity classification as columns as well::
+
+        freq_table_with_rarity = ftg.generate_freq_table_with_rarity(
+            class_info_table = class_info_table,
+            one_hot_table = one_hot_table,
+            class_variable = &quot;&lt;class_variable&gt;&quot;
+            class_variable_list = [&quot;&lt;class_name_1&gt;&quot;,&quot;&lt;class_name_2&gt;&quot;,...]
+            #if only need a part of &lt;class_variable&gt; column
+            )
+
+Where threshold and encoding are for generating rarity:
+
+* if the threshold &lt; freq &lt; 1- threshold, it will be encoded as 2
+* if the 0 &lt; freq &lt; threshold or 1 - threshold &lt; freq &lt; 1, it will be encoded as 1
+* if freq = 0 or freq = 1, it will be 0.
+
+Thus, for encoding, please only modify the value, not the key.
 </pre></div>
 </div>
 </div>
@@ -595,7 +743,8 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">freq_table_complete</span> <span class="o">=</span> <span class="n">ftg</span><span class="o">.</span><span class="n">generate_freq_table_with_rarity</span><span class="p">(</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ftg</span> <span class="o">=</span> <span class="n">freq_table_generator</span><span class="o">.</span><span class="n">FreqTableGenerator</span><span class="p">()</span>
+<span class="n">freq_table_complete</span> <span class="o">=</span> <span class="n">ftg</span><span class="o">.</span><span class="n">generate_freq_table_with_rarity</span><span class="p">(</span>
     <span class="n">one_hot_table</span> <span class="o">=</span> <span class="n">filtered_result</span><span class="p">,</span>
     <span class="n">class_info_table</span> <span class="o">=</span> <span class="n">eigen_result_aligned</span><span class="p">,</span>
     <span class="n">class_variable</span> <span class="o">=</span> <span class="s2">&quot;ethnicity&quot;</span>
@@ -752,12 +901,14 @@ Name: Novel, dtype: int64
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">personal_info</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/dataset/phenotypes/WHICAP_pheno_lpa_202306022.csv&quot;</span><span class="p">,</span> 
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/dataset/phenotypes/WHICAP_pheno_lpa_202306022.csv&quot;</span><span class="p">,</span>
     <span class="n">index_col</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
 <span class="n">personal_info</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;WES_ID&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
-<span class="n">personal_info</span> <span class="o">=</span> <span class="n">personal_info</span><span class="p">[(</span><span class="o">~</span><span class="n">personal_info</span><span class="p">[</span><span class="s2">&quot;AGE&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span> <span class="o">&amp;</span> <span class="p">(</span><span class="o">~</span><span class="n">personal_info</span><span class="p">[</span><span class="s2">&quot;DEM03&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">())]</span>
+<span class="n">personal_info</span> <span class="o">=</span> <span class="n">personal_info</span><span class="p">[</span>
+    <span class="p">(</span><span class="o">~</span><span class="n">personal_info</span><span class="p">[</span><span class="s2">&quot;AGE&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">())</span> <span class="o">&amp;</span> 
+    <span class="p">(</span><span class="o">~</span><span class="n">personal_info</span><span class="p">[</span><span class="s2">&quot;DEM03&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">())]</span>
 <span class="c1"># removed an outlier in Insulin (809 MIU/mL)</span>
-<span class="n">personal_info</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;washei30170&quot;</span><span class="p">,</span><span class="s2">&quot;INSL02_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NA</span>
+<span class="n">personal_info</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;washei30170&quot;</span><span class="p">,</span> <span class="s2">&quot;INSL02_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NA</span>
 </pre></div>
 </div>
 </div>
@@ -781,11 +932,30 @@ Name: Novel, dtype: int64
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">encoding_aligned</span><span class="p">,</span> <span class="n">personal_info_aligned</span> <span class="o">=</span> <span class="n">filtered_result</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">personal_info</span><span class="p">,</span> <span class="n">join</span> <span class="o">=</span> <span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
 <span class="n">eigen_aligned</span><span class="p">,</span> <span class="n">personal_info_aligned</span> <span class="o">=</span> <span class="n">eigen_result_aligned</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">personal_info_aligned</span><span class="p">,</span> <span class="n">join</span> <span class="o">=</span> <span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
 <span class="n">other_exogs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">personal_info_aligned</span><span class="p">[[</span><span class="s2">&quot;DEM03&quot;</span><span class="p">,</span> <span class="s2">&quot;AGE&quot;</span><span class="p">,</span> <span class="s2">&quot;APOE4+&quot;</span><span class="p">]],</span> <span class="n">eigen_aligned</span><span class="p">],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">join</span> <span class="o">=</span> <span class="s2">&quot;inner&quot;</span>
+    <span class="p">[</span><span class="n">personal_info_aligned</span><span class="p">[[</span><span class="s2">&quot;DEM03&quot;</span><span class="p">,</span> <span class="s2">&quot;AGE&quot;</span><span class="p">,</span> <span class="s2">&quot;APOE4+&quot;</span><span class="p">]],</span> 
+     <span class="n">eigen_aligned</span><span class="p">],</span>
+    <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">join</span> <span class="o">=</span> <span class="s2">&quot;inner&quot;</span>
 <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;DEM03&quot;</span><span class="p">:</span> <span class="s2">&quot;GENDER&quot;</span><span class="p">})</span>
 <span class="n">other_exogs</span><span class="p">[</span><span class="s2">&quot;intercept&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">phenotypes</span> <span class="o">=</span> <span class="n">personal_info_aligned</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">association</span><span class="o">.</span><span class="n">target_strategy</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
-<span class="n">VNTR_prediction</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Triglycerides, Insulin, and C-Peptide are natural logged for it’s right-skewed distribution</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">phenotypes</span> <span class="o">=</span> <span class="n">personal_info_aligned</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">association</span><span class="o">.</span><span class="n">target_strategy</span><span class="p">()</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
+<span class="n">phenotypes</span><span class="p">[</span><span class="s2">&quot;INSL02_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">phenotypes</span><span class="p">[</span><span class="s2">&quot;INSL02_2&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Float64Dtype</span><span class="p">()))</span>
+<span class="n">phenotypes</span><span class="p">[</span><span class="s2">&quot;LIP03_B&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">phenotypes</span><span class="p">[</span><span class="s2">&quot;LIP03_B&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Float64Dtype</span><span class="p">()))</span>
+<span class="n">phenotypes</span><span class="p">[</span><span class="s2">&quot;INSL03_2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">phenotypes</span><span class="p">[</span><span class="s2">&quot;INSL03_2&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Float64Dtype</span><span class="p">()))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VNTR_prediction</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/VNTR_pipeline/analysis_results/estimate_KIV2_length_PSV/predicted_result_20240102_new_mask_simple.csv&quot;</span><span class="p">,</span> 
     <span class="n">index_col</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
 </pre></div>
@@ -794,7 +964,21 @@ Name: Novel, dtype: int64
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">filtered_result</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/dataset/tidied_output/filtered_result.csv&quot;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">WHICAP_phenotype_legend</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;DIABETES&quot;</span><span class="p">:</span> <span class="s2">&quot;History of Diabetes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DEMENTIA&quot;</span><span class="p">:</span> <span class="s2">&quot;Clinical Alzheimer&#39;s disease&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HEART&quot;</span><span class="p">:</span> <span class="s2">&quot;History of Heart Disease&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HYPERTENSION&quot;</span><span class="p">:</span> <span class="s2">&quot;Hypertension&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;STROKE&quot;</span><span class="p">:</span> <span class="s2">&quot;Stroke&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LIP01_B&quot;</span><span class="p">:</span> <span class="s2">&quot;Cholesterol (mg/dL)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LIP02_B&quot;</span><span class="p">:</span> <span class="s2">&quot;HDL (mg/dL)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LIP03_B&quot;</span><span class="p">:</span> <span class="s2">&quot;Triglycerides (mg/dL), natural logged&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LIP04_2&quot;</span><span class="p">:</span> <span class="s2">&quot;LDL (mg/dL)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;INSL01_2&quot;</span><span class="p">:</span> <span class="s2">&quot;Glucose (mg/dL)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;INSL02_2&quot;</span><span class="p">:</span> <span class="s2">&quot;Insulin (mIU/mL), natural logged&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;INSL03_2&quot;</span><span class="p">:</span> <span class="s2">&quot;C-Peptide (ng/mL), natural logged&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HBA1C_2&quot;</span><span class="p">:</span> <span class="s2">&quot;Hemoglobin A1C (%)&quot;</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -958,11 +1142,11 @@ Name: Novel, dtype: int64
       <td>1</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>NaN</td>
+      <td>&lt;NA&gt;</td>
       <td>95.0</td>
       <td>83.0</td>
-      <td>10.3</td>
-      <td>5.82</td>
+      <td>2.332144</td>
+      <td>1.7613</td>
       <td>6.37</td>
     </tr>
     <tr>
@@ -974,11 +1158,11 @@ Name: Novel, dtype: int64
       <td>1</td>
       <td>NaN</td>
       <td>NaN</td>
+      <td>&lt;NA&gt;</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
       <td>NaN</td>
     </tr>
     <tr>
@@ -990,11 +1174,11 @@ Name: Novel, dtype: int64
       <td>1</td>
       <td>NaN</td>
       <td>NaN</td>
+      <td>&lt;NA&gt;</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
       <td>NaN</td>
     </tr>
     <tr>
@@ -1006,11 +1190,11 @@ Name: Novel, dtype: int64
       <td>1</td>
       <td>NaN</td>
       <td>NaN</td>
+      <td>&lt;NA&gt;</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
       <td>NaN</td>
     </tr>
     <tr>
@@ -1022,11 +1206,11 @@ Name: Novel, dtype: int64
       <td>1</td>
       <td>NaN</td>
       <td>NaN</td>
+      <td>&lt;NA&gt;</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>&lt;NA&gt;</td>
+      <td>&lt;NA&gt;</td>
       <td>NaN</td>
     </tr>
   </tbody>
@@ -1053,70 +1237,70 @@ Name: Novel, dtype: int64
 <div class="cell_output docutils container">
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  0%|          | 0/13 [00:00&lt;?, ?it/s]
                                                    
+                                                    
                                                    
-                                                   
-100%|██████████| 3/3 [02:05&lt;00:00, 41.85s/it]
-  8%|▊         | 1/13 [02:05&lt;25:03, 125.27s/it]A
-                                                   
-                                                   
-                                                   
-100%|██████████| 3/3 [02:38&lt;00:00, 53.73s/it]
- 15%|█▌        | 2/13 [04:43&lt;26:33, 144.84s/it]A
+100%|██████████| 3/3 [01:33&lt;00:00, 31.53s/it]
+  8%|▊         | 1/13 [01:33&lt;18:44, 93.75s/it][A
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:53&lt;00:00, 58.65s/it]
- 23%|██▎       | 3/13 [07:37&lt;26:18, 157.88s/it]A
+100%|██████████| 3/3 [01:52&lt;00:00, 38.09s/it]
+ 15%|█▌        | 2/13 [03:26&lt;19:11, 104.67s/it]A
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:46&lt;00:00, 56.08s/it]
- 31%|███       | 4/13 [10:24&lt;24:13, 161.46s/it]A
+100%|██████████| 3/3 [01:55&lt;00:00, 39.10s/it]
+ 23%|██▎       | 3/13 [05:21&lt;18:14, 109.47s/it]A
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:52&lt;00:00, 59.43s/it]
- 38%|███▊      | 5/13 [13:16&lt;22:02, 165.37s/it]A
+100%|██████████| 3/3 [01:56&lt;00:00, 39.61s/it]
+ 31%|███       | 4/13 [07:18&lt;16:51, 112.38s/it]A
+                                                   
+                                                   
+                                                   
+100%|██████████| 3/3 [01:56&lt;00:00, 39.50s/it]
+ 38%|███▊      | 5/13 [09:14&lt;15:11, 113.91s/it]A
                                                    
                                                     
                                                    
-100%|██████████| 3/3 [01:57&lt;00:00, 38.24s/it]
- 46%|████▌     | 6/13 [15:13&lt;17:23, 149.10s/it]A
-                                                   
-                                                   
-                                                   
-100%|██████████| 3/3 [01:52&lt;00:00, 37.43s/it]
- 54%|█████▍    | 7/13 [17:06&lt;13:42, 137.10s/it]A
+100%|██████████| 3/3 [01:22&lt;00:00, 27.69s/it]
+ 46%|████▌     | 6/13 [10:37&lt;12:03, 103.37s/it]A
                                                    
                                                     
                                                    
-100%|██████████| 3/3 [02:02&lt;00:00, 41.21s/it]
- 62%|██████▏   | 8/13 [19:09&lt;11:02, 132.53s/it]A
-                                                   
-                                                   
-                                                   
-100%|██████████| 3/3 [01:52&lt;00:00, 37.51s/it]
- 69%|██████▉   | 9/13 [21:02&lt;08:25, 126.40s/it]A
-                                                   
-                                                   
-                                                   
-100%|██████████| 3/3 [02:02&lt;00:00, 42.20s/it]
- 77%|███████▋  | 10/13 [23:04&lt;06:15, 125.28s/it]
+100%|██████████| 3/3 [01:22&lt;00:00, 27.76s/it]
+ 54%|█████▍    | 7/13 [12:00&lt;09:40, 96.72s/it] A
                                                    
                                                     
                                                    
-100%|██████████| 3/3 [01:57&lt;00:00, 37.36s/it]
- 85%|████████▍ | 11/13 [25:02&lt;04:05, 122.89s/it]
+100%|██████████| 3/3 [01:23&lt;00:00, 27.88s/it]
+ 62%|██████▏   | 8/13 [13:24&lt;07:42, 92.50s/it][A
                                                    
+                                                    
+                                                    
+100%|██████████| 3/3 [01:20&lt;00:00, 26.82s/it]
+ 69%|██████▉   | 9/13 [14:44&lt;05:54, 88.71s/it][A
                                                    
+                                                    
+                                                    
+100%|██████████| 3/3 [01:20&lt;00:00, 27.01s/it]
+ 77%|███████▋  | 10/13 [16:05&lt;04:18, 86.29s/it]A
                                                    
-100%|██████████| 3/3 [01:56&lt;00:00, 38.15s/it]
- 92%|█████████▏| 12/13 [26:58&lt;02:00, 120.88s/it]
+                                                    
+                                                    
+100%|██████████| 3/3 [01:21&lt;00:00, 27.06s/it]
+ 85%|████████▍ | 11/13 [17:26&lt;02:49, 84.75s/it]A
+                                                   
+                                                    
+                                                    
+100%|██████████| 3/3 [01:20&lt;00:00, 26.93s/it]
+ 92%|█████████▏| 12/13 [18:47&lt;01:23, 83.55s/it]A
                                                     
                                                     
                                                     
-100%|██████████| 3/3 [01:27&lt;00:00, 30.09s/it]
-100%|██████████| 13/13 [28:26&lt;00:00, 131.26s/it]
+100%|██████████| 3/3 [01:10&lt;00:00, 23.71s/it]
+100%|██████████| 13/13 [19:57&lt;00:00, 92.14s/it]A
 </pre></div>
 </div>
 </div>
@@ -1142,16 +1326,16 @@ Name: Novel, dtype: int64
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "517f5437d0bc46aebd931543b3ca5ff7", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "0e0a850857404531bfd9fb064d92aa8f", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_trait_vs_SNP
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "9cc7e81cf2e94eef9194edb664fff4ac", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "76aca3a53f634a3093b18a9f8a251a80", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/standardized_output_trait_vs_SNP
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "908da6746da043b9ac7505040c731bd7", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "d6011c202d55431aa28eaa638ba21f7c", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "4ee842a4b26b4076a4d1d61e8735db3f", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "2112f283b6e943f0aca7a732789bd8cc", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">lpa_pipeline</span> <span class="kn">import</span> <span class="n">post_processing</span>
 <span class="n">post_processor_variant</span> <span class="o">=</span> <span class="n">post_processing</span><span class="o">.</span><span class="n">PostProcessor</span><span class="p">(</span>
-    <span class="n">locus_table</span><span class="o">=</span><span class="n">locus_table</span><span class="p">,</span>
+    <span class="n">locus_table</span><span class="o">=</span><span class="n">locus_table_filtered</span><span class="p">,</span>
     <span class="n">snp_alias</span><span class="o">=</span><span class="s2">&quot;variant&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -1169,6 +1353,8 @@ Name: Novel, dtype: int64
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tidied_complete_output</span> <span class="o">=</span> <span class="n">post_processor_variant</span><span class="o">.</span><span class="n">clean_output</span><span class="p">(</span><span class="n">complete_output</span><span class="p">)</span>
+<span class="n">tidied_complete_output</span><span class="p">[</span><span class="s2">&quot;trait&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tidied_complete_output</span><span class="p">[</span><span class="s2">&quot;trait&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">WHICAP_phenotype_legend</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
 <span class="n">tidied_complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/meta_analysis/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/complete_output_tidied.xlsx&quot;</span><span class="p">)</span>
 </pre></div>
@@ -1315,68 +1501,68 @@ Name: Novel, dtype: int64
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:19&lt;00:00, 45.78s/it]
-  8%|▊         | 1/13 [02:19&lt;27:52, 139.35s/it]A
+100%|██████████| 3/3 [01:48&lt;00:00, 36.35s/it]
+  8%|▊         | 1/13 [01:48&lt;21:43, 108.65s/it]A
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:22&lt;00:00, 48.11s/it]
- 15%|█▌        | 2/13 [04:41&lt;25:51, 141.03s/it]A
+100%|██████████| 3/3 [02:05&lt;00:00, 42.35s/it]
+ 15%|█▌        | 2/13 [03:53&lt;21:42, 118.45s/it]A
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:24&lt;00:00, 48.94s/it]
- 23%|██▎       | 3/13 [07:05&lt;23:44, 142.45s/it]A
+100%|██████████| 3/3 [02:05&lt;00:00, 42.38s/it]
+ 23%|██▎       | 3/13 [05:59&lt;20:14, 121.48s/it]A
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:39&lt;00:00, 54.21s/it]
- 31%|███       | 4/13 [09:44&lt;22:21, 149.04s/it]A
+100%|██████████| 3/3 [02:04&lt;00:00, 42.33s/it]
+ 31%|███       | 4/13 [08:03&lt;18:25, 122.78s/it]A
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:38&lt;00:00, 53.08s/it]
- 38%|███▊      | 5/13 [12:23&lt;20:19, 152.39s/it]A
-                                                   
-                                                   
-                                                   
-100%|██████████| 3/3 [01:42&lt;00:00, 34.38s/it]
- 46%|████▌     | 6/13 [14:06&lt;15:48, 135.57s/it]A
-                                                   
-                                                   
-                                                   
-100%|██████████| 3/3 [01:50&lt;00:00, 36.65s/it]
- 54%|█████▍    | 7/13 [15:56&lt;12:43, 127.26s/it]A
-                                                   
-                                                   
-                                                   
-100%|██████████| 3/3 [01:48&lt;00:00, 36.01s/it]
- 62%|██████▏   | 8/13 [17:44&lt;10:06, 121.23s/it]A
+100%|██████████| 3/3 [02:05&lt;00:00, 42.45s/it]
+ 38%|███▊      | 5/13 [10:09&lt;16:29, 123.66s/it]A
                                                    
                                                     
                                                    
-100%|██████████| 3/3 [01:39&lt;00:00, 33.74s/it]
- 69%|██████▉   | 9/13 [19:23&lt;07:37, 114.30s/it]A
+100%|██████████| 3/3 [01:29&lt;00:00, 29.83s/it]
+ 46%|████▌     | 6/13 [11:38&lt;13:03, 111.94s/it]A
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [01:42&lt;00:00, 34.81s/it]
- 77%|███████▋  | 10/13 [21:06&lt;05:32, 110.81s/it]
+100%|██████████| 3/3 [01:28&lt;00:00, 29.76s/it]
+ 54%|█████▍    | 7/13 [13:07&lt;10:26, 104.45s/it]A
+                                                   
+                                                   
+                                                   
+100%|██████████| 3/3 [01:29&lt;00:00, 29.99s/it]
+ 62%|██████▏   | 8/13 [14:37&lt;08:18, 99.77s/it] A
                                                    
                                                     
                                                    
-100%|██████████| 3/3 [01:42&lt;00:00, 34.72s/it]
- 85%|████████▍ | 11/13 [22:49&lt;03:36, 108.38s/it]
+100%|██████████| 3/3 [01:26&lt;00:00, 28.84s/it]
+ 69%|██████▉   | 9/13 [16:03&lt;06:22, 95.57s/it][A
                                                    
+                                                    
                                                    
+100%|██████████| 3/3 [01:26&lt;00:00, 28.76s/it]
+ 77%|███████▋  | 10/13 [17:29&lt;04:38, 92.70s/it]A
                                                    
-100%|██████████| 3/3 [01:45&lt;00:00, 35.37s/it]
- 92%|█████████▏| 12/13 [24:35&lt;01:47, 107.60s/it]
+                                                    
+                                                   
+100%|██████████| 3/3 [01:26&lt;00:00, 28.93s/it]
+ 85%|████████▍ | 11/13 [18:56&lt;03:01, 90.89s/it]A
+                                                   
+                                                    
+                                                    
+100%|██████████| 3/3 [01:26&lt;00:00, 28.97s/it]
+ 92%|█████████▏| 12/13 [20:23&lt;01:29, 89.64s/it]A
                                                     
                                                     
                                                     
-100%|██████████| 3/3 [01:36&lt;00:00, 32.94s/it]
-100%|██████████| 13/13 [26:12&lt;00:00, 120.93s/it]
+100%|██████████| 3/3 [01:15&lt;00:00, 25.31s/it]
+100%|██████████| 13/13 [21:38&lt;00:00, 99.88s/it]A
 </pre></div>
 </div>
 </div>
@@ -1390,16 +1576,18 @@ Name: Novel, dtype: int64
 <span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/meta_analysis/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/complete_output.xlsx&quot;</span><span class="p">)</span>
 <span class="n">tidied_complete_output</span> <span class="o">=</span> <span class="n">post_processor_variant</span><span class="o">.</span><span class="n">clean_output</span><span class="p">(</span><span class="n">complete_output</span><span class="p">)</span>
+<span class="n">tidied_complete_output</span><span class="p">[</span><span class="s2">&quot;trait&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tidied_complete_output</span><span class="p">[</span><span class="s2">&quot;trait&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">WHICAP_phenotype_legend</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
 <span class="n">tidied_complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/meta_analysis/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/complete_output_tidied.xlsx&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "357e5a9e6613456c9751467e0c584ebb", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "2cfac23aaddf4de981f20fc508a93b0d", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_trait_vs_SNP_adjusted_by_VNTR
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "8ba43d77720e44b698bd6decacf105f7", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "2c00096e40bd4d099790f1f0a1691fd0", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/standardized_output_trait_vs_SNP_adjusted_by_VNTR
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "dd9e36faf06a470ead222a2fb3be6cd3", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "b9e134c7af2344e79bc8f2b683273608", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "e379cabe69dd44caa80be06daa42eed9", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "ca4b777804084acca3871747dfc6f052", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 </section>
 </section>
@@ -1535,8 +1723,8 @@ Name: Novel, dtype: int64
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:27&lt;00:00, 50.00s/it]
-100%|██████████| 1/1 [02:28&lt;00:00, 148.06s/it][A
+100%|██████████| 3/3 [01:54&lt;00:00, 38.74s/it]
+100%|██████████| 1/1 [01:54&lt;00:00, 114.43s/it][A
 </pre></div>
 </div>
 </div>
@@ -1556,10 +1744,10 @@ Name: Novel, dtype: int64
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "fef10ec1fc3140109ff1db1bcf16e772", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "b965f023a4474ed18abe0493f9bca18a", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_APOE_vs_SNP
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "65d70327577a45cbb169e1848e5dfe55", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "86ad911deb3648aa8a22a9f648d9d9da", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/standardized_output_APOE_vs_SNP
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "fc476506d2b045c1989c8edeb9c737d8", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "2eb8e71a57464ce28f4de4ee8c54da9b", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "cdc32392523c4df59c58ef9b49f680ce", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "f9cb761cc39e49499f832257f41d9326", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 </section>
 <section id="phenotypes-apoe-meta-analysis">
@@ -1736,54 +1924,44 @@ Name: Novel, dtype: int64
 <div class="cell_output docutils container">
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  0%|          | 0/13 [00:00&lt;?, ?it/s]
                                      
-                                             
-                                     .03it/s]
-100%|██████████| 3/3 [00:00&lt;00:00,  8.44it/s]
-  8%|▊         | 1/13 [00:00&lt;00:05,  2.28it/s][A
+                                     .65it/s]
+  8%|▊         | 1/13 [00:00&lt;00:03,  3.07it/s][A
                                      
-                                     .16it/s]
-                                     .08it/s]
-100%|██████████| 3/3 [00:00&lt;00:00,  8.64it/s]
- 15%|█▌        | 2/13 [00:00&lt;00:04,  2.32it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  8.23it/s]
- 23%|██▎       | 3/13 [00:01&lt;00:04,  2.29it/s][A
+                                     .74it/s]
+ 15%|█▌        | 2/13 [00:00&lt;00:03,  3.06it/s][A
+                                     
+                                     .57it/s]
+ 23%|██▎       | 3/13 [00:00&lt;00:03,  3.06it/s][A
                                      
                                      .52it/s]
-                                     .40it/s]
-100%|██████████| 3/3 [00:00&lt;00:00,  9.19it/s]
- 31%|███       | 4/13 [00:01&lt;00:03,  2.35it/s][A
+ 31%|███       | 4/13 [00:01&lt;00:02,  3.04it/s][A
                                      
-                                     .36it/s]
-                                     .26it/s]
-100%|██████████| 3/3 [00:00&lt;00:00,  9.02it/s]
- 38%|███▊      | 5/13 [00:02&lt;00:03,  2.38it/s][A
+                                     .65it/s]
+ 38%|███▊      | 5/13 [00:01&lt;00:02,  3.04it/s][A
                                      
-                                     .22it/s]
- 46%|████▌     | 6/13 [00:02&lt;00:02,  2.58it/s][A
+                                     .79it/s]
+ 46%|████▌     | 6/13 [00:01&lt;00:02,  3.11it/s][A
+                                     
+                                     .85it/s]
+ 54%|█████▍    | 7/13 [00:02&lt;00:01,  3.15it/s][A
+                                     
+                                     .60it/s]
+ 62%|██████▏   | 8/13 [00:02&lt;00:01,  3.19it/s][A
+                                     
+                                     .82it/s]
+ 69%|██████▉   | 9/13 [00:02&lt;00:01,  3.22it/s][A
+                                     
+                                     .49it/s]
+ 77%|███████▋  | 10/13 [00:03&lt;00:00,  3.23it/s]A
                                      
                                      .92it/s]
- 54%|█████▍    | 7/13 [00:02&lt;00:02,  2.67it/s][A
+ 85%|████████▍ | 11/13 [00:03&lt;00:00,  3.20it/s]A
                                      
-                                     .26it/s]
- 62%|██████▏   | 8/13 [00:03&lt;00:01,  2.81it/s][A
+                                     .43it/s]
+ 92%|█████████▏| 12/13 [00:03&lt;00:00,  3.21it/s]A
                                      
-                                     .30it/s]
- 69%|██████▉   | 9/13 [00:03&lt;00:01,  2.92it/s][A
-                                     
-                                     .95it/s]
- 77%|███████▋  | 10/13 [00:03&lt;00:01,  2.91it/s]A
-                                     
-                                     .36it/s]
- 85%|████████▍ | 11/13 [00:04&lt;00:00,  2.83it/s]A
-                                     
-                                     .55it/s]
- 92%|█████████▏| 12/13 [00:04&lt;00:00,  2.81it/s]A
-                                     
-                                     .19it/s]
-100%|██████████| 13/13 [00:04&lt;00:00,  2.69it/s]A
+                                     .94it/s]
+100%|██████████| 13/13 [00:04&lt;00:00,  3.17it/s]A
 </pre></div>
 </div>
 </div>
@@ -1802,10 +1980,10 @@ Name: Novel, dtype: int64
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "0b7d7507b63544d38f53c76f7e2c6cda", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "e98c6700d05f4eaf8b570d6b151a1c6c", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_trait_vs_APOE
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5fbafb3f73d24f68bde0659f59814b1b", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "5b78e88f14b84bbab4008ab66febd0b6", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/standardized_output_trait_vs_APOE
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5c6c36d876ce46bbb4ed0e2997e915cb", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "29558cd0806a4598b70f8affac82985b", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "fcb4401c70594810be76776acf72415c", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "2d832b30843645c6b8ae52f106d2ec17", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -1817,6 +1995,8 @@ Name: Novel, dtype: int64
 <span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/meta_analysis/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/complete_output.xlsx&quot;</span><span class="p">)</span>
 <span class="n">tidied_complete_output</span> <span class="o">=</span> <span class="n">post_processor_APOE</span><span class="o">.</span><span class="n">clean_output</span><span class="p">(</span><span class="n">complete_output</span><span class="p">)</span>
+<span class="n">tidied_complete_output</span><span class="p">[</span><span class="s2">&quot;trait&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tidied_complete_output</span><span class="p">[</span><span class="s2">&quot;trait&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">WHICAP_phenotype_legend</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
 <span class="n">tidied_complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/meta_analysis/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/complete_output_tidied.xlsx&quot;</span><span class="p">)</span>
 </pre></div>
@@ -1859,7 +2039,13 @@ Name: Novel, dtype: int64
     <span class="n">join</span> <span class="o">=</span> <span class="s2">&quot;inner&quot;</span>
    <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;DEM03&quot;</span><span class="p">:</span> <span class="s2">&quot;GENDER&quot;</span><span class="p">})</span>
 <span class="n">other_exogs_serum</span><span class="p">[</span><span class="s2">&quot;intercept&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">other_exogs_serum</span> <span class="o">=</span> <span class="n">other_exogs_serum</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="s2">&quot;ethnicity&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">other_exogs_serum</span> <span class="o">=</span> <span class="n">other_exogs_serum</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="s2">&quot;ethnicity&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1874,18 +2060,20 @@ Name: Novel, dtype: int64
                <span class="s2">&quot;Isoform 1          (expression)&quot;</span><span class="p">:</span> <span class="s2">&quot;isoform&quot;</span><span class="p">,</span>
                <span class="s2">&quot;wAS&quot;</span><span class="p">:</span> <span class="s2">&quot;wIS&quot;</span><span class="p">})</span>
 <span class="n">serum_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-    <span class="n">left</span> <span class="o">=</span> <span class="n">personal_info_serum</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()[[</span><span class="s2">&quot;WES_ID&quot;</span><span class="p">,</span><span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">]],</span> 
-    <span class="n">right</span> <span class="o">=</span> <span class="n">serum_result</span><span class="p">,</span> 
-    <span class="n">left_on</span> <span class="o">=</span> <span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">,</span> 
+    <span class="n">left</span> <span class="o">=</span> <span class="n">personal_info_serum</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()[[</span><span class="s2">&quot;WES_ID&quot;</span><span class="p">,</span> <span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">]],</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="n">serum_result</span><span class="p">,</span>
+    <span class="n">left_on</span> <span class="o">=</span> <span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">,</span>
     <span class="n">right_index</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;WES_ID&quot;</span><span class="p">)</span>
+<span class="n">encoding_serum</span> <span class="o">=</span> <span class="n">encoding_aligned</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">other_exogs_serum</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
 </div>
+<p>Lpa is a right-skewed data from it’s nature, natural log it</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">encoding_serum</span> <span class="o">=</span> <span class="n">encoding_aligned</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">other_exogs_serum</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">serum_result</span><span class="p">[</span><span class="s2">&quot;lpa&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">serum_result</span><span class="p">[</span><span class="s2">&quot;lpa&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -2019,7 +2207,7 @@ Name: Novel, dtype: int64
     <tr>
       <th>0</th>
       <td>W05307</td>
-      <td>223.78</td>
+      <td>5.410663</td>
       <td>17</td>
       <td>27</td>
       <td>0.86</td>
@@ -2031,7 +2219,7 @@ Name: Novel, dtype: int64
     <tr>
       <th>1</th>
       <td>W06744</td>
-      <td>66.82</td>
+      <td>4.202002</td>
       <td>28</td>
       <td>33</td>
       <td>0.93</td>
@@ -2043,7 +2231,7 @@ Name: Novel, dtype: int64
     <tr>
       <th>2</th>
       <td>W06939</td>
-      <td>103.15</td>
+      <td>4.636184</td>
       <td>18</td>
       <td>-</td>
       <td>1.00</td>
@@ -2055,7 +2243,7 @@ Name: Novel, dtype: int64
     <tr>
       <th>3</th>
       <td>W06984</td>
-      <td>12.31</td>
+      <td>2.510412</td>
       <td>23</td>
       <td>19</td>
       <td>0.82</td>
@@ -2067,7 +2255,7 @@ Name: Novel, dtype: int64
     <tr>
       <th>4</th>
       <td>W07059</td>
-      <td>10.85</td>
+      <td>2.384165</td>
       <td>17</td>
       <td>27</td>
       <td>0.72</td>
@@ -2098,7 +2286,7 @@ Name: Novel, dtype: int64
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>100%|██████████| 3/3 [00:50&lt;00:00, 16.72s/it]       
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>100%|██████████| 2/2 [00:21&lt;00:00, 10.66s/it]       
 </pre></div>
 </div>
 </div>
@@ -2109,7 +2297,7 @@ Name: Novel, dtype: int64
     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/wIS_OLS_N_snp=107.csv&quot;</span><span class="p">,</span>
     <span class="n">index_col</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
 <span class="n">complete_output</span> <span class="o">=</span> <span class="n">post_processor_variant</span><span class="o">.</span><span class="n">post_process_association</span><span class="p">(</span><span class="n">wIS</span><span class="p">)</span>
-<span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">project_name</span><span class="si">}</span><span class="s2">/wIS_complete_output.xlsx&quot;</span><span class="p">)</span>
+<span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/wIS_complete_output.xlsx&quot;</span><span class="p">)</span>
 <span class="n">complete_output</span><span class="p">[[</span>
     <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;variant Beta&#39;</span><span class="p">,</span><span class="s1">&#39;FDR_adjusted_p-value&#39;</span><span class="p">,</span> <span class="s1">&#39;significant_FDR&#39;</span><span class="p">,</span><span class="s1">&#39;r_squared&#39;</span><span class="p">,</span>
     <span class="s1">&#39;mylocus&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span><span class="s1">&#39;mut&#39;</span><span class="p">,</span> <span class="s1">&#39;coding&#39;</span><span class="p">,</span> <span class="s1">&#39;novel&#39;</span><span class="p">]</span>
@@ -2124,7 +2312,7 @@ Name: Novel, dtype: int64
     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/lpa_OLS_N_snp=107.csv&quot;</span><span class="p">,</span> 
     <span class="n">index_col</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
 <span class="n">complete_output</span> <span class="o">=</span> <span class="n">post_processor_variant</span><span class="o">.</span><span class="n">post_process_association</span><span class="p">(</span><span class="n">lpa</span><span class="p">)</span>
-<span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">project_name</span><span class="si">}</span><span class="s2">/lpa_complete_output.xlsx&quot;</span><span class="p">)</span>
+<span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/lpa_complete_output.xlsx&quot;</span><span class="p">)</span>
 <span class="n">complete_output</span><span class="p">[[</span>
     <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;variant Beta&#39;</span><span class="p">,</span><span class="s1">&#39;FDR_adjusted_p-value&#39;</span><span class="p">,</span> <span class="s1">&#39;significant_FDR&#39;</span><span class="p">,</span><span class="s1">&#39;r_squared&#39;</span><span class="p">,</span>
     <span class="s1">&#39;mylocus&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span><span class="s1">&#39;mut&#39;</span><span class="p">,</span> <span class="s1">&#39;coding&#39;</span><span class="p">,</span> <span class="s1">&#39;novel&#39;</span><span class="p">]</span>
@@ -2149,7 +2337,7 @@ Name: Novel, dtype: int64
 <span class="n">personal_info_serum_old</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/dataset/serum_data/serum_data_personal_info.csv&quot;</span><span class="p">)</span>
 <span class="n">personal_info_serum</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-    <span class="n">personal_info</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span>        
+    <span class="n">personal_info</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(),</span>
     <span class="n">personal_info_serum_old</span><span class="p">[[</span><span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">]],</span> 
     <span class="n">left_on</span> <span class="o">=</span> <span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">,</span> <span class="n">right_on</span> <span class="o">=</span> <span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;WES_ID&quot;</span><span class="p">)</span>
 <span class="n">other_exogs_serum</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
@@ -2164,26 +2352,13 @@ Name: Novel, dtype: int64
     <span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;LP(a) (nmol/L)&quot;</span><span class="p">:</span> <span class="s2">&quot;lpa&quot;</span><span class="p">,</span>
                <span class="s2">&quot;Isoform 1          (expression)&quot;</span><span class="p">:</span> <span class="s2">&quot;isoform&quot;</span><span class="p">,</span>
                <span class="s2">&quot;wAS&quot;</span><span class="p">:</span> <span class="s2">&quot;wIS&quot;</span><span class="p">})</span>
-<span class="n">serum_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">personal_info_serum</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()[[</span><span class="s2">&quot;WES_ID&quot;</span><span class="p">,</span><span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">]],</span> 
-                        <span class="n">serum_result</span><span class="p">,</span> 
-                        <span class="n">left_on</span> <span class="o">=</span> <span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">,</span> 
-                        <span class="n">right_index</span> <span class="o">=</span> <span class="kc">True</span>
-                       <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;WES_ID&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">other_exogs_serum</span><span class="p">[</span><span class="s2">&quot;ethnicity&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>HISP    14
-AF       8
-EU       5
-Name: ethnicity, dtype: int64
+<span class="n">serum_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="n">personal_info_serum</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()[[</span><span class="s2">&quot;WES_ID&quot;</span><span class="p">,</span><span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">]],</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="n">serum_result</span><span class="p">,</span>
+    <span class="n">left_on</span> <span class="o">=</span> <span class="s2">&quot;WHICAP_ID&quot;</span><span class="p">,</span>
+    <span class="n">right_index</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;WES_ID&quot;</span><span class="p">)</span>
+<span class="n">serum_result</span><span class="p">[</span><span class="s2">&quot;lpa&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">serum_result</span><span class="p">[</span><span class="s2">&quot;lpa&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -2304,6 +2479,13 @@ Name: ethnicity, dtype: int64
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">serum_result</span><span class="p">[</span><span class="s2">&quot;lpa&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">serum_result</span><span class="p">[</span><span class="s2">&quot;lpa&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">asso</span> <span class="o">=</span> <span class="n">association</span><span class="o">.</span><span class="n">SNPAssociation</span><span class="p">()</span>
 <span class="n">asso</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span>
     <span class="n">encoded_snp</span> <span class="o">=</span> <span class="n">encoding_serum</span><span class="p">,</span> 
@@ -2320,19 +2502,7 @@ Name: ethnicity, dtype: int64
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>100%|██████████| 3/3 [00:54&lt;00:00, 18.22s/it]       
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">&quot;</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&#39;/mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/association/removed_subtype_serum_vs_SNP_adjusted_by_VNTR&#39;
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>100%|██████████| 2/2 [00:24&lt;00:00, 12.09s/it]       
 </pre></div>
 </div>
 </div>
@@ -2345,8 +2515,9 @@ Name: ethnicity, dtype: int64
 <span class="n">complete_output</span> <span class="o">=</span> <span class="n">post_processor_variant</span><span class="o">.</span><span class="n">post_process_association</span><span class="p">(</span><span class="n">wIS</span><span class="p">)</span>
 <span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/wIS_complete_output.xlsx&quot;</span><span class="p">)</span>
 <span class="n">complete_output</span><span class="p">[[</span>
-    <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;variant Beta&#39;</span><span class="p">,</span><span class="s1">&#39;FDR_adjusted_p-value&#39;</span><span class="p">,</span> <span class="s1">&#39;significant_FDR&#39;</span><span class="p">,</span><span class="s1">&#39;r_squared&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;mylocus&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span><span class="s1">&#39;mut&#39;</span><span class="p">,</span> <span class="s1">&#39;coding&#39;</span><span class="p">,</span> <span class="s1">&#39;novel&#39;</span><span class="p">]</span>
+    <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;variant Beta&#39;</span><span class="p">,</span> <span class="s1">&#39;FDR_adjusted_p-value&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;significant_FDR&#39;</span><span class="p">,</span> <span class="s1">&#39;r_squared&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;mylocus&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span> <span class="s1">&#39;mut&#39;</span><span class="p">,</span> <span class="s1">&#39;coding&#39;</span><span class="p">,</span> <span class="s1">&#39;novel&#39;</span><span class="p">]</span>
 <span class="p">]</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/wIS_complete_tidied.xlsx&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -2360,8 +2531,9 @@ Name: ethnicity, dtype: int64
 <span class="n">complete_output</span> <span class="o">=</span> <span class="n">post_processor_variant</span><span class="o">.</span><span class="n">post_process_association</span><span class="p">(</span><span class="n">lpa</span><span class="p">)</span>
 <span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/lpa_complete_output.xlsx&quot;</span><span class="p">)</span>
 <span class="n">complete_output</span><span class="p">[[</span>
-    <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;variant Beta&#39;</span><span class="p">,</span><span class="s1">&#39;FDR_adjusted_p-value&#39;</span><span class="p">,</span> <span class="s1">&#39;significant_FDR&#39;</span><span class="p">,</span><span class="s1">&#39;r_squared&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;mylocus&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span><span class="s1">&#39;mut&#39;</span><span class="p">,</span> <span class="s1">&#39;coding&#39;</span><span class="p">,</span> <span class="s1">&#39;novel&#39;</span><span class="p">]</span>
+    <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;variant Beta&#39;</span><span class="p">,</span> <span class="s1">&#39;FDR_adjusted_p-value&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;significant_FDR&#39;</span><span class="p">,</span> <span class="s1">&#39;r_squared&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;mylocus&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span> <span class="s1">&#39;mut&#39;</span><span class="p">,</span> <span class="s1">&#39;coding&#39;</span><span class="p">,</span> <span class="s1">&#39;novel&#39;</span><span class="p">]</span>
 <span class="p">]</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/lpa_complete_tidied.xlsx&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -2573,8 +2745,8 @@ Name: ethnicity, dtype: int64
                                                    
                                                    
                                                    
-100%|██████████| 3/3 [02:49&lt;00:00, 56.94s/it]
-100%|██████████| 1/1 [02:49&lt;00:00, 169.36s/it][A
+100%|██████████| 3/3 [02:15&lt;00:00, 46.28s/it]
+100%|██████████| 1/1 [02:15&lt;00:00, 135.87s/it][A
 </pre></div>
 </div>
 </div>
@@ -2594,10 +2766,10 @@ Name: ethnicity, dtype: int64
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "505e7435d36746d79745fc1e761a41a0", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "b6fd2449e6a345819255e17a0c07409b", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_VNTR_vs_SNP
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "49d5f06f639749769939dd05cfc896a5", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "b34cc68717974e76a234fa6747b10ef6", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/standardized_output_VNTR_vs_SNP
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5e25ef7879134c3487f5674d9134c51e", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "7174195b86a34522b7549c040ca70399", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5f95455eaf864520b792f478db5d6f56", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "dd625986ea644648b833ba065ee1819d", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 </section>
 <section id="phenotypes-vntr-adjustment-meta-analysis-n-3774">
@@ -2782,71 +2954,52 @@ Name: ethnicity, dtype: int64
 </div>
 <div class="cell_output docutils container">
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  0%|          | 0/13 [00:00&lt;?, ?it/s]
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  7.65it/s]
-  8%|▊         | 1/13 [00:00&lt;00:05,  2.05it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  6.27it/s]
- 15%|█▌        | 2/13 [00:01&lt;00:05,  1.91it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  5.25it/s]
- 23%|██▎       | 3/13 [00:01&lt;00:06,  1.63it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  5.43it/s]
- 31%|███       | 4/13 [00:02&lt;00:05,  1.55it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  5.49it/s]
- 38%|███▊      | 5/13 [00:03&lt;00:05,  1.52it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  6.28it/s]
- 46%|████▌     | 6/13 [00:03&lt;00:04,  1.56it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  7.02it/s]
- 54%|█████▍    | 7/13 [00:04&lt;00:03,  1.63it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  7.13it/s]
- 62%|██████▏   | 8/13 [00:04&lt;00:02,  1.72it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  7.81it/s]
- 69%|██████▉   | 9/13 [00:05&lt;00:02,  1.81it/s][A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  7.81it/s]
- 77%|███████▋  | 10/13 [00:05&lt;00:01,  1.87it/s]A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  7.81it/s]
- 85%|████████▍ | 11/13 [00:06&lt;00:01,  1.92it/s]A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  7.84it/s]
- 92%|█████████▏| 12/13 [00:06&lt;00:00,  1.95it/s]A
-                                             
-                                             
-                                             
-100%|██████████| 3/3 [00:00&lt;00:00,  7.79it/s]
-100%|██████████| 13/13 [00:07&lt;00:00,  1.79it/s]A
+                                     
+                                     .80it/s]
+                                     .71it/s]
+100%|██████████| 3/3 [00:00&lt;00:00,  9.67it/s]
+  8%|▊         | 1/13 [00:00&lt;00:04,  2.57it/s][A
+                                     
+                                     .85it/s]
+                                     .76it/s]
+100%|██████████| 3/3 [00:00&lt;00:00,  9.66it/s]
+ 15%|█▌        | 2/13 [00:00&lt;00:04,  2.55it/s][A
+                                     
+                                     .00it/s]
+ 23%|██▎       | 3/13 [00:01&lt;00:03,  2.57it/s][A
+                                     
+                                     .78it/s]
+100%|██████████| 3/3 [00:00&lt;00:00,  9.62it/s]
+ 31%|███       | 4/13 [00:01&lt;00:03,  2.55it/s][A
+                                     
+                                     .29it/s]
+                                     .19it/s]
+100%|██████████| 3/3 [00:00&lt;00:00,  9.17it/s]
+ 38%|███▊      | 5/13 [00:01&lt;00:03,  2.50it/s][A
+                                     
+                                     .98it/s]
+ 46%|████▌     | 6/13 [00:02&lt;00:02,  2.59it/s][A
+                                     
+                                     .01it/s]
+ 54%|█████▍    | 7/13 [00:02&lt;00:02,  2.65it/s][A
+                                     
+                                     .81it/s]
+ 62%|██████▏   | 8/13 [00:03&lt;00:01,  2.68it/s][A
+                                     
+                                     .66it/s]
+ 69%|██████▉   | 9/13 [00:03&lt;00:01,  2.70it/s][A
+                                     
+                                     .77it/s]
+ 77%|███████▋  | 10/13 [00:03&lt;00:01,  2.72it/s]A
+                                     
+                                     .90it/s]
+ 85%|████████▍ | 11/13 [00:04&lt;00:00,  2.74it/s]A
+                                     
+                                     .83it/s]
+ 92%|█████████▏| 12/13 [00:04&lt;00:00,  2.74it/s]A
+                                     
+                                     .89it/s]
+100%|██████████| 13/13 [00:04&lt;00:00,  2.67it/s]A
 </pre></div>
 </div>
 </div>
@@ -2871,25 +3024,10 @@ Name: ethnicity, dtype: int64
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "a12843a2f0bd4ae9aae8555ab9bf59f9", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "6d356ee495da4eba974ce0f0191d4a1e", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/removed_subtype_trait_vs_VNTR
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "0a77018e3ec2494f8e1ad62556c24785", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "c484eb84e2d148c49e809e8dc21938e9", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>METAL scripts are saved to /mnt/vast/hpc/bvardarajan_lab/LPA_analysis/data_analysis_result/meta_analysis/standardized_output_trait_vs_VNTR
 </pre></div>
 </div>
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "31b2296ac33c4aadbe99a2e9210869cd", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "0c59bd424cd644d6b6222518ea31f470", "version_major": 2, "version_minor": 0}</script></div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">post_processor_VNTR</span> <span class="o">=</span> <span class="n">post_processing</span><span class="o">.</span><span class="n">PostProcessor</span><span class="p">(</span>
-    <span class="n">locus_table</span> <span class="o">=</span> <span class="n">locus_table</span><span class="p">,</span>
-    <span class="n">snp_alias</span> <span class="o">=</span> <span class="s2">&quot;VNTR_estimate&quot;</span><span class="p">)</span>
-<span class="n">complete_output</span> <span class="o">=</span> <span class="n">post_processor_VNTR</span><span class="o">.</span><span class="n">post_process_meta_analysis</span><span class="p">(</span><span class="n">aggregate_results</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;VNTR&quot;</span><span class="p">)</span>
-<span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span>
-    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/meta_analysis/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/complete_output.xlsx&quot;</span><span class="p">)</span>
-<span class="n">tidied_complete_output</span> <span class="o">=</span> <span class="n">post_processor_VNTR</span><span class="o">.</span><span class="n">clean_output</span><span class="p">(</span><span class="n">complete_output</span><span class="p">)</span>
-<span class="n">tidied_complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span>
-    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/meta_analysis/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/complete_output_tidied.xlsx&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "e3a0afb09ed048c9996c4a83ed2842f7", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "7824771f97304725a88fc3a8fde1aa74", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 </section>
 <section id="lpa-wis-vntr-adjustment-association-n-27">
@@ -2968,79 +3106,6 @@ Name: ethnicity, dtype: int64
 </pre></div>
 </div>
 </div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">asso</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span>
-    <span class="n">encoded_snp</span><span class="o">=</span><span class="n">vntr_as_exog_serum</span><span class="p">,</span> 
-    <span class="n">other_exogs</span><span class="o">=</span><span class="n">other_exogs_serum</span><span class="p">,</span>
-    <span class="n">target_dataset</span><span class="o">=</span><span class="n">serum_result</span><span class="p">,</span>
-    <span class="n">target_strategy</span><span class="o">=</span><span class="n">association</span><span class="o">.</span><span class="n">target_strategy_serum</span><span class="p">(),</span>
-    <span class="n">output_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="n">snp_alias</span><span class="o">=</span><span class="s2">&quot;VNTR_estimate&quot;</span><span class="p">,</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>100%|██████████| 3/3 [00:00&lt;00:00,  4.04it/s]
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">wIS</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/wIS_OLS_N_snp=1.csv&quot;</span><span class="p">,</span>
-    <span class="n">index_col</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
-<span class="n">complete_output</span> <span class="o">=</span> <span class="n">post_processor_VNTR</span><span class="o">.</span><span class="n">post_process_association</span><span class="p">(</span><span class="n">wIS</span><span class="p">)</span>
-<span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/wIS_complete_output.xlsx&quot;</span><span class="p">)</span>
-<span class="n">complete_output</span><span class="p">[[</span>
-    <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;VNTR_estimate Beta&#39;</span><span class="p">,</span><span class="s1">&#39;FDR_adjusted_p-value&#39;</span><span class="p">,</span> <span class="s1">&#39;significant_FDR&#39;</span><span class="p">,</span><span class="s1">&#39;r_squared&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;mylocus&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span><span class="s1">&#39;mut&#39;</span><span class="p">,</span> <span class="s1">&#39;coding&#39;</span><span class="p">,</span> <span class="s1">&#39;novel&#39;</span><span class="p">]</span>
-<span class="p">]</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/wIS_complete_tidied.xlsx&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lpa</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/lpa_OLS_N_snp=1.csv&quot;</span><span class="p">,</span>
-    <span class="n">index_col</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
-<span class="n">complete_output</span> <span class="o">=</span> <span class="n">post_processor_VNTR</span><span class="o">.</span><span class="n">post_process_association</span><span class="p">(</span><span class="n">lpa</span><span class="p">)</span>
-<span class="n">complete_output</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/lpa_complete_output.xlsx&quot;</span><span class="p">)</span>
-<span class="n">complete_output</span><span class="p">[[</span>
-    <span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="s1">&#39;VNTR_estimate Beta&#39;</span><span class="p">,</span><span class="s1">&#39;FDR_adjusted_p-value&#39;</span><span class="p">,</span> <span class="s1">&#39;significant_FDR&#39;</span><span class="p">,</span><span class="s1">&#39;r_squared&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;mylocus&#39;</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span><span class="s1">&#39;mut&#39;</span><span class="p">,</span> <span class="s1">&#39;coding&#39;</span><span class="p">,</span> <span class="s1">&#39;novel&#39;</span><span class="p">]</span>
-<span class="p">]</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">/lpa_complete_tidied.xlsx&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">output_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">version_name</span><span class="si">}</span><span class="s2">_serum_vs_APOE_stratified_by_VNTR&quot;</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vntr_binary</span> <span class="o">=</span> <span class="p">(</span><span class="n">vntr_as_exog</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">encoding_serum</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">23.0</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-    <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;High&quot;</span><span class="p">,</span> <span class="s2">&quot;Low&quot;</span><span class="p">]</span>
-<span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;1-A/T&quot;</span><span class="p">:</span> <span class="s2">&quot;VNTR_binary&quot;</span><span class="p">})</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">other_exogs_serum_binary_vntr</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;APOE4+&quot;</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
 <div class="cell_output docutils container">
 <div class="output text_html"><div>
 <style scoped>
@@ -3060,312 +3125,64 @@ Name: ethnicity, dtype: int64
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>VNTR_binary</th>
       <th>GENDER</th>
       <th>AGE</th>
+      <th>APOE4+</th>
       <th>PC1</th>
       <th>PC2</th>
       <th>PC3</th>
-      <th>ethnicity</th>
       <th>intercept</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>washei64289</th>
-      <td>Low</td>
       <td>1</td>
       <td>90.00</td>
+      <td>1.0</td>
       <td>0.0390</td>
       <td>0.0314</td>
       <td>-0.0165</td>
-      <td>AF</td>
       <td>1</td>
     </tr>
     <tr>
       <th>washei41440</th>
-      <td>Low</td>
       <td>1</td>
       <td>74.00</td>
+      <td>0.0</td>
       <td>-0.0435</td>
       <td>0.0076</td>
       <td>0.0145</td>
-      <td>EU</td>
       <td>1</td>
     </tr>
     <tr>
       <th>washei40407</th>
-      <td>Low</td>
       <td>1</td>
       <td>85.89</td>
+      <td>1.0</td>
       <td>-0.0153</td>
       <td>-0.0746</td>
       <td>-0.0053</td>
-      <td>EU</td>
       <td>1</td>
     </tr>
     <tr>
       <th>washei39055</th>
-      <td>Low</td>
       <td>1</td>
       <td>86.00</td>
+      <td>1.0</td>
       <td>0.0186</td>
       <td>-0.0413</td>
       <td>0.0168</td>
-      <td>AF</td>
       <td>1</td>
     </tr>
     <tr>
       <th>washei37339</th>
-      <td>Low</td>
       <td>1</td>
       <td>78.00</td>
+      <td>1.0</td>
       <td>-0.0435</td>
       <td>0.0052</td>
       <td>-0.0327</td>
-      <td>EU</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei36243</th>
-      <td>High</td>
-      <td>1</td>
-      <td>81.00</td>
-      <td>-0.0205</td>
-      <td>-0.0111</td>
-      <td>0.0285</td>
-      <td>AF</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei35857</th>
-      <td>High</td>
-      <td>1</td>
-      <td>72.44</td>
-      <td>-0.0285</td>
-      <td>-0.0587</td>
-      <td>-0.0113</td>
-      <td>AF</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei35820</th>
-      <td>Low</td>
-      <td>1</td>
-      <td>80.18</td>
-      <td>-0.0075</td>
-      <td>-0.1631</td>
-      <td>-0.0054</td>
-      <td>EU</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei35683</th>
-      <td>Low</td>
-      <td>1</td>
-      <td>93.00</td>
-      <td>0.0508</td>
-      <td>-0.0558</td>
-      <td>-0.0104</td>
-      <td>AF</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei35474</th>
-      <td>Low</td>
-      <td>1</td>
-      <td>93.32</td>
-      <td>-0.0231</td>
-      <td>0.0342</td>
-      <td>0.0118</td>
-      <td>AF</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei34421</th>
-      <td>High</td>
-      <td>1</td>
-      <td>88.76</td>
-      <td>0.0329</td>
-      <td>0.0095</td>
-      <td>-0.0074</td>
-      <td>EU</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei30180</th>
-      <td>Low</td>
-      <td>0</td>
-      <td>83.39</td>
-      <td>-0.0007</td>
-      <td>0.0402</td>
-      <td>-0.0264</td>
-      <td>AF</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei29952</th>
-      <td>Low</td>
-      <td>1</td>
-      <td>76.00</td>
-      <td>-0.0218</td>
-      <td>0.0159</td>
-      <td>0.0115</td>
-      <td>AF</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei51879</th>
-      <td>High</td>
-      <td>1</td>
-      <td>78.02</td>
-      <td>0.0209</td>
-      <td>-0.0192</td>
-      <td>0.0088</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei50504</th>
-      <td>High</td>
-      <td>1</td>
-      <td>84.00</td>
-      <td>-0.0386</td>
-      <td>-0.0360</td>
-      <td>-0.0220</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei50466</th>
-      <td>High</td>
-      <td>1</td>
-      <td>80.00</td>
-      <td>0.0036</td>
-      <td>0.0067</td>
-      <td>-0.0079</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei49313</th>
-      <td>High</td>
-      <td>0</td>
-      <td>90.00</td>
-      <td>-0.0450</td>
-      <td>-0.0942</td>
-      <td>-0.0060</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei45269</th>
-      <td>Low</td>
-      <td>1</td>
-      <td>78.00</td>
-      <td>-0.0245</td>
-      <td>0.0101</td>
-      <td>0.0100</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei45178</th>
-      <td>High</td>
-      <td>0</td>
-      <td>78.00</td>
-      <td>-0.0468</td>
-      <td>-0.1165</td>
-      <td>-0.0069</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei39274</th>
-      <td>Low</td>
-      <td>0</td>
-      <td>81.00</td>
-      <td>-0.0498</td>
-      <td>-0.1118</td>
-      <td>-0.0081</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei37561</th>
-      <td>Low</td>
-      <td>1</td>
-      <td>85.00</td>
-      <td>0.0260</td>
-      <td>-0.0043</td>
-      <td>0.0161</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei37093</th>
-      <td>High</td>
-      <td>1</td>
-      <td>76.00</td>
-      <td>-0.0275</td>
-      <td>0.0000</td>
-      <td>0.0311</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei35828</th>
-      <td>Low</td>
-      <td>1</td>
-      <td>82.00</td>
-      <td>0.0236</td>
-      <td>-0.0034</td>
-      <td>0.0005</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei35718</th>
-      <td>High</td>
-      <td>1</td>
-      <td>84.00</td>
-      <td>-0.0359</td>
-      <td>-0.0858</td>
-      <td>-0.0082</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei35479</th>
-      <td>Low</td>
-      <td>0</td>
-      <td>93.72</td>
-      <td>0.0310</td>
-      <td>-0.0025</td>
-      <td>0.0136</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei30811</th>
-      <td>High</td>
-      <td>1</td>
-      <td>87.00</td>
-      <td>-0.0461</td>
-      <td>-0.0672</td>
-      <td>-0.0009</td>
-      <td>HISP</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <th>washei30169</th>
-      <td>Low</td>
-      <td>1</td>
-      <td>82.93</td>
-      <td>0.0043</td>
-      <td>0.0004</td>
-      <td>0.0135</td>
-      <td>HISP</td>
       <td>1</td>
     </tr>
   </tbody>
@@ -3374,79 +3191,20 @@ Name: ethnicity, dtype: int64
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">other_exogs_serum_binary_vntr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">vntr_binary</span><span class="p">,</span> <span class="n">other_exogs</span><span class="p">],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">join</span> <span class="o">=</span> <span class="s2">&quot;inner&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">asso</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span>
-    <span class="n">encoded_snp</span><span class="o">=</span><span class="n">other_exogs_serum_binary_vntr</span><span class="p">[[</span><span class="s2">&quot;APOE4+&quot;</span><span class="p">]],</span> 
-    <span class="n">other_exogs</span><span class="o">=</span><span class="n">other_exogs_serum_binary_vntr</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;APOE4+&quot;</span><span class="p">,</span> <span class="s2">&quot;ethnicity&quot;</span><span class="p">]),</span>
+    <span class="n">encoded_snp</span><span class="o">=</span><span class="n">vntr_as_exog_serum</span><span class="p">,</span> 
+    <span class="n">other_exogs</span><span class="o">=</span><span class="n">other_exogs_serum</span><span class="p">,</span>
     <span class="n">target_dataset</span><span class="o">=</span><span class="n">serum_result</span><span class="p">,</span>
     <span class="n">target_strategy</span><span class="o">=</span><span class="n">association</span><span class="o">.</span><span class="n">target_strategy_serum</span><span class="p">(),</span>
     <span class="n">output_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="n">extra_iterate_on</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;VNTR_binary&quot;</span><span class="p">],</span>
-    <span class="n">snp_alias</span><span class="o">=</span><span class="s2">&quot;APOE&quot;</span><span class="p">,</span>
+    <span class="n">snp_alias</span><span class="o">=</span><span class="s2">&quot;VNTR_estimate&quot;</span><span class="p">,</span>
     <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  0%|          | 0/3 [00:00&lt;?, ?it/s]
-  0%|          | 0/1 [00:00&lt;?, ?it/s]/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n&gt;=20 ... continuing anyway, n=11
-  warnings.warn(&quot;kurtosistest only valid for n&gt;=20 ... continuing &quot;
-                                             
-  0%|          | 0/1 [00:00&lt;?, ?it/s].88it/s]/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n&gt;=20 ... continuing anyway, n=16
-  warnings.warn(&quot;kurtosistest only valid for n&gt;=20 ... continuing &quot;
-                                             
-100%|██████████| 2/2 [00:00&lt;00:00,  5.54it/s]
- 33%|███▎      | 1/3 [00:00&lt;00:00,  2.14it/s]
-  0%|          | 0/1 [00:00&lt;?, ?it/s]/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n&gt;=20 ... continuing anyway, n=11
-  warnings.warn(&quot;kurtosistest only valid for n&gt;=20 ... continuing &quot;
-                                             
-  0%|          | 0/1 [00:00&lt;?, ?it/s].23it/s]/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n&gt;=20 ... continuing anyway, n=16
-  warnings.warn(&quot;kurtosistest only valid for n&gt;=20 ... continuing &quot;
-                                             
-100%|██████████| 2/2 [00:00&lt;00:00,  4.42it/s]
- 67%|██████▋   | 2/3 [00:01&lt;00:00,  1.96it/s]
-  0%|          | 0/1 [00:00&lt;?, ?it/s]/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n&gt;=20 ... continuing anyway, n=11
-  warnings.warn(&quot;kurtosistest only valid for n&gt;=20 ... continuing &quot;
-                                             
-  0%|          | 0/1 [00:00&lt;?, ?it/s].81it/s]/home/yl4326/conda/my-envs/Jupyter/lib/python3.8/site-packages/scipy/stats/stats.py:1541: UserWarning: kurtosistest only valid for n&gt;=20 ... continuing anyway, n=16
-  warnings.warn(&quot;kurtosistest only valid for n&gt;=20 ... continuing &quot;
-                                             
-100%|██████████| 2/2 [00:00&lt;00:00,  5.32it/s]
-100%|██████████| 3/3 [00:01&lt;00:00,  1.95it/s]
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">output_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">version_name</span><span class="si">}</span><span class="s2">_serum_vs_APOE&quot;</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">asso</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span>
-    <span class="n">encoded_snp</span><span class="o">=</span><span class="n">other_exogs_serum_binary_vntr</span><span class="p">[[</span><span class="s2">&quot;APOE4+&quot;</span><span class="p">]],</span> 
-    <span class="n">other_exogs</span><span class="o">=</span><span class="n">other_exogs_serum_binary_vntr</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;APOE4+&quot;</span><span class="p">,</span> <span class="s2">&quot;ethnicity&quot;</span><span class="p">,</span> <span class="s2">&quot;VNTR_binary&quot;</span><span class="p">]),</span>
-    <span class="n">target_dataset</span><span class="o">=</span><span class="n">serum_result</span><span class="p">,</span>
-    <span class="n">target_strategy</span><span class="o">=</span><span class="n">association</span><span class="o">.</span><span class="n">target_strategy_serum</span><span class="p">(),</span>
-    <span class="n">output_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">project_path</span><span class="si">}</span><span class="s2">/data_analysis_result/association/</span><span class="si">{</span><span class="n">output_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="n">snp_alias</span><span class="o">=</span><span class="s2">&quot;APOE&quot;</span><span class="p">,</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>100%|██████████| 3/3 [00:00&lt;00:00,  4.31it/s]
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>100%|██████████| 2/2 [00:00&lt;00:00,  5.71it/s]
 </pre></div>
 </div>
 </div>

@@ -141,7 +141,7 @@
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="lpa_pipeline.post_processing.CorrectMetalDirection">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.post_processing.</span></span><span class="sig-name descname"><span class="pre">CorrectMetalDirection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.post_processing.CorrectMetalDirection" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.post_processing.</span></span><span class="sig-name descname"><span class="pre">CorrectMetalDirection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.post_processing.CorrectMetalDirection" title="Permalink to this definition"></a></dt>
 <dd><p>correct the beta and direction discrepancy caused by metal</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lpa_pipeline.post_processing.CorrectMetalDirection.correct_effect">
@@ -157,7 +157,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lpa_pipeline.post_processing.CorrectMetalDirection.correct_metal_direction">
-<span class="sig-name descname"><span class="pre">correct_metal_direction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.post_processing.CorrectMetalDirection.correct_metal_direction" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">correct_metal_direction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variant'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.post_processing.CorrectMetalDirection.correct_metal_direction" title="Permalink to this definition"></a></dt>
 <dd><p>check each row for the metal direction and give corrected result</p>
 </dd></dl>
 
@@ -180,11 +180,14 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lpa_pipeline.post_processing.CorrectMetalDirection.correct_metal_complete">
-<span class="sig-name descname"><span class="pre">correct_metal_complete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.post_processing.CorrectMetalDirection.correct_metal_complete" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">correct_metal_complete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variant'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.post_processing.CorrectMetalDirection.correct_metal_complete" title="Permalink to this definition"></a></dt>
 <dd><p>complete pipeline correct the direction</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>df</strong> – pd.DataFrame, the result from meta-analysis (metal_toolkit module)</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – pd.DataFrame, the result from meta-analysis (metal_toolkit module)</p></li>
+<li><p><strong>mode</strong> – Optional[str], if using “variant”, will check the consistency between results</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="simple">
@@ -244,7 +247,7 @@ module</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="lpa_pipeline.post_processing.PostProcessor">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.post_processing.</span></span><span class="sig-name descname"><span class="pre">PostProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_value_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'fdr_bh'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snp_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variant'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.post_processing.PostProcessor" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lpa_pipeline.post_processing.</span></span><span class="sig-name descname"><span class="pre">PostProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">locus_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_value_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'fdr_bh'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snp_alias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ethnicity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['EU',</span> <span class="pre">'AF',</span> <span class="pre">'HISP']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#lpa_pipeline.post_processing.PostProcessor" title="Permalink to this definition"></a></dt>
 <dd><p>wrapper for all the postprocessing</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lpa_pipeline.post_processing.PostProcessor.post_process_association">
@@ -266,7 +269,7 @@ module</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lpa_pipeline.post_processing.PostProcessor.post_process_meta_analysis">
-<span class="sig-name descname"><span class="pre">post_process_meta_analysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.post_processing.PostProcessor.post_process_meta_analysis" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">post_process_meta_analysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'variant'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.post_processing.PostProcessor.post_process_meta_analysis" title="Permalink to this definition"></a></dt>
 <dd><p>The wrapper of all post process steps for a metal_toolkit module result</p>
 <p>It computes FDR-adjusted p-value, correct the direction discrepancy from METAL,
 and append locus information for the result</p>
@@ -276,6 +279,23 @@ and append locus information for the result</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>the module with FDR adjusted p-value, correct direction and locus info</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lpa_pipeline.post_processing.PostProcessor.clean_output">
+<span class="sig-name descname"><span class="pre">clean_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#lpa_pipeline.post_processing.PostProcessor.clean_output" title="Permalink to this definition"></a></dt>
+<dd><p>An API to reorder the output to better readability</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> – pd.DataFrame, the output need to be cleaned</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the format-cleaned output</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>pd.DataFrame</p>

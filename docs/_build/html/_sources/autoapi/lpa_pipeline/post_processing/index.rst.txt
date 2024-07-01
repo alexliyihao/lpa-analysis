@@ -37,7 +37,7 @@ Classes
 
 
 
-.. py:class:: CorrectMetalDirection(locus_table: pandas.DataFrame)
+.. py:class:: CorrectMetalDirection(locus_table: pandas.DataFrame = None)
 
 
    correct the beta and direction discrepancy caused by metal
@@ -54,7 +54,7 @@ Classes
       correct the direction label, running for pd.DataFrame.apply()
 
 
-   .. py:method:: correct_metal_direction(df: pandas.DataFrame) -> pandas.DataFrame
+   .. py:method:: correct_metal_direction(df: pandas.DataFrame, mode: str = 'variant') -> pandas.DataFrame
 
       check each row for the metal direction and give corrected result
 
@@ -69,11 +69,12 @@ Classes
       :rtype: pd.DataFrame
 
 
-   .. py:method:: correct_metal_complete(df: pandas.DataFrame) -> pandas.DataFrame
+   .. py:method:: correct_metal_complete(df: pandas.DataFrame, mode: Optional[str] = 'variant') -> pandas.DataFrame
 
       complete pipeline correct the direction
 
       :param df: pd.DataFrame, the result from meta-analysis (metal_toolkit module)
+      :param mode: Optional[str], if using "variant", will check the consistency between results
 
       Result:
           pd.DataFrame, the result with corrected effect and corrected direction column
@@ -115,7 +116,7 @@ Classes
 
 
 
-.. py:class:: PostProcessor(locus_table: pandas.DataFrame, p_value_threshold: float = 0.05, method: str = 'fdr_bh', snp_alias: str = 'variant')
+.. py:class:: PostProcessor(locus_table: Optional[str] = None, p_value_threshold: Optional[float] = 0.05, method: Optional[str] = 'fdr_bh', snp_alias: Optional[str] = 'variant', ethnicity: Optional[list] = ['EU', 'AF', 'HISP'])
 
 
    wrapper for all the postprocessing
@@ -132,7 +133,7 @@ Classes
       :rtype: pd.DataFrame
 
 
-   .. py:method:: post_process_meta_analysis(df: pandas.DataFrame) -> pandas.DataFrame
+   .. py:method:: post_process_meta_analysis(df: pandas.DataFrame, mode: str = 'variant') -> pandas.DataFrame
 
       The wrapper of all post process steps for a metal_toolkit module result
 
@@ -142,6 +143,16 @@ Classes
       :param df: pd.DataFrame, the output of association module
 
       :returns: the module with FDR adjusted p-value, correct direction and locus info
+      :rtype: pd.DataFrame
+
+
+   .. py:method:: clean_output(df: pandas.DataFrame) -> pandas.DataFrame
+
+      An API to reorder the output to better readability
+
+      :param df: pd.DataFrame, the output need to be cleaned
+
+      :returns: the format-cleaned output
       :rtype: pd.DataFrame
 
 

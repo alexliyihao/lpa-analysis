@@ -97,9 +97,7 @@ Functions
 
    The key for main dict is the variable name
    The value is a dict with the following keys:
-
        "engine", whose value is a statsmodels model
-
        "preprocessing", whose value is a callable takes in a pd.DataFrame and returns another one
 
 
@@ -152,11 +150,8 @@ Functions
                                in output DataFrame
       :param na_strategy: Optional[str], the strategy statsmodels dealing with NAs,
                           Available options are ‘none’, ‘drop’, and ‘raise’.
-
                           If ‘none’, no nan checking is done.
-
                           If ‘drop’, any observations with nans are dropped.
-
                           If ‘raise’, an error is raised.
       :param group_na_strategy: Optional[str], how na_strategy apply when have
                                 extra_iterate_on, can be "snp-wise" or "group-wise",
@@ -167,17 +162,13 @@ Functions
                                           before the regression analysis
                                           this function should take a pd.DataFrame as input and output
       :param verbose: Optional[int] in {0,1,2} default 0
-
-                      if verbose == 0, no output will be printed except the progress bar
-
-                      if verbose == 1, the regression will give the saving path
-
-                      if verbose == 2, the regression will output all the related
+                      if verbose = 1, the regression will give the saving path
+                      if verbose = 2, the regression will output all the related
                       values during the computation, only for debugging purpose,
                       use with care for it will create massive I/O
 
 
-   .. py:method:: transform(output_path: str = None, verbose: int = None) -> Dict
+   .. py:method:: transform(output_path: str = None, verbose: int = None) -> None
 
       API Run the actual association test
 
@@ -273,7 +264,7 @@ Functions
                 - dict: additional information that is included.
 
 
-   .. py:method:: association_test(encoded_snp: pandas.DataFrame, other_exogs: pandas.DataFrame, target_dataset: Union[pandas.DataFrame, pandas.Series], target_strategy: Dict[str, Dict[str, Union[statsmodels.api.Logit, statsmodels.api.OLS, Callable]]], output_path: str = '', one_to_one_exogs: Optional[pandas.DataFrame] = None, one_to_one_strategy: Optional[Callable] = None, one_to_one_alias: str = None, na_strategy: str = 'drop', extra_iterate_on: List[str] = None, group_na_strategy: str = 'snp_wise', snps_preprocessing_strategy: Optional[Callable] = None, snp_alias: str = 'variant', verbose: int = 0) -> Dict
+   .. py:method:: association_test(encoded_snp: pandas.DataFrame, other_exogs: pandas.DataFrame, target_dataset: Union[pandas.DataFrame, pandas.Series], target_strategy: Dict[str, Dict[str, Union[statsmodels.api.Logit, statsmodels.api.OLS, Callable]]], output_path: str = '', one_to_one_exogs: Optional[pandas.DataFrame] = None, one_to_one_strategy: Optional[Callable] = None, one_to_one_alias: str = None, na_strategy: str = 'drop', extra_iterate_on: List[str] = None, group_na_strategy: str = 'snp_wise', snps_preprocessing_strategy: Optional[Callable] = None, snp_alias: str = 'variant', verbose: int = 0)
 
       API running regression test
 
@@ -281,9 +272,8 @@ Functions
       :param other_exogs: pd.DataFrame, the dataframe taking all the other variables
       :param target_dataset: pd.DataFrame, the dataframe taking all the target variables
       :param target_strategy: dict[str, dict[str, funcs or models]], the dictionary
-                              provide pre-processing to specific column. Only column mentioned in
-                              keys will be included in the running. The inner dictionary should
-                              have two keys:
+                              provide pre-processing to specific column. Only column mentioned in keys
+                              will be included in the running. The inner dictionary should have two keys:
 
                                - "engine": statsmodels.api models,
                                    designed for statsmodels.discrete.discrete_model.Logit or
@@ -321,8 +311,7 @@ Functions
                       values during the computation, only for debugging purpose,
                       use with care for it will create massive I/O
 
-      :returns: a dict recording output brief information
-      :rtype: dict
+      :returns: dict, a dict recording output brief information
 
 
 
