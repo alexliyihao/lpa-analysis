@@ -23,6 +23,7 @@ library(viridis)
 library(stringr)
 library(RColorBrewer)
 library(patchwork)
+library(Cairo)
 ```
 ```{r}
 sessionInfo()
@@ -50,7 +51,7 @@ convert_phenotype_note = function(df){
     to = c("History of Heart Disease", 
            "Clinical Alzheimer's Disease",
            "History of Diabetes", 
-           "Cholestrol", "HDL", "Triglycerides", "LDL",
+           "Cholesterol", "HDL", "Triglycerides", "LDL",
            "Glucose", "Insulin", "C-Peptide", 
            "Hypertension", "Stroke", 
            "Hemoglobin A1C")
@@ -72,7 +73,7 @@ personal_info = personal_info %>%
       to = c("Male", "Female")))
 ```
 
-variant rarity and freq table can be obtained from the **visualization.freq_table_generator** module.
+variant rarity and freq table can be obtained from the **freq_table_generator** module.
 ```{r}
 variant_table = utils::read.csv("data/info_table_new_phenotypes.csv")
 variant_table %>% utils::head()
@@ -121,14 +122,16 @@ all_variants_by_locus = ggplot2::ggplot(
   ggplot2::scale_y_continuous(expand = c(0,0), limits = c(0, 700))+
   ggplot2::scale_color_grey()+
   ggplot2::scale_fill_grey()+
-  ggplot2::theme(legend.title = element_blank())+
+  ggplot2::theme(
+    legend.title = element_blank(),
+    axis.text = element_text(color = "black"))+
   ggplot2::coord_fixed(ratio = 1/150)
-#ggplot2::ggsave("figures/supplemental_figure_S1_distribution_of_locus.png", plot = all_variants_by_locus)
+ggplot2::ggsave(
+  "figures/Supplemental_Figure_S1_distribution_of_locus.pdf", 
+  plot = all_variants_by_locus,
+  device = CairoPDF)
 all_variants_by_locus
 ```
-
-
-
 
 # Figure 1: Appearance Venn Diagram for variants
 
@@ -178,13 +181,15 @@ novel_intronic_Venn = appearance_venn_diagram(
 
 aggregate_venn = (all_variants_Venn + previouly_discovered_Venn) / 
   (novel_exonic_variants_Venn + novel_intronic_Venn)
-#ggsave("figures/Figure_1_venn_diagrams_for_different_filter_condition.png",aggregate_venn)
+ggsave("figures/Figure_1_venn_diagrams_for_different_filter_condition.pdf",
+       plot = aggregate_venn,
+       device = CairoPDF)
 aggregate_venn
 ```
 
-# Figure 2 
+# Supplemental Figure S2: Sex and ancestry distribution of exonic and intronic variants
 
-variant rarity and freq table can be obtained from the **visualization.appearance_table_generator** module.
+variant rarity and freq table can be obtained from the **appearance_table_generator** module.
 ```{r}
 rarity_distribution_plot = function(df, top_limit = 700, label = "A"){
   appearance_table = df %>% 
@@ -227,42 +232,57 @@ rarity_distribution_plot = function(df, top_limit = 700, label = "A"){
     ggplot2::labs(title = label, x = "", y="Number of Variants")+
     ggplot2::theme(
         plot.title = element_text(size = 14, face = "bold"),
+        axis.text = element_text(color = "black"),
         panel.spacing = unit(0, "lines")
     )
   return(g)
 }
 ```
 
-## Figure 2A: all 1421 SNPs
-
+## Figure S2A: all 1421 SNPs
 
 ```{r}
-appearance_table = utils::read.csv("data/appearance_table_by_ethnicity_gender_new_phenotype.csv")[,-1]
-
+appearance_table = utils::read.csv(
+  "data/appearance_table_by_ethnicity_gender_new_phenotype.csv")[,-1]
 appearance_table %>% utils::head(5)
-all_variants_rarity_distribution = rarity_distribution_plot(df = appearance_table,top_limit = 700, label = "A")
+all_variants_rarity_distribution = rarity_distribution_plot(
+  df = appearance_table,
+  top_limit = 700, 
+  label = "A")
+```
+
+## Figure S2B: previouly idnetified exons
+
+```{r}
+appearance_table = utils::read.csv(
+  "data/appearance_table_by_ethnicity_gender_coassin_snps_new_phenotype.csv")[,-1]
+identified_exons_rarity_distribution = rarity_distribution_plot(
+  df = appearance_table,
+  top_limit = 60, 
+  label = "B")
+```
+
+# Figure S2C Novel Exons
+
+```{r}
+appearance_table = utils::read.csv(
+  "data/appearance_table_by_ethnicity_gender_new_exons_new_phenotype.csv")[,-1]
+novel_exons_rarity_distribution = rarity_distribution_plot(
+  df = appearance_table,
+  top_limit = 80,
+  label = "C")
 ```
 
 
-## Figure 2B: previouly idnetified exons
+# Figure S2D Introns:
 
 ```{r}
-appearance_table = utils::read.csv("data/appearance_table_by_ethnicity_gender_coassin_snps_new_phenotype.csv")[,-1]
-identified_exons_rarity_distribution = rarity_distribution_plot(df = appearance_table,top_limit = 60, label = "B")
-```
-
-# Figure 2C Novel Exons
-```{r}
-appearance_table = utils::read.csv("data/appearance_table_by_ethnicity_gender_new_exons_new_phenotype.csv")[,-1]
-novel_exons_rarity_distribution = rarity_distribution_plot(df = appearance_table,top_limit = 80,label = "C")
-```
-
-
-# Figure 2D Introns:
-
-```{r}
-appearance_table = utils::read.csv("data/appearance_table_by_ethnicity_gender_introns_new_phenotype.csv")[,-1]
-intron_rarity_distribution = rarity_distribution_plot(df = appearance_table,top_limit = 550, label = "D")
+appearance_table = utils::read.csv(
+  "data/appearance_table_by_ethnicity_gender_introns_new_phenotype.csv")[,-1]
+intron_rarity_distribution = rarity_distribution_plot(
+  df = appearance_table,
+  top_limit = 550, 
+  label = "D")
 ```
 
 
@@ -277,16 +297,17 @@ figure_2_panel = lemon::grid_arrange_shared_legend(
   position = "right"
   )
 
-#ggsave("figures/Figure_2_variant_distribution_panel_by_gender_and_race.png", 
-#       figure_2_panel,
-#       width = 8,
-#       height = 7)
+ggsave("figures/Supplemental_Figure_S2_variant_distribution_panel_by_gender_and_race.pdf", 
+       plot = figure_2_panel,
+       width = 8,
+       height = 7,
+       device = CairoPDF)
 ```
 
 
-# Figure 3: Manhattan Plot: Phenotype vs SNPs
+# Figure 2: Manhattan Plot: Phenotype vs SNPs
 
-The source file can be obtained from the output complete_output_tidied.xlsx in "trait_vs_SNP" folder
+The source file can be obtained from the output complete_output_tidied.xlsx in using phenotypes vs encoded genotypes from **association** module
 ```{r}
 association_result = readxl::read_xlsx(
   "WHICAP_result_tables/phenotypes_vs_SNP/phenotypes_vs_SNP.xlsx")
@@ -310,6 +331,7 @@ association_result = association_result %>%
 
 ```{r}
 manhattan_plot_overall = function(threshold){
+  #color credit to https://stackoverflow.com/questions/9563711/r-color-palettes-for-many-data-classes
   for_figure = association_result
   significant_snps = for_figure %>% 
     dplyr::filter(`FDR_adjusted_p-value` < threshold) %>% 
@@ -319,7 +341,7 @@ manhattan_plot_overall = function(threshold){
     ggplot2::geom_rect(
       color = "lightgrey",
       fill = "lightgrey",
-      size = 0.01,
+      linewidth = 0.01,
       xmin = 581,
       xmax = 740,
       ymin = 0,
@@ -328,7 +350,7 @@ manhattan_plot_overall = function(threshold){
     ggplot2::geom_rect(
       color = "lightgrey",
       fill = "lightgrey",
-      size = 0.01,
+      linewidth = 0.01,
       xmin = 4744,
       xmax = 4925,
       ymin = 0,
@@ -345,8 +367,9 @@ manhattan_plot_overall = function(threshold){
         size=1,
         stroke = FALSE
       )+
-    ggplot2::scale_color_manual(
-      values = c("dodgerblue2", "#E31A1C", # red
+    ggplot2::scale_color_manual( 
+      values = c("dodgerblue2", 
+                 "#E31A1C", # red
                  "green4",
                  "#6A3D9A", # purple
                  "#FF7F00", # orange
@@ -369,7 +392,7 @@ manhattan_plot_overall = function(threshold){
         color = locus),
         segment.color = "grey50",
         size=2.0,
-        max.overlaps = 9,
+        max.overlaps = 10,
         label.padding = 0.1,
         box.padding = 0.5) +
     ggplot2::scale_colour_manual(
@@ -386,6 +409,7 @@ manhattan_plot_overall = function(threshold){
       panel.border = element_blank(),
       panel.grid.major.x = element_blank(),
       panel.grid.minor.x = element_blank(),
+      axis.text = element_text(color = "black"),
       legend.key.size = unit(0.4, 'cm')
       )+
     ggplot2::ylab("-log(FDR-adjusted p-value)")+
@@ -400,11 +424,13 @@ manhattan_plot_overall = function(threshold){
 
 ```{r}
 manhattan_plot_overall_result = manhattan_plot_overall(threshold = 0.05)
-#ggsave("figures/manhattan_plot_all_phenotypes.png", manhattan_plot_overall_result)
+ggsave("figures/Figure_2_Manhattan_plot_all_phenotypes.pdf", 
+       manhattan_plot_overall_result,
+       device = CairoPDF)
 manhattan_plot_overall_result
 ```
 
-# Figure 4: VNTR Density
+# Figure 3: VNTR Density
 
 The estimate is obtained from vntrwrap repository (https://github.com/alexliyihao/vntrwrap)
 ```{r}
@@ -425,29 +451,11 @@ vntr_overall_distribution = ggplot2::ggplot(
   ggplot2::theme_bw()+
   ggplot2::labs(title = "A", x = "CN Estimate", y = "Count")+
   ggplot2::theme(
-      plot.title = element_text(size = 14, face = "bold")
+      plot.title = element_text(size = 14, face = "bold"),
+      axis.text = element_text(color = "black")
   )
 vntr_overall_distribution
 #ggplot2::ggsave("figures/vntr_distribution_overall_histogram.png", vntr_distribution)
-```
-
-
-```{r}
-vntr_distribution = ggplot2::ggplot(
-  data = vntr_estimate,
-  mapping = aes(x = estimate))+
-  ggplot2::geom_histogram(mapping = aes(y = after_stat(density)),
-                          fill = "white", color = "black", binwidth = 0.25)+
-  ggplot2::geom_density()+
-  ggplot2::scale_y_continuous(expand = c(0,0))+
-  ggplot2::coord_fixed(ratio = 300/1)+
-  ggplot2::theme_bw()+
-  ggplot2::labs(title = "A")+
-  ggplot2::theme(
-      plot.title = element_text(size = 14, face = "bold")
-  )
-vntr_distribution
-#ggplot2::ggsave("figures/vntr_distribution_overall_density.png", vntr_distribution)
 ```
 
 ```{r}
@@ -461,7 +469,8 @@ vntr_distribution_density_by_race = ggplot2::ggplot(
   ggplot2::scale_y_continuous(limits = c(0, 0.125), expand = c(0,0))+
   ggplot2::labs(title = "B", x = "CN Estimate", y = "Density")+
   ggplot2::theme(
-      plot.title = element_text(size = 14, face = "bold")
+      plot.title = element_text(size = 14, face = "bold"),
+      axis.text = element_text(color = "black")
   )+
   ggplot2::coord_fixed(ratio = 200/1)
 vntr_distribution_density_by_race
@@ -473,7 +482,7 @@ vntr_distribution_faceted = ggplot2::ggplot(
   data = vntr_estimate,
   mapping = aes(x = estimate))+
   ggplot2::geom_histogram(
-    mapping = aes(y = ..density..,),
+    mapping = aes(y = after_stat(density),),
     fill = "white", 
     color = "black", 
     binwidth = 0.5)+
@@ -483,7 +492,8 @@ vntr_distribution_faceted = ggplot2::ggplot(
   ggplot2::scale_y_continuous(expand = c(0,0))+
   ggplot2::labs(title = "C", x = "CN Estimate", y = "Density")+
   ggplot2::theme(
-      plot.title = element_text(size = 14, face = "bold")
+      plot.title = element_text(size = 14, face = "bold"),
+      axis.text = element_text(color = "black")
   )+
   ggplot2::coord_fixed(ratio = 150/1)
 vntr_distribution_faceted
@@ -493,11 +503,13 @@ vntr_overall_distribution
 ```{r}
 vntr_panel = (vntr_overall_distribution / vntr_distribution_density_by_race) | vntr_distribution_faceted
 vntr_panel
-#ggsave("figures/Figure_4_VNTR_CN_distribution_panel.png",vntr_panel)
+ggsave("figures/Figure_3_VNTR_CN_distribution_panel.pdf",
+       plot = vntr_panel,
+       device = CairoPDF)
 ```
 
 
-# Figure 5: Boxplot VNTR vs SNPs
+# Figure 4: Boxplot VNTR vs SNPs
 
 The output is from complete_output_tidied.xlsx from VNTR ~ SNP section in illustration.
 ```{r}
@@ -546,86 +558,81 @@ boxplot_vntr = function(snp){
 }
 ```
 
-this is #60 in the list which is the first reverse direction... 
-```{r}
-boxplot_vntr("4672-A/G")
-```
-
-```{r}
-boxplot_vntr("4755-T/C")
-```
-
 ```{r}
 g = (boxplot_vntr("654-C/T")+boxplot_vntr("588-T/G")+boxplot_vntr("568-G/C")) / 
   (boxplot_vntr("566-G/C")+boxplot_vntr("4894-G/A")+boxplot_vntr("690-A/C")) /
   (boxplot_vntr("4816-T/A")+boxplot_vntr("600-T/C")+boxplot_vntr("4951-A/C"))
-#ggsave("figures/VNTR_vs_SNP_top_hits.png", plot = g, width = 14, height = 14)
+ggsave("figures/Figure_4_VNTR_vs_SNP_top_hits.pdf", 
+       plot = g, width = 14, height = 14, device = CairoPDF)
 g
 ```
 
 
-# Figure 6. Serum CF 
+# (Deprecated) Figure 5. Serum CF 
 
-The input is from lpa/wIS ~ SNP + adjustments section in the illustration
+The input is from lpa/wIS ~ SNP + adjustments section in the illustration, info_table format see Supplemental Table S1
 ```{r}
 wIS_result = readxl::read_xlsx(
-  "WHICAP_result_tables/Serum_vs_SNP/wIS_complete_tidied.xlsx") %>% 
-  dplyr::select(
-    tidyr::all_of(c(
-      "index", 
-      "variant Beta", 
-      #"variant P-value", 
-      #"coding",
-      "FDR_adjusted_p-value"))) %>% 
-  magrittr::set_colnames(c("variant", "effect_size", "p_value_FDR"))
+  "WHICAP_result_tables/Serum_vs_SNP/wIS_complete_tidied.xlsx") 
 lpa_result = readxl::read_xlsx(
-  "WHICAP_result_tables/Serum_vs_SNP/lpa_complete_tidied.xlsx") %>% 
-  dplyr::select(
-    tidyr::all_of(c(
-      "index", 
-      "variant Beta", 
-      #"variant P-value", 
-      #"coding",
-      "FDR_adjusted_p-value"))) %>% 
-  magrittr::set_colnames(c("variant", "effect_size", "p_value_FDR"))
+  "WHICAP_result_tables/Serum_vs_SNP/lpa_complete_tidied_log_lpa.xlsx") 
+
+info_table = readxl::read_xlsx("WHICAP_result_tables/Paper_1_table_and_visualizations/Supplemental_Table_S1_all_variant_info_table.xlsx")
 
 p_value_threshold = 0.05
 ```
 
 ```{r}
+wIS_result = wIS_result %>% 
+  dplyr::select(
+    tidyr::all_of(c(
+      "index", 
+      "variant Beta", 
+      #"variant P-value", 
+      #"coding",
+      "FDR_adjusted_p-value"))) %>% 
+  magrittr::set_colnames(c("variant", "effect_size", "p_value_FDR"))
+lpa_result = lpa_result %>% 
+  dplyr::select(
+    tidyr::all_of(c(
+      "index", 
+      "variant Beta", 
+      #"variant P-value", 
+      #"coding",
+      "FDR_adjusted_p-value"))) %>% 
+  magrittr::set_colnames(c("variant", "effect_size", "p_value_FDR"))
+```
+
+
+```{r}
 wIS_result_filtered = merge(
   x = wIS_result %>% dplyr::filter(p_value_FDR <= p_value_threshold),
-  y = info_table %>% select(c("snp_pos", "Novelty")), 
+  y = info_table %>% select(c("Variant", "novel")), 
   by.x = c("variant"), 
-  by.y = c("snp_pos"),
+  by.y = c("Variant"),
   all.x = TRUE) %>% 
   dplyr::arrange(p_value_FDR)
-```
-
-```{r}
-wIS_result_filtered
-```
-
-
-```{r}
 lpa_result_filtered = merge(
   x = lpa_result %>% dplyr::filter(p_value_FDR <= p_value_threshold),
-  y = info_table %>% select(c("snp_pos", "Novelty")), 
+  y = info_table %>% select(c("Variant", "novel")), 
   by.x = c("variant"), 
-  by.y = c("snp_pos"),
+  by.y = c("Variant"),
   all.x = TRUE) %>% 
   dplyr::arrange(p_value_FDR)
 ```
-```{r}
-lpa_result_filtered
-```
-
 
 Split subjects into 2 groups (by threshold 38, 27 = 18+9)
 
 ```{r}
 serum_freq = utils::read.csv("data/serum_snp_freq_2_group_by_38.csv")
 serum_data = utils::read.csv("data/serum_data_grouped_2_group_by_38.csv")
+```
+
+```{r}
+serum_freq[0:5,]
+```
+
+```{r}
 serum_lpa = serum_data[,2]
 print(serum_lpa[order(serum_lpa)])
 print(summary(serum_lpa[order(serum_lpa)]))
@@ -692,9 +699,9 @@ for_figure_merge$SNP = for_figure_merge$SNP %>%
 
 ```{r}
 for_figure_merge = merge(for_figure_merge, 
-                         info_table %>% select(c(snp_pos, coding)) %>% unique(),
+                         info_table %>% select(c("Variant", "coding")) %>% unique(),
                          by.x = "SNP",
-                         by.y = "snp_pos", 
+                         by.y = "Variant", 
                          all.x = TRUE)
 ```
 
@@ -751,18 +758,16 @@ g = lemon::grid_arrange_shared_legend(g_lpa, g_was, ncol = 1, nrow = 2,
                                       padding = 2,
                                       position='right',
                                       plot = TRUE)
-#ggsave("figures/updated_serum_top_hits_adjusted_p_value.png", g)
+#ggsave("figures/serum_top_hits_log_lpa.png", g)
 g
 ```
 
 
-# Supplemental Table S1. Coassin dataset:
+# Supplemental Table S2. Coassin dataset:
 
 Coassin mentioned "The 1000 Genomes project is a freely accessible public data resource including data from 2,504 individuals in its final phase (so called 1000 Genomes Phase 3). High coverage exome sequencing data of all individuals is available at ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data. Additionally, high coverage whole genome sequencing (WGS) data from 150 of these individuals was made publicly available by the HiSeqX Diversity Panel of the Illumina Polaris project (https://github.com/Illumina/Polaris/wiki/HiSeqX‐Diversity‐Panel; (https://www.ebi.ac.uk/ena/data/view/PRJEB20654)."
 
- - **Note: the population description file gives total 2577 samples (vs 2504). Not quite sure what is dropped... I'll first run the frequency from this file. This frequency should be underestimated when compared with Coassin's, but very little**.
- 
- - Error may happened due to it's OCRed, I checked twice but it may happens.
+ - **Note: the population description file gives total 2577 samples (vs 2504). Not quite sure what is dropped. I'll first run the frequency from this file. This frequency should be underestimated when compared with Coassin's, but very little**.
  
 ```{r, include = FALSE}
 #https://ddbj.nig.ac.jp/public/mirror_database/1000genomes/
@@ -772,17 +777,6 @@ coassin_population_size = p3exome %>%
   dplyr::summarise(sample_size = sum(Total)) %>% 
   tidyr::drop_na()  
 print(coassin_population_size$sample_size %>% sum())
-```
-
-```{r}
-p3exome
-```
-```{r}
-coassin_population_size
-```
-
-```{r}
-coassin_s11
 ```
 
 ```{r}
@@ -828,7 +822,7 @@ Use top lines as example
 coassin_freq %>% head()
 ```
 
-What worth notice is not all the exons Coassin discovered (208) has frequencies, only 204 of them have rows in the frequency table. 1 of these 4 is in our dataset, so we need to skip it when draw comparison figures
+What worth notice is not all the exons Coassin discovered (208) has frequencies, only 204 of them have rows in the frequency table. 1 of these 4 missing is in our dataset, so we need to skip it when draw comparison figures
 
 ```{r}
 # OCRed from doi: 10.1194/jlr.M090381 supplementary table S9
@@ -849,12 +843,9 @@ print(setdiff(coassin_freq$variant,coassin_Exons))
 ```
 ```{r, include=TRUE, echo=TRUE}
 for (i in setdiff(coassin_Exons,coassin_freq$variant)){
-  print(paste(i, "in our dataset:", i %in% info_table$snp_pos))
+  print(paste(i, "in our dataset:", i %in% info_table$Variant))
 }
 ```
-
-I think Gissette need this figure, technically it should be histogram, but I used a density curve for better illustration. A foreseeable bias is the difference between each bin will be smoothed, but the general idea is still the same. The x-axis is the absolute difference between relative frequencies in two datasets.
-
 
 ```{r}
 previously_discovered_Exons = dplyr::intersect(
@@ -863,7 +854,8 @@ previously_discovered_Exons = dplyr::intersect(
 ```
 
 ```{r}
-coassin_count_table = coassin_freq[coassin_freq$variant %in% previously_discovered_Exons,] %>% 
+coassin_count_table = coassin_freq[
+  coassin_freq$variant %in% previously_discovered_Exons,] %>% 
   dplyr::select(tidyr::all_of(c("variant", 
                                 "EU","EU_total", 
                                 "AF","AF_total", 
@@ -986,9 +978,7 @@ significant_count = test %>%
     )%>% 
   select(c(EU_significant, AF_significant, HISP_significant, PUR_significant, Population_significant))
 ```
-```{r}
-significant_count
-```
+
 ```{r}
 significant_count %>% 
   purrr::map(table) %>% 
@@ -1022,9 +1012,7 @@ significant_count_output = significant_count_output %>%
   dplyr::select(group, insignificant, significant) %>% 
   dplyr::mutate(NA_count = (sheets$Population %>% nrow() - significant - insignificant))
 ```
-```{r}
-sheets$Population %>% nrow()
-```
+
 
 
 ```{r}
