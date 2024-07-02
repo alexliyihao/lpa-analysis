@@ -1,4 +1,4 @@
-"""A generator computing appearance absoulute frequency of SNP carrier by race and ethnicity
+"""A generator computing appearance absolute frequency of SNP carrier by race and ethnicity
 
 Common usage:
 

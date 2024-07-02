@@ -87,8 +87,8 @@ def target_strategy() -> Dict[str, Dict[str, Union[sm.Logit, sm.OLS, Callable]]]
 
     The key for main dict is the variable name
     The value is a dict with the following keys:
-        "engine", whose value is a statsmodels model
-        "preprocessing", whose value is a callable takes in a pd.DataFrame and returns another one
+      - "engine", whose value is a statsmodels model
+      - "preprocessing", whose value is a callable takes in a pd.DataFrame and returns another one
     """
     return {'STROKE': {"engine": sm.Logit,
                        "preprocessing": dropna},
@@ -190,12 +190,12 @@ class SNPAssociation:
                  Only column mentioned in keys will be included in the running.
                  The inner dictionary should have two keys:
 
-                 "engine": statsmodels.api models
+                  - "engine": statsmodels.api models
                      designed for statsmodels.discrete.discrete_model.Logit or
                      statsmodels.regression.linear_model.OLS,
                      but any model's .fit results provide .params .bse .pvalues will work
 
-                 "preprocessing": funcs
+                  - "preprocessing": funcs
                      the function should take a pd.DataFrame/pd.Series as input
                      and a pd.DataFrame/pd.Series as output,
                      If this strategy is None, the column will be used as

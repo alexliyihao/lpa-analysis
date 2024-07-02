@@ -1,4 +1,4 @@
-"""A class generating output for Haploview4.2 linkage format
+"""A class generating output for Haploview4.2 (https://www.broadinstitute.org/haploview/haploview) linkage format
 
 Common usage:
 

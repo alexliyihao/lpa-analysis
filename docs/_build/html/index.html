@@ -87,32 +87,39 @@
              
   <section id="lpa-analysis">
 <h1>lpa-analysis<a class="headerlink" href="#lpa-analysis" title="Permalink to this heading"></a></h1>
-<p>Code repo for research project with Dr. Gissette Soffer and Dr. Badri Vardarajan at Columbia Medical Center</p>
+<p>Code repo for <em>[Ancestry specific distribution of LPA Kringle IV-Type-2 genetic variants highlight associations to apo(a) copy number, glucose and hypertension](TODO: add links)</em></p>
 <section id="environment">
 <h2>Environment<a class="headerlink" href="#environment" title="Permalink to this heading"></a></h2>
 <ul class="simple">
 <li><p>Coassin_pipeline’s dependency is packaged in Coassin_pipeline/app_tar, for details, see the Readme file in Coassin_pipeline.</p></li>
-<li><p>The project’s dependencies and releases are managed by <a class="reference external" href="https://python-poetry.org/">Poetry</a>. If you only works on codes, related information can be found at pyproject.toml under section tool.poetry.dependencies, For running details, see the Readme file in src/lpa_pipeline.</p></li>
+<li><p>The project’s python dependencies and releases are managed by <a class="reference external" href="https://python-poetry.org/">Poetry</a>. If you only works on codes, related information can be found at pyproject.toml under section tool.poetry.dependencies, For running details, see the Readme file in src/lpa_pipeline.</p></li>
+<li><p>Some visualization code are written by R. The sessionInfo can be found at visualization/sessionInfo.txt</p></li>
 </ul>
 </section>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
 <ul class="simple">
-<li><p><strong>Coassin_pipeline</strong> included shell script and all the related example file used running pipeline from Dr. Coassin et.al’s paper <a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6314250/"><strong>A comprehensive map of single base polymorphisms in the hypervariable LPA Kringle-IV-2 copy number variation region</strong></a>, the <a class="reference external" href="https://github.com/genepi/lpa-pipeline">pipeline</a> is running on <a class="reference external" href="http://www.cloudgene.io/">Cloudgene</a> on a SGE-managed cluster</p></li>
-<li><p><strong>src/pipeline</strong> is the data analysis pipeline used in Python.</p></li>
-<li><p><strong>METAL</strong> included the backup shell script running <a class="reference external" href="https://github.com/statgen/METAL">METAL</a> 11.3.25 for meta analysis. These scripts are not required ion running</p></li>
+<li><p><strong>Coassin_pipeline</strong> included shell script and all the related example file used running pipeline from Dr. Coassin et.al’s paper <a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6314250/"><strong>A comprehensive map of single base polymorphisms in the hypervariable LPA Kringle-IV-2 copy number variation region</strong></a>, the <a class="reference external" href="https://github.com/genepi/lpa-pipeline">pipeline</a> is running on <a class="reference external" href="http://www.cloudgene.io/">Cloudgene</a> on a SGE or SLURM-managed cluster</p></li>
+<li><p><strong>src/lpa_pipeline</strong> is the data analysis pipeline used in Python.</p></li>
+<li><p><strong>METAL</strong> included the backup shell script running <a class="reference external" href="https://github.com/statgen/METAL">METAL</a> 11.3.25 for meta analysis. These scripts are not required in the running</p></li>
+<li><p>For the VNTR estimating pipeline, please see the repo <a class="reference external" href="https://github.com/alexliyihao/vntrwrap">vntrwrap</a>. Those pipeline are list separately for they are also working for other projects.</p></li>
 </ul>
 </section>
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h2>
 <ul class="simple">
-<li><p>A Sphinx-based api copy can be found in docs/_build/html/index.html</p></li>
-<li><p>TODO: host a documentation online(readthedocs.com, maybe?)</p></li>
+<li><p>Most of the Python codes are documented in their source code</p></li>
+<li><p>A Sphinx-based autodoc is host [here](TODO: add the link)</p></li>
+<li><p>A copy of the autodoc can be found in docs/_build/html/index.html, which is saved on purpose.</p></li>
 </ul>
 </section>
 <section id="license">
 <h2>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h2>
 <p>The repository was created by Yihao Li. It is licensed under the terms of the MIT license.</p>
+</section>
+<section id="contact">
+<h2>Contact<a class="headerlink" href="#contact" title="Permalink to this heading"></a></h2>
+<p>If need help or can help with anything, please feel free to email Yihao Li (yl4326[at]cumc.columbia.edu) and CC both Dr. Gissette Reyes-Soffer (gr2104[at]cumc.columbia.edu) and Dr. Badri Vardarajan (bnv2103[at]cumc.columbia.edu)</p>
 <div class="toctree-wrapper compound">
 </div>
 </section>

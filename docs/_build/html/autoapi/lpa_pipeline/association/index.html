@@ -232,8 +232,10 @@ finding other columns and concatenate them as well</p></li>
 <p>The key for main dict is the variable name
 The value is a dict with the following keys:</p>
 <blockquote>
-<div><p>“engine”, whose value is a statsmodels model
-“preprocessing”, whose value is a callable takes in a pd.DataFrame and returns another one</p>
+<div><ul class="simple">
+<li><p>“engine”, whose value is a statsmodels model</p></li>
+<li><p>“preprocessing”, whose value is a callable takes in a pd.DataFrame and returns another one</p></li>
+</ul>
 </div></blockquote>
 </dd></dl>
 
@@ -267,17 +269,25 @@ The value is a dict with the following keys:</p>
 The dictionary provide pre-processing to specific column,
 Only column mentioned in keys will be included in the running.
 The inner dictionary should have two keys:</p>
-<dl class="simple">
+<blockquote>
+<div><ul>
+<li><dl class="simple">
 <dt>”engine”: statsmodels.api models</dt><dd><p>designed for statsmodels.discrete.discrete_model.Logit or
 statsmodels.regression.linear_model.OLS,
 but any model’s .fit results provide .params .bse .pvalues will work</p>
 </dd>
+</dl>
+</li>
+<li><dl class="simple">
 <dt>”preprocessing”: funcs</dt><dd><p>the function should take a pd.DataFrame/pd.Series as input
 and a pd.DataFrame/pd.Series as output,
 If this strategy is None, the column will be used as
 exogenous variables as-is</p>
 </dd>
 </dl>
+</li>
+</ul>
+</div></blockquote>
 </p></li>
 <li><p><strong>output_path</strong> – str, the output root path,
 the saving name will be printed for reference</p></li>
