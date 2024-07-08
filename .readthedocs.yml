@@ -3,7 +3,9 @@ version: 2
 
 # Image to use
 build:
-  image: testing
+  os: debian - 10.13
+  tools:
+    python: "3.8.12"
 
 # Configuration
 python:
