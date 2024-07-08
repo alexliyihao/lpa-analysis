@@ -3,7 +3,7 @@ version: 2
 
 # Image to use
 build:
-  os: debian - 10.13
+  os: ubuntu-20.14
   tools:
     python: "3.8.12"
 
