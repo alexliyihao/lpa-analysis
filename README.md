@@ -21,8 +21,7 @@ Code repo for *[Ancestry specific distribution of LPA Kringle IV-Type-2 genetic 
 ## Documentation
 
 - Most of the Python codes are documented in their source code
-- A Sphinx-based autodoc is host [here](TODO: add the link)
-- A copy of the autodoc can be found in docs/_build/html/index.html, which is saved on purpose.
+- A copy of the sphinx-autoapi based doc can be found in docs/_build/html/index.html. Due to some version issue we cannot host it on readthedoc.
 
 ## License
 
@@ -30,4 +29,4 @@ The repository was created by Yihao Li. It is licensed under the terms of the MI
 
 ## Contact
 
-If need help or can help with anything, please feel free to email Yihao Li (yl4326[at]cumc.columbia.edu) and CC both Dr. Gissette Reyes-Soffer (gr2104[at]cumc.columbia.edu) and Dr. Badri Vardarajan (bnv2103[at]cumc.columbia.edu)
+If need help or can help with anything, please feel free to email Yihao Li (yl4326@cumc.columbia.edu) and CC both Dr. Gissette Reyes-Soffer (gr2104@cumc.columbia.edu) and Dr. Badri Vardarajan (bnv2103@cumc.columbia.edu)

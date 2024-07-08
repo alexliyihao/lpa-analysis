@@ -4,7 +4,7 @@ The code for statistical analysis
 
 ## Import
 
-The pipeline is written as Python modules, a demo JupyterLab IPython Notebook(.ipynb) is provided in `docs` folder and the [doc](TODO: add the documentation website).
+The pipeline is written as Python modules, a demo JupyterLab IPython Notebook(.ipynb) is provided in `docs/_build/html/index.html`, due to some version issue we cannot host it on readthedoc.com.
 
 The tqdm are included in the code, in case there's anything wrong with tqdm displaying, our running environment is using jupyterlab==3.2.4 with widgetsnbextension==3.6.4.
 
