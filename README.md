@@ -1,6 +1,6 @@
 # lpa-analysis
 
-Code repo for *[Ancestry specific distribution of LPA Kringle IV-Type-2 genetic variants highlight associations to apo(a) copy number, glucose and hypertension](TODO: add links)*
+Code repo for *[Ancestry specific distribution of LPA Kringle IV-Type-2 genetic variants highlight associations to apo(a) copy number, glucose and hypertension](https://doi.org/10.1101/2024.07.09.24310176)*
 
 ## Environment
 
