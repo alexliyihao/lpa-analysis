@@ -1,6 +1,6 @@
 # lpa-analysis
 
-Code repo for *[Ancestry specific distribution of LPA Kringle IV-Type-2 genetic variants highlight associations to apo(a) copy number, glucose and hypertension](https://doi.org/10.1101/2024.07.09.24310176)*
+Code repo for *[LPA Kringle IV Type-2 Genetic Variants Are Associated With Apolipoprotein (a) Size, Hypertension, and Nonfasting Glucose Levels](https://doi.org/10.1161/JAHA.125.043246)*
 
 ## Environment
 
@@ -22,6 +22,10 @@ Code repo for *[Ancestry specific distribution of LPA Kringle IV-Type-2 genetic 
 
 - Most of the Python codes are documented in their source code
 - A copy of the sphinx-autoapi based doc can be found in docs/_build/html/index.html. Due to some version issue we cannot host it on readthedoc.
+
+## Other Figures
+
+Those figure which readers might interested in but not related to the storytelling are included in *other_figures*
 
 ## License
 
